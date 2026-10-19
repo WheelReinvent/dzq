@@ -94,22 +94,18 @@ gratitudes. The leaf holds when there are at least N **distinct** gratitudes
    certificate's issuer is the holder too. A thank-you to yourself counts
    only toward your own promises to yourself.
 
-### Using it: redemption per holder
+### No use counter
 
-A certificate for many people is used by each of them separately. The
-redemption record names the holder:
+A certificate has **no "used" state** and no counter. Counting uses needs
+one place that counts, which is a centre, and a promise between people does
+not need one: if Marko shows the same certificate twice, it is between him
+and Dad. The value of a certificate is the history of keeping it — holders
+can thank the issuer for a kept promise with an ordinary gratitude, which
+is already part of the format. (This follows DzenQ's decision of
+2026-10-14: no counters, no used state.)
 
-```
-redemption digest(S, H) = SAID of {"d":"<44 #>","t":"redeem","g":"<certificate SAID>","h":"<holder AID>"}
-```
-
-The certificate's issuer anchors it (a digest seal in an `ixn`) when the
-holder has used it — after the issuer confirms ("promise kept ✓"), or when
-a door does so on the issuer's behalf. A verifier reports the certificate as
-**used by this holder** if that digest is in the issuer's KEL. Other
-holders are unaffected.
-
-(Gratitude redemption, `{"t":"redeem","g"}` without `h`, is unchanged.)
+A certificate is usable while its condition holds, until `until`, and until
+the issuer closes it.
 
 ### Closing early
 
@@ -135,34 +131,37 @@ verifier answers **"can this holder use it now?"**:
 | the holder meets the condition (with the gratitudes and claims presented) | `not-earned` |
 | `until` is absent or later than the verifier's clock | `expired` |
 | no close digest in the issuer's KEL | `closed` |
-| no redemption digest for (certificate, holder) in the issuer's KEL | `used` |
 
-As with everything KEL-based, `closed` and `used` are only as fresh as the
-issuer's KEL the verifier has; doors that hand out real things SHOULD load
-it fresh.
+As with everything KEL-based, `closed` is only as fresh as the issuer's KEL
+the verifier has; doors that hand out real things SHOULD load it fresh.
 
 ## What changes
 
 - **Spec:** new type `certificate` (schemas 1.1.0 / 2.1.0 of the certificate
-  family); new condition leaf `thanks:`; redemption extension gains the
-  per-holder record and the close record; presentation extension gains the
-  "usable" result and the `thanks:` proof rules.
+  family); new condition leaf `thanks:`; a close record; presentation
+  extension gains the "usable" result and the `thanks:` proof rules. No
+  per-holder redemption, no counters.
 - **Reference verifier and CLI:** `dzq sign --type certificate …`,
   `thanks:` evaluation in presentations, usable/expired/closed/used.
 - **Vectors:** earned / not earned (too few, wrong category, wrong issuer,
-  before `since`, self-issued), expired, closed, used by this holder but not
-  by another, a certificate presented as a gratitude (refused).
+  before `since`, self-issued), expired, closed, a certificate presented as
+  a gratitude (refused).
 - **DzenQ:** `dzenq-key/1` maps to a certificate with a `thanks:` condition;
   `dzenq-promise/1` to a certificate to named people. "All my people" is not
   part of the format: an app that wants it issues certificates to the people
   it means, one by one.
+
+## Decided
+
+- Certificate and gratitude are separate types in the same envelope.
+- One certificate issuer; the gratitudes in a `thanks:` condition may come
+  from many issuers.
+- One free-text field `note` (no separate `ask`).
+- No use counter and no "used" state. The issuer can close a certificate
+  early.
 
 ## Open questions
 
 1. Should `what` be public, at least for certificates to a condition that
    anyone may meet ("lunch for anyone with a Help thank-you")? Public makes
    such rules discoverable; private keeps the promise between the people.
-2. Who may anchor a redemption: only the issuer, or also a door the issuer
-   delegates to? (KERI delegation would allow the latter.)
-3. Do we need "used N times" (a certificate good for three coffees), or is
-   one use per holder enough for now?
