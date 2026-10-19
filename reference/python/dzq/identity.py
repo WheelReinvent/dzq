@@ -47,11 +47,11 @@ class Identity(build.Controller):
     def registry(self):
         return blake3_said_registry(self.prefix)
 
-    def sign(self, type, to, content, when=None, attachment=None):
+    def sign(self, type, to, content, when=None, attachment=None, private=True):
         """A signed statement of `type` (e.g. "gratitude") to `to` (an AID or a
         condition). `content` holds the type's fields. See dzq.types."""
         from .statement import sign
-        return sign(self, type, to, content, when=when, attachment=attachment)
+        return sign(self, type, to, content, when=when, attachment=attachment, private=private)
 
     def __repr__(self):
         return "Identity(%s)" % self.aid

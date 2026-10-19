@@ -7,6 +7,7 @@
              -o thanks.dzq
     dzq open thanks.dzq                   # what the file says (trusts nothing)
     dzq verify thanks.dzq                 # whether to believe it
+    dzq hide thanks.dzq -o shown.dzq      # a copy without the private text, still valid
     dzq presentation vp.json --nonce CODE
 """
 
@@ -55,9 +56,10 @@ def cmd_whoami(a):
 def cmd_types(a):
     for t in types.TYPES.values():
         print("%s" % t.name)
-        print("  fields:   %s" % ", ".join(t.required))
+        print("  public:   %s" % (", ".join(t.public) or "-"))
+        print("  private:  %s" % ", ".join(t.private))
         if t.optional:
-            print("  optional: %s (use --attach for a file)" % ", ".join(t.optional))
+            print("  optional: %s (private; use --attach for a file)" % ", ".join(t.optional))
     return EXIT_VALID
 
 
@@ -76,7 +78,7 @@ def cmd_sign(a):
             body = f.read()
         attachment = (os.path.basename(a.attach), body, mimetypes.guess_type(a.attach)[0] or "application/octet-stream")
     try:
-        st = me.sign(type=a.type, to=a.to, content=content, attachment=attachment)
+        st = me.sign(type=a.type, to=a.to, content=content, attachment=attachment, private=not a.all_public)
     except ValueError as e:
         raise CliError(str(e)) from e
     out = a.output or "%s.dzq" % st.said[:12]
@@ -94,6 +96,23 @@ def cmd_open(a):
     except (archive.ArchiveError, ValueError) as e:
         raise CliError("not a readable dzq file: %s" % e) from e
     print("\n(not verified yet — run: dzq verify %s)" % a.file)
+    return EXIT_VALID
+
+
+def cmd_hide(a):
+    data = open(a.file, "rb").read()
+    try:
+        st = open_statement(data)
+    except (archive.ArchiveError, ValueError) as e:
+        raise CliError("not a readable dzq file: %s" % e) from e
+    if not st.private:
+        raise CliError("this statement has no private part (it was signed with every field public)")
+    shown = st.compact()
+    out = a.output or a.file.replace(".dzq", "") + ".hidden.dzq"
+    with open(out, "wb") as f:
+        f.write(shown.to_dzq())
+    print(shown)
+    print("\nwrote %s — same statement, same signature, without the private text" % out)
     return EXIT_VALID
 
 
@@ -149,7 +168,14 @@ def main(argv=None):
     s.add_argument("fields", nargs="*", help="the type's fields as name=value")
     s.add_argument("--attach", help="a file to attach")
     s.add_argument("-o", "--output", help="output .dzq file")
+    s.add_argument("--all-public", action="store_true",
+                   help="dzq/1.0 layout: no private part, every field public forever")
     s.set_defaults(fn=cmd_sign)
+
+    s = sub.add_parser("hide", help="a copy without the private content, for showing")
+    s.add_argument("file")
+    s.add_argument("-o", "--output")
+    s.set_defaults(fn=cmd_hide)
 
     s = sub.add_parser("open", help="show what a .dzq file says (without trusting it)")
     s.add_argument("file")

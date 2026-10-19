@@ -53,17 +53,18 @@ Create two identities, sign a statement, open it, verify it:
 ```
 $ dzq init alice
 created alice.id  (private: it holds your signing secret)
-your AID: EGZXbjjIy4uuw8A15dsEjpEbFeXcfaCvbuhEuhBZN_IT
+your AID: EAcBzwG9D1bdj8ZT4Mk4GttekxbTrXGtJpI57yzaXcy_
 
 $ dzq init bob
-your AID: EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k
+your AID: EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
 
 $ dzq types
 gratitude
-  fields:   title, message, category
-  optional: attachment (use --attach for a file)
+  public:   category
+  private:  title, message
+  optional: attachment (private; use --attach for a file)
 
-$ dzq sign --as alice.id --type gratitude --to EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k \
+$ dzq sign --as alice.id --type gratitude --to EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ \
       title="Thank you" message="For fixing my bike." category=help -o thanks.dzq
 wrote thanks.dzq
 ```
@@ -73,20 +74,21 @@ Send `thanks.dzq` any way you like. On the other side:
 ```
 $ dzq open thanks.dzq
 Statement (gratitude)
-  from     EGZXbjjIy4uuw8A15dsEjpEbFeXcfaCvbuhEuhBZN_IT
-  to       EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k
-  date     2026-10-19T18:57:17+00:00
+  from     EAcBzwG9D1bdj8ZT4Mk4GttekxbTrXGtJpI57yzaXcy_
+  to       EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
+  date     2026-10-19T19:21:19+00:00
+  category help
   title    Thank you
   message  For fixing my bike.
-  category help
 
 (not verified yet — run: dzq verify thanks.dzq)
 
 $ dzq verify thanks.dzq
 ✓ VALID
-  signed by  EGZXbjjIy4uuw8A15dsEjpEbFeXcfaCvbuhEuhBZN_IT
-  to         EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k
+  signed by  EAcBzwG9D1bdj8ZT4Mk4GttekxbTrXGtJpI57yzaXcy_
+  to         EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
   unchanged  yes, every byte as signed
+  content    shown, and it is exactly what was signed
   final      not yet: valid as of the signer's key history in hand (event 0)
 ```
 
@@ -96,6 +98,33 @@ Change one word inside the file and verify again:
 $ dzq verify forged.dzq
 ✗ NOT VALID: the content was changed after it was signed
 ```
+
+### Show the proof, not the words
+
+Bob wants to prove he got a thank-you from Alice without showing what she
+wrote. He hides the private part; the copy is still the same signed
+statement:
+
+```
+$ dzq hide thanks.dzq -o for-the-door.dzq
+Statement (gratitude)
+  from     EAcBzwG9D1bdj8ZT4Mk4GttekxbTrXGtJpI57yzaXcy_
+  to       EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
+  date     2026-10-19T19:21:19+00:00
+  category help
+  private  hidden (only its digest is here: EK2t-sOOJu9iN1_iLgw1ngzjIYrKbJUpAOn02m4leqxW)
+
+$ dzq verify for-the-door.dzq
+✓ VALID
+  signed by  EAcBzwG9D1bdj8ZT4Mk4GttekxbTrXGtJpI57yzaXcy_
+  to         EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
+  unchanged  yes, every byte as signed
+  content    hidden: the signature covers it, but this copy does not show it
+```
+
+Each type declares which fields stay public; for a thank-you that is the
+category. Title, message and attachment travel in a salted block that only
+the holder decides to reveal.
 
 ## What a file looks like
 
@@ -131,7 +160,7 @@ in the same envelope, and verification does not change.
 |---|---|
 | ✅ Gratitude (to an AID or a condition) | `dzq/1.0` draft, implemented in DzenQ |
 | ✅ Letters to an e-mail / phone, sealing, redemption, holder-bound presentation | optional extensions |
-| 🔜 Private content: show the proof, not the text ([proposal 0001](proposals/0001-private-content.md)) | before a public pilot |
+| ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier; DzenQ core next |
 | 🔜 Apology, promise, certificate | new types |
 
 ## In this repository
@@ -141,7 +170,7 @@ in the same envelope, and verification does not change.
 | [SPEC.md](SPEC.md) | the format: envelope, types, signing, verification, the `.dzq` file |
 | [extensions/](extensions/) | letters, periods (sealing), redemption, presentation |
 | [schemas/](schemas/) | the schemas, byte for byte, with their fixed SAIDs |
-| [vectors/](vectors/) | 64 cases with expected results — pass them and you're compatible |
+| [vectors/](vectors/) | 76 cases with expected results — pass them and you're compatible |
 | [reference/python/](reference/python/) | the reference verifier |
 | [conformance/rust/](conformance/rust/) | runs the vectors through DzenQ's Rust core |
 | [docs/](docs/) | relation to KERI/ACDC; where DzenQ differs from the spec today |

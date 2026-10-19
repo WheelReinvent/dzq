@@ -113,8 +113,10 @@ class Controller:
         return acdc.new_gratitude(self.prefix, registry or cesr.blake3_said("registry|" + self.prefix), attributes)
 
     def bundle(self, credential, key=None, kel=None, index=0):
+        """ACDC (as given: full or compact) + signature over the COMPACT form + KEL."""
         raw = acdc.dumps(credential) if isinstance(credential, dict) else credential
-        sig = cesr.indexed_sig_qb64((key or self.current).sign(raw), index)
+        signed = acdc.dumps(acdc.compact(credential)) if isinstance(credential, dict) else credential
+        sig = cesr.indexed_sig_qb64((key or self.current).sign(signed), index)
         return raw + cesr.counter_indexed_sigs([sig]) + (self.kel() if kel is None else kel)
 
     def close_period(self, saids, since, prev=""):

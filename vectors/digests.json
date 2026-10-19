@@ -3,6 +3,8 @@
   "schemas": {
     "gratitude 1.0.0": "EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav",
     "gratitude-condition 2.0.0": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ",
+    "gratitude-private 1.1.0": "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_",
+    "gratitude-private-condition 2.1.0": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
     "binding 1.0.0": "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
   },
   "blake3_said": [

@@ -104,6 +104,8 @@ def check_credential(bundle, seal=None, kel_text=None):
     except cesr.CesrError as e:
         return r.fail("format", "bad signature group: %s" % e)
     r.update(said=integ.said, issuer=integ.issuer, recipient=integ.recipient, schema=integ.schema)
+    if integ.schema in acdc.PRIVATE:
+        r["content"] = "shown" if integ.content is not None else "hidden"
 
     try:
         # A fresher copy first, then the bundle's own: for each sequence number
@@ -122,7 +124,7 @@ def check_credential(bundle, seal=None, kel_text=None):
         # Anchored on its own (gratitudes issued before periods).
         r["anchored_at_sn"] = anchor
         keys = view.keys_at(anchor)
-        if not keys or not _signed_by(raw, sigs, keys):
+        if not keys or not _signed_by(integ.signed_raw, sigs, keys):
             return r.fail("signature", "signature does not match the issuer's keys at the anchor")
         r["sealed"] = True
     elif seal is not None:
@@ -130,12 +132,12 @@ def check_credential(bundle, seal=None, kel_text=None):
             close_sn, key_sets = _period(view, integ.issuer, integ.said, seal)
         except ValueError as e:
             return r.fail("seal", str(e))
-        if not any(_signed_by(raw, sigs, k) for k in key_sets):
+        if not any(_signed_by(integ.signed_raw, sigs, k) for k in key_sets):
             return r.fail("signature", "signature does not match the issuer's keys in that period")
         r.update(anchored_at_sn=close_sn, sealed=True)
     else:
         keys = view.current_keys()
-        if not keys or not _signed_by(raw, sigs, keys):
+        if not keys or not _signed_by(integ.signed_raw, sigs, keys):
             return r.fail("not-current", "not sealed, and not signed by the issuer's current keys")
 
     r["redeemed_at_sn"] = view.digest_anchor_of(acdc.redemption_said(integ.said))

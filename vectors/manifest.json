@@ -318,6 +318,86 @@
         "valid": false,
         "code": "not-current"
       }
+    },
+    {
+      "name": "private-full",
+      "description": "dzq/1.1: title and message in the salted block, shown. Signature covers the compact form.",
+      "bundle": "credentials/private-full.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EH7UV7DAfsLqVr-qkqGvXqUidmzhTue-uwaIBe6NKFK4",
+        "schema": "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "private-compact",
+      "description": "The same statement with the block replaced by its SAID: same id, same signature.",
+      "bundle": "credentials/private-compact.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EH7UV7DAfsLqVr-qkqGvXqUidmzhTue-uwaIBe6NKFK4",
+        "content": "hidden"
+      }
+    },
+    {
+      "name": "private-edited-message",
+      "description": "The full form with the message changed after signing.",
+      "bundle": "credentials/private-edited-message.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "private-wrong-digest",
+      "description": "A compact form whose content SAID was swapped for another.",
+      "bundle": "credentials/private-wrong-digest.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "private-no-salt",
+      "description": "A content block without a salt (SAIDs recomputed): guessable, refused.",
+      "bundle": "credentials/private-no-salt.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "private-bad-salt",
+      "description": "A salt that is not 128 bits (SAIDs recomputed).",
+      "bundle": "credentials/private-bad-salt.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "private-title-outside",
+      "description": "A private-schema statement with the title outside the block (SAIDs recomputed).",
+      "bundle": "credentials/private-title-outside.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "private-condition",
+      "description": "dzq/1.1 to a condition (schema 2.1.0), full form.",
+      "bundle": "credentials/private-condition.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "ENHLbexlFDo534LiVQTXJYLc_LRB8HEgMYx6Yx30KNGt",
+        "schema": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
+        "content": "shown"
+      }
     }
   ],
   "archives": [
@@ -444,6 +524,28 @@
       "expect": {
         "valid": false,
         "code": "archive"
+      }
+    },
+    {
+      "name": "private-attachment",
+      "description": "dzq/1.1 full form with its attachment: the file is checked against the private block.",
+      "file": "archives/private-attachment.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "attachment": "ok",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "private-compact",
+      "description": "dzq/1.1 compact copy for showing: no text, no attachment, still valid.",
+      "file": "archives/private-compact.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "attachment": null,
+        "content": "hidden"
       }
     }
   ],
@@ -636,6 +738,26 @@
       "expect": {
         "valid": false,
         "code": "format"
+      }
+    },
+    {
+      "name": "private-compact-at-door",
+      "description": "Bob shows a dzq/1.1 thank-you to a door without its text.",
+      "file": "presentations/private-compact-at-door.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+      }
+    },
+    {
+      "name": "private-letter-claimed-compact",
+      "description": "Dave claims a dzq/1.1 letter and shows it without its text.",
+      "file": "presentations/private-letter-claimed-compact.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv"
       }
     }
   ]

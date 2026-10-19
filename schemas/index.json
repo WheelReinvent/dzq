@@ -16,5 +16,17 @@
     "title": "DzenQ Identity Binding",
     "version": "1.0.0",
     "credentialType": "DzenqBinding"
+  },
+  "gratitude-private.schema.json": {
+    "said": "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_",
+    "title": "dzq Gratitude (private content)",
+    "version": "1.1.0",
+    "credentialType": "DzqGratitude"
+  },
+  "gratitude-private-condition.schema.json": {
+    "said": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
+    "title": "dzq Gratitude (private content, condition)",
+    "version": "2.1.0",
+    "credentialType": "DzqGratitude"
   }
 }

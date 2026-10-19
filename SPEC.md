@@ -1,12 +1,12 @@
-# dzq/1.0 — Signed gestures between people
+# dzq/1.1 — Signed gestures between people
 
 **dzq** (pronounced *dee-zik*) is a file format for signed gestures from one
 person to another: a thank-you, and later an apology, a promise, a
 certificate. The name comes from DzenQ, the first application that used it;
 DzenQ is the first implementation, not the owner of the format.
 
-**Status:** draft 1 (2026-10-19). Editors: the DzenQ team.
-**This version:** `dzq/1.0`. The text is under CC BY 4.0, the code and vectors under Apache-2.0.
+**Status:** draft 2 (2026-10-19). Editors: the DzenQ team.
+**This version:** `dzq/1.1` — adds private content (3.5) to `dzq/1.0`; everything valid under 1.0 stays valid. The text is under CC BY 4.0, the code and vectors under Apache-2.0.
 
 A dzq file is a small, signed statement: one person says something to
 another person — or to whoever meets a condition — and signs it. Anyone can
@@ -178,6 +178,8 @@ are published byte for byte in [`schemas/`](schemas/). A verifier compares
 |---|---|---|---|
 | gratitude | [gratitude.schema.json](schemas/gratitude.schema.json) — to one AID | 1.0.0 | `EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav` |
 | gratitude | [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
+| gratitude, private content (3.5) | [gratitude-private.schema.json](schemas/gratitude-private.schema.json) — to one AID | 1.1.0 | `EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_` |
+| gratitude, private content (3.5) | [gratitude-private-condition.schema.json](schemas/gratitude-private-condition.schema.json) — to a condition | 2.1.0 | `EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc` |
 | — | [binding.schema.json](schemas/binding.schema.json) — not a dzq type; DzenQ's identity binding, published for reference | 1.0.0 | `ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo` |
 
 The schema files carry DzenQ-era titles ("DzenQ Gratitude"). They are part
@@ -186,6 +188,39 @@ of the signed SAIDs and stay as they are.
 A schema's SAID is Blake3-256 over the file with `$id` set to 44 `#`.
 The schema text is normative only through its SAID and section 3.1; where
 they differ, section 3.1 wins.
+
+### 3.5 Private content (dzq/1.1)
+
+A type may put some of its fields in a **private content block** `a.c`,
+which can be shown, or replaced by its SAID, without changing the
+statement's SAID or signature. The holder keeps the full form; a verifier
+can be shown the compact one and still check everything except the words.
+
+Each type declares which of its fields are **public** (in `a`, always
+visible) and which are **private** (in `a.c`). For gratitude 1.1.0 / 2.1.0:
+
+| Where | Fields |
+|---|---|
+| `a` (public) | `d`, `i` or `dq`, `dt`, `category`, `c` — in this order |
+| `a.c` (private) | `d`, `u`, `title`, `message`, optional `attachment` — in this order |
+
+- `a.c.u` is a **salt**: 128 random bits, CESR qb64 with code `0A` (24
+  characters). It is required; without it a short text could be found by
+  guessing against `a.c.d`. Issuers MUST draw it from a cryptographic random
+  source and never reuse it.
+- **Full form**: `a.c` is the block object. **Compact form**: `a.c` is the
+  string `a.c.d`.
+- **All SAIDs, the version size and the signature are computed over the
+  compact form** (3.3 applied to the compact form, after `a.c.d` := SAID of
+  the block with its own `d` set to 44 `#`). So both forms carry the same
+  `d`, `a.d`, `v` and signature: they are one statement.
+- Text limits and attachment rules of 3.1 apply inside the block.
+- A `.dzq` file normally holds the full form. To show a statement without
+  its words, the holder sends the compact form (in a `.dzq` without the
+  attachment, or inside a presentation).
+
+This is ACDC partial disclosure of a nested block with a salt (`u`).
+Gratitude 1.0.0 / 2.0.0 stay valid and fully public.
 
 ## 4. Conditions (`a.dq`)
 
@@ -263,8 +298,14 @@ reporting its code (6.4).
    — `canonical` / `schema`
 3. **Schema**: `s` is one of the gratitude SAIDs of 3.4 and `a.i` / `a.dq`
    match it. — `schema`
-4. **SAIDs**: `a.d` recomputes; the size in `v` equals the byte length;
-   `d` recomputes. — `said`
+4. **SAIDs**: for a private-content schema (3.5) given in full form, `a.c.d`
+   recomputes over the block; then replace the block by `a.c.d` (compact
+   form). On the compact form: `a.d` recomputes; the size in `v` equals its
+   byte length; `d` recomputes. — `said`
+
+   From here on, "the ACDC bytes" means the compact form: that is what the
+   signature covers. Report whether the private content was **shown** or
+   **hidden**.
 5. **Issuer KEL**: process the issuer's events — those of a fresher KEL
    first, if given, then those in the bundle; for each sequence number the
    first accepted event wins (KERI "first seen"). An event is accepted when
@@ -336,7 +377,8 @@ A verifier reports at least: `valid`; on failure one `code`:
 | `archive` | (`.dzq` only) the archive is refused before verification: section 7 |
 
 and on success `said`, `issuer`, `recipient`, `sealed`, `anchored_at_sn`,
-`redeemed_at_sn`. Implementations MAY add human-readable reasons.
+`redeemed_at_sn`, and for private-content schemas `content` = `shown` or
+`hidden`. Implementations MAY add human-readable reasons.
 
 ## 7. The `.dzq` file
 
@@ -344,7 +386,7 @@ A ZIP archive (deflate or stored) with these entries:
 
 | Entry | Required | Content |
 |---|---|---|
-| `credential.acdc` | yes | the bundle (section 5), UTF-8 |
+| `credential.acdc` | yes | the bundle (section 5), UTF-8; for private content (3.5) the full form, or the compact form in a copy made for showing |
 | `metadata.json` | no | for display only, never trusted: `{id, title, message, issuedAt, issuer_aid, recipient_aid}` |
 | `assets/` | no | the directory entry, if the ZIP tool writes one |
 | `assets/<file name>` | no | the file named by `a.attachment` |
@@ -409,7 +451,9 @@ a new file signature.
 
 An apology, a promise or a certificate is a new **type**: a new schema (or a
 pair, to one AID and to a condition) that keeps the envelope of 3.1 and
-defines its own content attributes after `a.dt`. Everything else stays: the
+defines its own content attributes after `a.dt`, saying which are public
+and which go into the private block of 3.5. A type may have no public
+fields at all. Everything else stays: the
 canonical form, SAIDs, conditions, bundle, `.dzq` file, verification and all
 extensions work unchanged, because none of them reads the content
 attributes.
@@ -438,10 +482,12 @@ other meanings.
   receives the claim key through that address, including someone who has
   taken over the address. The issuer accepts that risk when choosing an
   address over an AID.
-- **Privacy.** A gratitude is not encrypted. Title, message, recipient and
-  category are readable by anyone who has the file. Do not send a `.dzq`
-  where you would not send its text. Selective disclosure is planned for a
-  later version (docs/keri-acdc-alignment.md).
+- **Privacy.** A statement is signed, not encrypted. With the private
+  content of 3.5, the holder can show it compact: issuer, recipient, date
+  and the type's public fields stay visible, the words do not. The full
+  form is readable by anyone who has it; 1.0.0 / 2.0.0 statements are
+  public in full, forever. Hiding a file in transit is the delivery
+  channel's job.
 - **Archives** are untrusted input: enforce section 7 before anything else.
 - **Timestamps** in `dt` are claims, not proofs.
 

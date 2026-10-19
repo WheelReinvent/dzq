@@ -1,6 +1,6 @@
 # Proposal 0001: private content (show the proof, not the text)
 
-**Status:** accepted design, not yet released · **Target:** dzq/1.1 · **Author:** DzenQ team, 2026-10-19
+**Status:** implemented in the spec (dzq/1.1, SPEC §3.5) and the reference verifier; DzenQ core pending · **Target:** dzq/1.1 · **Author:** DzenQ team, 2026-10-19
 
 ## Problem
 
@@ -135,5 +135,5 @@ make sense together.
 
 ## Open questions
 
-None at the moment. Next step: write the spec text, schemas 1.1.0 / 2.1.0
-and vectors, then implement in the reference verifier and DzenQ's core.
+None. Done: spec text (SPEC §3.5), schemas 1.1.0 / 2.1.0, reference
+verifier and CLI (`dzq hide`), vectors `private-*`. Pending: DzenQ core.

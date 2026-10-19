@@ -54,10 +54,33 @@ class Statement:
         return self.credential.get("d")
 
     @property
+    def private(self):
+        """Has a private content block (dzq/1.1)."""
+        return "c" in self.credential.get("a", {})
+
+    @property
+    def hidden(self):
+        """The private content is not in this copy (compact form)."""
+        return isinstance(self.credential.get("a", {}).get("c"), str)
+
+    @property
     def content(self):
-        """The type's own fields (title, message, …), without the envelope."""
+        """The type's own fields (title, message, …), without the envelope.
+        Private fields are missing when the copy is compact."""
         a = self.credential.get("a", {})
-        return {k: v for k, v in a.items() if k not in ("d", "i", "dq", "dt")}
+        out = {k: v for k, v in a.items() if k not in ("d", "i", "dq", "dt", "c")}
+        c = a.get("c")
+        if isinstance(c, dict):
+            out.update({k: v for k, v in c.items() if k not in ("d", "u")})
+        return out
+
+    def compact(self):
+        """The same statement with the private content replaced by its digest:
+        what you show to a door. Same id, same signature."""
+        if not self.private or self.hidden:
+            return self
+        compact_raw = acdc.dumps(acdc.compact(self.credential))
+        return Statement(compact_raw + self.bundle[len(self.raw):])
 
     def __repr__(self):
         lines = ["Statement (%s)" % self.type,
@@ -68,6 +91,8 @@ class Statement:
             if k == "attachment":
                 v = "%s (%s, %d bytes)" % (v["filename"], v["mime_type"], v["size"])
             lines.append("  %-8s %s" % (k, v))
+        if self.hidden:
+            lines.append("  private  hidden (only its digest is here: %s)" % self.credential["a"]["c"])
         lines.append("  id       %s" % self.said)
         return "\n".join(lines)
 
@@ -82,7 +107,7 @@ class Statement:
     def verify(self, seal=None, kel=None):
         """Checks signature, content and the issuer's key history (SPEC §6)."""
         r = verify.check_credential(self.bundle, seal=seal, kel_text=kel)
-        if r.valid and self._attachment is not None and "attachment" in self.content:
+        if r.valid and self._attachment is not None and isinstance(self.content.get("attachment"), dict):
             named = self.content["attachment"]
             r["attachment"] = "ok" if blake3(self._attachment[1]).hex() == named["d"] else "mismatch"
         return Verification(r)
@@ -123,6 +148,10 @@ class Verification:
                  "  signed by  %s" % r["issuer"],
                  "  to         %s" % r["recipient"],
                  "  unchanged  yes, every byte as signed"]
+        if r.get("content") == "hidden":
+            lines.append("  content    hidden: the signature covers it, but this copy does not show it")
+        elif r.get("content") == "shown":
+            lines.append("  content    shown, and it is exactly what was signed")
         if r.get("sealed"):
             lines.append("  final      yes: sealed in the signer's key history (event %s)" % r["anchored_at_sn"])
         else:
@@ -141,7 +170,7 @@ def open_statement(data):
         bundle, z = archive.open_dzq(bytes(data))
         st = Statement(bundle)
         att = st.content.get("attachment")
-        if att:
+        if isinstance(att, dict):
             try:
                 st._attachment = (att["filename"], archive._read(z, "assets/" + att["filename"]))
             except KeyError:
@@ -152,10 +181,17 @@ def open_statement(data):
     return Statement(data)
 
 
-def sign(identity, type, to, content, when=None, attachment=None):
+def sign(identity, type, to, content, when=None, attachment=None, private=True):
     """Builds and signs a statement of `type` from `identity` to `to`
-    (an AID, or a condition like "any(<AID>,<AID>)")."""
+    (an AID, or a condition like "any(<AID>,<AID>)").
+
+    private=True (the default, dzq/1.1): the type's private fields go into a
+    salted block that can later be hidden without breaking the signature.
+    private=False: the dzq/1.0 layout, every field public forever."""
     import datetime
+    import os
+
+    from .cesr import encode
 
     t = types_.by_name(type)
     content = dict(content)
@@ -176,7 +212,11 @@ def sign(identity, type, to, content, when=None, attachment=None):
     for f in t.fields:
         if f in content:
             attrs[f] = content[f]
-    schema = t.schema_to_condition if to_condition else t.schema_to_aid
-    credential = acdc.saidify({"v": "", "d": "", "i": identity.prefix,
-                               "ri": identity.registry, "s": schema, "a": dict({"d": ""}, **attrs)})
+    if private:
+        credential = acdc.new_private_gratitude(identity.prefix, identity.registry, attrs,
+                                                salt=encode("0A", os.urandom(16)))
+    else:
+        schema = t.schema_to_condition if to_condition else t.schema_to_aid
+        credential = acdc.saidify({"v": "", "d": "", "i": identity.prefix,
+                                   "ri": identity.registry, "s": schema, "a": dict({"d": ""}, **attrs)})
     return Statement(identity.bundle(credential), attachment=asset)

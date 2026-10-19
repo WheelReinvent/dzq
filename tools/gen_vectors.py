@@ -261,6 +261,61 @@ def generate(base):
     out.credential("abandoned-issuer", "The issuer abandoned its identifier (rotation to no next key); unsealed thanks are void.",
                    bt7, invalid("not-current"), kel=gone.kel())
 
+    # --- dzq/1.1: private content -------------------------------------------
+    def salt(name):
+        return cesr.encode("0A", blake3(("dzq vector salt|" + name).encode())[:16])
+
+    def private(issuer, name, **attributes):
+        return acdc.new_private_gratitude(issuer.prefix, cesr.blake3_said("registry|" + issuer.prefix),
+                                          attrs(**attributes), salt=salt(name))
+
+    def resaid(cred):
+        """Recompute every SAID of a (possibly malformed) private credential, bypassing validation."""
+        cred = json.loads(json.dumps(cred))
+        c = cred["a"]["c"]
+        if isinstance(c, dict):
+            c["d"] = cesr.SAID_PLACEHOLDER
+            c["d"] = cesr.blake3_said(acdc.dumps(c))
+        comp = acdc.compact(cred)
+        comp["a"]["d"] = cesr.SAID_PLACEHOLDER
+        comp["a"]["d"] = cesr.blake3_said(acdc.dumps(comp["a"]))
+        comp["d"] = cesr.SAID_PLACEHOLDER
+        comp["v"] = acdc.version_string(0)
+        comp["v"] = acdc.version_string(len(acdc.dumps(comp).encode()))
+        comp["d"] = cesr.blake3_said(acdc.dumps(comp))
+        if isinstance(c, dict):
+            comp["a"]["c"] = c
+        return comp
+
+    p1 = private(alice, "p1", recipient=bob.prefix, message="За допомогу з переїздом (приватно)")
+    p1_full = alice.bundle(p1)
+    p1_compact = alice.bundle(acdc.compact(p1))
+    assert acdc.compact(p1)["d"] == p1["d"]
+    out.credential("private-full", "dzq/1.1: title and message in the salted block, shown. Signature covers the compact form.",
+                   p1_full, valid(said=p1["d"], schema=acdc.SCHEMA_GRATITUDE_PRIVATE, content="shown"))
+    out.credential("private-compact", "The same statement with the block replaced by its SAID: same id, same signature.",
+                   p1_compact, valid(said=p1["d"], content="hidden"))
+    out.credential("private-edited-message", "The full form with the message changed after signing.",
+                   tamper(p1_full, "(приватно)", "(змінено!)"), invalid("said"))
+    other = cesr.blake3_said("another content block")
+    out.credential("private-wrong-digest", "A compact form whose content SAID was swapped for another.",
+                   tamper(p1_compact, p1["a"]["c"]["d"], other), invalid("said"))
+    no_salt = json.loads(json.dumps(p1))
+    del no_salt["a"]["c"]["u"]
+    out.credential("private-no-salt", "A content block without a salt (SAIDs recomputed): guessable, refused.",
+                   alice.bundle(resaid(no_salt)), invalid("schema"))
+    short_salt = json.loads(json.dumps(p1))
+    short_salt["a"]["c"]["u"] = "0Aabc"
+    out.credential("private-bad-salt", "A salt that is not 128 bits (SAIDs recomputed).",
+                   alice.bundle(resaid(short_salt)), invalid("schema"))
+    leaked = json.loads(json.dumps(p1))
+    leaked["a"] = {"d": "", "i": bob.prefix, "dt": DT, "title": "Відкритий заголовок", "category": "help", "c": p1["a"]["c"]}
+    out.credential("private-title-outside", "A private-schema statement with the title outside the block (SAIDs recomputed).",
+                   alice.bundle(resaid(leaked)), invalid("schema"))
+    p2 = private(alice, "p2", condition=letter, message="Лист на адресу (приватно)", category="letter")
+    out.credential("private-condition", "dzq/1.1 to a condition (schema 2.1.0), full form.",
+                   alice.bundle(p2), valid(said=p2["d"], schema=acdc.SCHEMA_GRATITUDE_PRIVATE_CONDITION, content="shown"))
+
     # --- archives ---------------------------------------------------------
     meta = {"id": g1["d"], "title": g1["a"]["title"], "message": g1["a"]["message"], "issuedAt": DT,
             "issuer_aid": alice.prefix, "recipient_aid": bob.prefix}
@@ -296,6 +351,13 @@ def generate(base):
                 {"valid": False, "code": "archive"})
     out.archive("not-zip", "Not a ZIP file at all.", b1.encode(), {"valid": False, "code": "archive"})
 
+    p_att = acdc.new_private_gratitude(alice.prefix, cesr.blake3_said("registry|" + alice.prefix), attrs(
+        recipient=bob.prefix, attachment={"d": blake3(att_body).hex(), "filename": "photo.txt",
+                                          "mime_type": "text/plain", "size": len(att_body)}), salt=salt("p-att"))
+    out.archive("private-attachment", "dzq/1.1 full form with its attachment: the file is checked against the private block.",
+                archive.make_dzq(alice.bundle(p_att), attachment=("photo.txt", att_body)), valid(attachment="ok", content="shown"))
+    out.archive("private-compact", "dzq/1.1 compact copy for showing: no text, no attachment, still valid.",
+                archive.make_dzq(alice.bundle(acdc.compact(p_att))), valid(attachment=None, content="hidden"))
     # --- presentations ----------------------------------------------------
     def vp(holder, creds, nonce=NONCE, **kw):
         return build.presentation(holder, creds, nonce, DT, **kw)
@@ -368,6 +430,12 @@ def generate(base):
                      acdc.dumps({"payload": no_dt_text, "signature": bob.sign_payload(no_dt_text)}), NONCE,
                      {"valid": False, "code": "format"})
 
+    out.presentation("private-compact-at-door", "Bob shows a dzq/1.1 thank-you to a door without its text.",
+                     vp(bob, [p1_compact]), NONCE, {"valid": True, "holder": bob.prefix})
+    out.presentation("private-letter-claimed-compact", "Dave claims a dzq/1.1 letter and shows it without its text.",
+                     vp(dave, [alice.bundle(acdc.compact(p2))], claims=[build.claim_proof(ck, p2["d"], dave.prefix)]),
+                     NONCE, {"valid": True, "holder": dave.prefix})
+
     # --- conditions (a.dq) ------------------------------------------------
     A, B = "a" * 64, "b" * 64
     conds = []
@@ -420,6 +488,8 @@ def generate(base):
     out.json("digests.json", {
         "spec": "dzq/1.0",
         "schemas": {"gratitude 1.0.0": acdc.SCHEMA_GRATITUDE, "gratitude-condition 2.0.0": acdc.SCHEMA_GRATITUDE_CONDITION,
+                    "gratitude-private 1.1.0": acdc.SCHEMA_GRATITUDE_PRIVATE,
+                    "gratitude-private-condition 2.1.0": acdc.SCHEMA_GRATITUDE_PRIVATE_CONDITION,
                     "binding 1.0.0": acdc.SCHEMA_BINDING},
         "blake3_said": [{"input": s, "said": cesr.blake3_said(s)} for s in ["", "dzq", "Дякую"]],
         "redemption_said": [{"gratitude": g1["d"], "said": acdc.redemption_said(g1["d"])}],

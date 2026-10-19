@@ -83,9 +83,20 @@ def read_dzq(data):
     bundle, _ = open_dzq(data)
     a = json.loads(verify.split_bundle(bundle)[0])
     attrs = a.get("a", {})
+    c = attrs.get("c") if isinstance(attrs.get("c"), dict) else {}
     return {"issuer": a.get("i"), "recipient": attrs.get("i") or attrs.get("dq"), "date": attrs.get("dt"),
-            "title": attrs.get("title"), "message": attrs.get("message"), "category": attrs.get("category"),
-            "attachment": (attrs.get("attachment") or {}).get("filename")}
+            "title": attrs.get("title", c.get("title")), "message": attrs.get("message", c.get("message")),
+            "category": attrs.get("category"), "attachment": (attrs.get("attachment") or c.get("attachment") or {}).get("filename"),
+            "hidden": isinstance(attrs.get("c"), str)}
+
+
+def named_attachment(credential):
+    """The attachment the credential names (public 1.0 field or private block)."""
+    a = credential.get("a", {})
+    if "attachment" in a:
+        return a["attachment"]
+    c = a.get("c")
+    return c.get("attachment") if isinstance(c, dict) else None
 
 
 def check_dzq(data, seal=None, kel_text=None):
@@ -96,7 +107,7 @@ def check_dzq(data, seal=None, kel_text=None):
     att = None
     if r.valid:
         a = verify.split_bundle(bundle)[0]
-        named = json.loads(a)["a"].get("attachment")
+        named = named_attachment(json.loads(a))
         if named:
             entry = "assets/" + named["filename"]
             if asset_basename(entry) is None:

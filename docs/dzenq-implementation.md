@@ -11,8 +11,8 @@ Checked by: `conformance/rust/dzq_vectors.rs`, which runs every vector
 through the core (copy it into `rustLib/tests/`). Draft 1 (commit
 `1cc6fd5`) passes completely in DzenQ's CI. Vectors added after it
 (`kel-forged-inception`, `forged-holder-kel`, `title-too-long`,
-`condition-in-a-i`) are expected to fail until rows 14, 15 and the security
-finding are fixed.
+`condition-in-a-i`, and every `private-*` vector) are expected to fail until
+rows 14, 15, 18 and the security finding are fixed.
 
 ## Security finding: forged inception events (fix first)
 
@@ -62,6 +62,7 @@ has the same code.
 | 14 | Text limits (title 200, message 5000, category 64) | not checked (serde structs only) | part of validity | Check them (vector `title-too-long`). |
 | 15 | `a.i` under schema 1.0.0 | parsed as a condition (pre-1.0 test letters) | one AID | Treat `a.i` as an AID, keep the old reading only for SAIDs issued before 2026-10-12 if needed (vector `condition-in-a-i`). |
 | 16 | `verify_kel` "all offered events accepted" | counts events with a JSON stream reader that stops at the first `-AAB`, so it only ever sees sn 0 | every event must be accepted | Count events with the CESR parser. |
+| 18 | Private content (dzq/1.1, SPEC §3.5) | not implemented: schemas 1.1.0 / 2.1.0 are unknown | issue with a salted block; verify full and compact forms | Implement: expand-check-compact before the SAID checks; sign the compact form; issue 1.1.0 / 2.1.0 (vectors `private-*`). |
 | 17 | KELs inside one presentation | one shared database: a credential can be judged with another credential's issuer KEL, depending on order | each credential with its own bundle (plus the verifier's fresher KEL) | Order-independence; or specify a merge rule both follow. |
 
 ## What the conformance test does not cover
