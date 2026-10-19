@@ -39,7 +39,65 @@ a thousand lines of Python that was written from the spec alone. A second
 implementation is an afternoon's job, and the vectors tell you when you're
 done.
 
-## The whole flow
+## Try it in a terminal
+
+No code needed. Install the reference tool from this repository:
+
+```
+git clone https://github.com/WheelReinvent/dzq && cd dzq
+pip install ./reference/python
+```
+
+Create two identities, sign a statement, open it, verify it:
+
+```
+$ dzq init alice
+created alice.id  (private: it holds your signing secret)
+your AID: EGZXbjjIy4uuw8A15dsEjpEbFeXcfaCvbuhEuhBZN_IT
+
+$ dzq init bob
+your AID: EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k
+
+$ dzq types
+gratitude
+  fields:   title, message, category
+  optional: attachment (use --attach for a file)
+
+$ dzq sign --as alice.id --type gratitude --to EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k \
+      title="Thank you" message="For fixing my bike." category=help -o thanks.dzq
+wrote thanks.dzq
+```
+
+Send `thanks.dzq` any way you like. On the other side:
+
+```
+$ dzq open thanks.dzq
+Statement (gratitude)
+  from     EGZXbjjIy4uuw8A15dsEjpEbFeXcfaCvbuhEuhBZN_IT
+  to       EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k
+  date     2026-10-19T18:57:17+00:00
+  title    Thank you
+  message  For fixing my bike.
+  category help
+
+(not verified yet — run: dzq verify thanks.dzq)
+
+$ dzq verify thanks.dzq
+✓ VALID
+  signed by  EGZXbjjIy4uuw8A15dsEjpEbFeXcfaCvbuhEuhBZN_IT
+  to         EBeMyZxeujKT2HeRoSxmbf7JdNpEY2G3gT6kwFtz8E8k
+  unchanged  yes, every byte as signed
+  final      not yet: valid as of the signer's key history in hand (event 0)
+```
+
+Change one word inside the file and verify again:
+
+```
+$ dzq verify forged.dzq
+✗ NOT VALID: the content was changed after it was signed
+```
+
+## The same in Python
 
 ```python
 import dzq
@@ -114,17 +172,6 @@ Every statement uses the same **envelope** — issuer, recipient or
 condition, date, signature, key history. The **type**, named by `s`, defines
 the content fields. Gratitude is the first type; new types are new schemas
 in the same envelope, and verification does not change.
-
-## From the command line
-
-```
-pip install cryptography
-cd reference/python
-python3 -m dzq verify ../../vectors/archives/minimal.dzq
-```
-
-The answer is honest about freshness: a statement that isn't sealed is
-"valid as of the key history you have"; pass a fresher one with `--kel`.
 
 ## Status and roadmap
 

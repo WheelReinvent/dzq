@@ -101,6 +101,7 @@ class Verification:
         "signature": "the signature does not match the signer's keys",
         "not-current": "signed by a key the signer no longer uses, and never sealed",
         "seal": "the seal supplied does not prove it",
+        "archive": "the file is not a safe .dzq archive",
     }
 
     def __init__(self, result):
