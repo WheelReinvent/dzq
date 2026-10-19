@@ -185,6 +185,33 @@
       }
     },
     {
+      "name": "kel-forged-inception",
+      "description": "Mallory writes an inception event for Alice's AID with Mallory's own keys (its SAID does not recompute) and signs a thank-you 'from Alice'.",
+      "bundle": "credentials/kel-forged-inception.acdc",
+      "expect": {
+        "valid": false,
+        "code": "kel"
+      }
+    },
+    {
+      "name": "title-too-long",
+      "description": "A title of 201 characters (the schema allows 200), SAIDs recomputed.",
+      "bundle": "credentials/title-too-long.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "version-plus-sign",
+      "description": "The version string writes the size as '+0019c' (same number, not canonical); SAID recomputed.",
+      "bundle": "credentials/version-plus-sign.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
       "name": "stale-kel-offline",
       "description": "Signed by the issuer's key at issuance; the bundle carries only that KEL. Offline this verifies (the verifier does not know about the later rotation).",
       "bundle": "credentials/stale-kel-offline.acdc",
@@ -579,6 +606,36 @@
       "expect": {
         "valid": false,
         "code": "credential"
+      }
+    },
+    {
+      "name": "forged-holder-kel",
+      "description": "Mallory presents Bob's thank-you with a forged inception for Bob's AID carrying Mallory's key.",
+      "file": "presentations/forged-holder-kel.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "kel"
+      }
+    },
+    {
+      "name": "condition-in-a-i",
+      "description": "A schema 1.0.0 thank-you whose a.i holds a condition (pre-1.0 test letters); under dzq/1.0 a.i is one AID, so Mallory does not hold it.",
+      "file": "presentations/condition-in-a-i.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "missing-dt",
+      "description": "A presentation payload without dt.",
+      "file": "presentations/missing-dt.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "format"
       }
     }
   ]

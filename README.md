@@ -23,7 +23,7 @@ application that writes and reads it. Others are welcome to.
 | [SPEC.md](SPEC.md) | the core: credential, conditions, bundle, verification, `.dzq` file |
 | [extensions/](extensions/) | optional parts: letters (claim keys), periods, redemption, presentation |
 | [schemas/](schemas/) | the JSON schemas, byte for byte, with their SAIDs in [index.json](schemas/index.json) |
-| [vectors/](vectors/) | 58 cases (credentials, .dzq files, presentations) with expected results, plus conditions, Merkle and digest tables |
+| [vectors/](vectors/) | 64 cases (credentials, .dzq files, presentations) with expected results, plus conditions, Merkle and digest tables |
 | [reference/python/](reference/python/) | reference verifier: Python 3.9+, needs only `cryptography` (for Ed25519); BLAKE3, CESR and KERI log checking included |
 | [conformance/rust/](conformance/rust/) | runs the vectors through the DzenQ core |
 | [docs/keri-acdc-alignment.md](docs/keri-acdc-alignment.md) | where dzq/1.0 differs from plain KERI/ACDC, and why |

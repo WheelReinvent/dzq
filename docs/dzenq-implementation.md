@@ -8,7 +8,39 @@ that decides validity. This page lists what is different, and what DzenQ
 should change to match the spec exactly.
 
 Checked by: `conformance/rust/dzq_vectors.rs`, which runs every vector
-through the core (copy it into `rustLib/tests/`).
+through the core (copy it into `rustLib/tests/`). Draft 1 (commit
+`1cc6fd5`) passes completely in DzenQ's CI. Vectors added after it
+(`kel-forged-inception`, `forged-holder-kel`, `title-too-long`,
+`condition-in-a-i`) are expected to fail until rows 14, 15 and the security
+finding are fixed.
+
+## Security finding: forged inception events (fix first)
+
+The keriox fork does not recompute the SAID of key events. In
+`keriox_core/src/event_message/key_event_message.rs`, `compare_digest`
+compares the event's own `d` with itself whenever the hash codes match,
+and `verify_identifier_binding` therefore only checks `i == d`. `check_digest`
+(which does recompute) is called only for replies and OOBIs.
+
+Effect: anyone can write an `icp` with `i = d = <someone's AID>` and their
+own keys. A verifier that does not already know that AID accepts it, so:
+
+- a thank-you "from Alice", signed by Mallory, verifies (vector
+  `kel-forged-inception`);
+- a presentation "by Bob", signed by Mallory with a forged `holder_kel`,
+  verifies (vector `forged-holder-kel`) — and, because the core keeps KELs
+  first-seen, the forged KEL then stays in that verifier's database for
+  Bob's AID.
+
+Online doors that load the KEL from the watcher first are protected as
+long as the watcher already holds the real KEL. Offline wallets are not.
+
+Fix, in keriox: for every key event, `d.verify_binding(&event.to_derivation_data()?)`
+(for `icp`/`dip` `to_derivation_data` already blanks both `d` and `i`);
+in `verify_identifier_binding` for a self-addressing prefix, also require
+that binding. Until the fork is fixed, DzenQ's core can run the same check
+on each parsed event before `process_cesr`. Check whether upstream keriox
+has the same code.
 
 ## Differences
 
@@ -16,7 +48,7 @@ through the core (copy it into `rustLib/tests/`).
 |---|---|---|---|---|
 | 1 | `signatures.json` in `.dzq` | written as `{}` | deprecated: ignored, not written | Stop writing it. Reading needs no change. |
 | 2 | `metadata.json` | always written | optional, display only | None needed. |
-| 3 | Which key a signature is checked against | any signature against any current key, index ignored | the key the index names | None for single-key identifiers (all of DzenQ). Needed before multisig. |
+| 3 | Which key a signature is checked against | any signature against any current key, index ignored (a signature with index 7 passes for a one-key issuer) | the key the index names | Check the index. Harmless today for single-key issuers, but it accepts malformed groups. |
 | 4 | Thresholds | not checked for gratitude signatures | `kt` must be met | Same as 3. |
 | 5 | Failure reasons | free English text | stable codes (SPEC §6.4) | Optional: add a code next to the text. The conformance test maps text to codes for now. |
 | 6 | Pre-1.0 formats | still read: sorted-keys ACDCs with a dummy SAID (`legacy_format`), test letters of 2026-10-11 with a condition in `a.i`, redemption as a digest of the SAID | not part of dzq/1.0 (redemption form allowed as MAY) | Keep reading them; never write them. |
@@ -27,6 +59,10 @@ through the core (copy it into `rustLib/tests/`).
 | 11 | Telegram prototype (`tg/dz-309-prototype`) | does not produce `.dzq` | — | When it signs thanks, send the same bundle and a "download .dzq" link: the first proof that the format lives outside the app. |
 | 12 | Archive entry whitelist | rejects unknown entries | same | None. |
 | 13 | Size check of the attachment | digest only | digest (reference also checks size) | None. |
+| 14 | Text limits (title 200, message 5000, category 64) | not checked (serde structs only) | part of validity | Check them (vector `title-too-long`). |
+| 15 | `a.i` under schema 1.0.0 | parsed as a condition (pre-1.0 test letters) | one AID | Treat `a.i` as an AID, keep the old reading only for SAIDs issued before 2026-10-12 if needed (vector `condition-in-a-i`). |
+| 16 | `verify_kel` "all offered events accepted" | counts events with a JSON stream reader that stops at the first `-AAB`, so it only ever sees sn 0 | every event must be accepted | Count events with the CESR parser. |
+| 17 | KELs inside one presentation | one shared database: a credential can be judged with another credential's issuer KEL, depending on order | each credential with its own bundle (plus the verifier's fresher KEL) | Order-independence; or specify a merge rule both follow. |
 
 ## What the conformance test does not cover
 

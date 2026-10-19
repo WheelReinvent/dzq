@@ -139,7 +139,9 @@ order (absent optional fields are omitted, not `null`):
 | `attachment` | no | `{"d", "filename", "mime_type", "size"}`, in this order: lowercase hex Blake3-256 of the file, file name, media type, size in bytes |
 
 Gratitude has two schemas: 1.0.0 (to one AID: MUST have `a.i`, MUST NOT have
-`a.dq`) and 2.0.0 (to a condition: the reverse). No other fields are allowed
+`a.dq`) and 2.0.0 (to a condition: the reverse). `a.i` is always a single
+AID, never a condition (vector `condition-in-a-i`). Text limits are counted
+in Unicode characters and are part of validity (vector `title-too-long`). No other fields are allowed
 at any level.
 
 `dt` is what the issuer states; it is not a trusted timestamp. Order in time
@@ -201,7 +203,8 @@ leaf      := AID                         [A-Za-z0-9_-]+
            | kind ":" value              kind = [a-z0-9-]+, value has no whitespace , ( )
 ```
 
-- Whitespace around items is allowed; the canonical text has none.
+- White space (Unicode `White_Space`) around items is allowed; the
+  canonical text has none. No other characters are trimmed.
 - Nesting depth is at most 8 levels below the top.
 - `any` holds when at least one item holds; `all` when every item holds
   (and it has at least one).
@@ -262,13 +265,21 @@ reporting its code (6.4).
    match it. — `schema`
 4. **SAIDs**: `a.d` recomputes; the size in `v` equals the byte length;
    `d` recomputes. — `said`
-5. **Issuer KEL**: process the KEL (the fresher one if given, else the one
-   in the bundle) by KERI rules: every event's SAID and version size
-   recompute; `icp` is signed by its keys; each `rot` is signed by new keys
-   whose digests were committed in the previous `n` list; each `ixn` is
-   signed by the current keys; sequence numbers and prior digests chain.
-   Only accepted events count; the log ends at the first event that is not
-   accepted. There must be at least an accepted inception of `i`. — `kel`
+5. **Issuer KEL**: process the issuer's events — those of a fresher KEL
+   first, if given, then those in the bundle; for each sequence number the
+   first accepted event wins (KERI "first seen"). An event is accepted when
+   its version string is exact for its size; it has exactly the KERI 1.0
+   fields of its type in KERI order (compact JSON); **its SAID recomputes**
+   (for `icp`, with both `d` and `i` set to 44 `#`; a self-addressing `i`
+   must then equal `d`); `icp` is signed by its keys; each `rot` is signed
+   by new keys whose digests were committed in the previous `n` list; each
+   `ixn` is signed by the current keys; sequence numbers and prior digests
+   chain. The log ends at the first event that is not accepted. There must
+   be an accepted inception of `i`. — `kel`
+
+   Recomputing the SAID of every event is what binds the AID to its keys.
+   Without it anyone can write an inception for someone else's AID with
+   their own keys (vector `kel-forged-inception`).
 6. **Signature present.** — `no-signature`
 7. **Signed by whom, when** — exactly one of:
    - **anchored**: an `ixn`/`rot` of the issuer at sequence number *k*
@@ -322,6 +333,7 @@ A verifier reports at least: `valid`; on failure one `code`:
 | `signature` | the signature does not match the keys it must match |
 | `not-current` | not sealed, and not signed by the issuer's current keys |
 | `seal` | a supplied period seal does not prove the gratitude |
+| `archive` | (`.dzq` only) the archive is refused before verification: section 7 |
 
 and on success `said`, `issuer`, `recipient`, `sealed`, `anchored_at_sn`,
 `redeemed_at_sn`. Implementations MAY add human-readable reasons.
@@ -334,6 +346,7 @@ A ZIP archive (deflate or stored) with these entries:
 |---|---|---|
 | `credential.acdc` | yes | the bundle (section 5), UTF-8 |
 | `metadata.json` | no | for display only, never trusted: `{id, title, message, issuedAt, issuer_aid, recipient_aid}` |
+| `assets/` | no | the directory entry, if the ZIP tool writes one |
 | `assets/<file name>` | no | the file named by `a.attachment` |
 | `signatures.json` | no | **deprecated**; written as `{}` by DzenQ before dzq/1.0. Readers ignore it; writers MUST NOT write it. |
 

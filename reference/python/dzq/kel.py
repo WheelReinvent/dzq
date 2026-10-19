@@ -7,6 +7,7 @@ else is reported as unsupported, never silently accepted.
 """
 
 import json
+import re
 
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -50,13 +51,21 @@ def parse_stream(text):
     return out
 
 
-def _version_size(v, prefix):
-    if not isinstance(v, str) or not v.startswith(prefix) or len(v) != 17 or not v.endswith("_"):
-        return None
-    try:
-        return int(v[10:16], 16)
-    except ValueError:
-        return None
+FIELDS = {
+    "icp": ("v", "t", "d", "i", "s", "kt", "k", "nt", "n", "bt", "b", "c", "a"),
+    "rot": ("v", "t", "d", "i", "s", "p", "kt", "k", "nt", "n", "bt", "br", "ba", "a"),
+    "ixn": ("v", "t", "d", "i", "s", "p", "a"),
+}
+
+
+def _canonical(raw, ev):
+    """The event has exactly the KERI 1.0 fields of its type, in order, compact."""
+    order = FIELDS.get(ev.get("t"))
+    if order is None:
+        return True  # unsupported types are rejected later with a clearer reason
+    if tuple(ev.keys()) != order:
+        return False
+    return json.dumps(ev, ensure_ascii=False, separators=(",", ":")) == raw
 
 
 def _threshold(kt):
@@ -148,15 +157,16 @@ def _collect_seals(view, sn, seals):
 
 def _accept(view, raw, ev, sigs):
     t = ev.get("t")
-    size = _version_size(ev.get("v"), KERI_PREFIX)
-    if size is None or size != len(raw.encode("utf-8")):
-        raise KelError("version string size does not match")
+    if ev.get("v") != "%s%06x_" % (KERI_PREFIX, len(raw.encode("utf-8"))):
+        raise KelError("version string does not match the event size")
+    if not _canonical(raw, ev):
+        raise KelError("event fields are not the KERI 1.0 fields in KERI order")
     if not _event_said_ok(raw, ev):
         raise KelError("event SAID does not match")
-    try:
-        sn = int(ev.get("s", ""), 16)
-    except ValueError as e:
-        raise KelError("bad sequence number") from e
+    s_hex = ev.get("s")
+    if not isinstance(s_hex, str) or not re.fullmatch(r"0|[1-9a-f][0-9a-f]*", s_hex):
+        raise KelError("bad sequence number")
+    sn = int(s_hex, 16)
 
     if t == "icp":
         if sn != 0 or view.epochs:
@@ -175,6 +185,8 @@ def _accept(view, raw, ev, sigs):
         view.epochs.append(Epoch(0, keys, kt, ev["n"], _threshold(ev["nt"]) if ev["n"] else 0))
         _collect_seals(view, 0, ev.get("a", []))
     elif t in ("rot", "ixn"):
+        if not view.epochs:
+            raise KelError("no inception before this event")
         if view.abandoned:
             raise KelError("identifier was abandoned")
         if sn != view.sn + 1:
@@ -216,27 +228,27 @@ def build_view(kel_text, prefix=None):
     later event of the prefix are listed in `rejected`. Returns None when
     no event of the prefix was accepted.
     """
+    if not isinstance(kel_text, str):
+        raise KelError("a KEL is CESR text")
     events = parse_stream(kel_text)
     if prefix is None:
         prefix = next((ev.get("i") for _, ev, _ in events), None)
     view = KelView(prefix)
     broken = None
     for raw, ev, sigs in events:
-        if ev.get("i") != prefix:
+        if not isinstance(ev, dict) or ev.get("i") != prefix:
             continue
         if broken is not None:
             view.rejected.append((ev.get("s"), "follows a rejected event"))
             continue
         # A copy of an accepted event (first seen wins).
-        try:
-            sn = int(ev.get("s", ""), 16)
-        except ValueError:
-            sn = None
+        s_hex = ev.get("s")
+        sn = int(s_hex, 16) if isinstance(s_hex, str) and re.fullmatch(r"[0-9a-f]+", s_hex) else None
         if sn is not None and sn <= view.sn:
             continue
         try:
             _accept(view, raw, ev, sigs)
-        except (KelError, KeyError, TypeError, cesr.CesrError) as e:
+        except (KelError, KeyError, TypeError, ValueError, IndexError, AttributeError, cesr.CesrError) as e:
             broken = str(e)
             view.rejected.append((ev.get("s"), broken))
     return view if view.epochs else None

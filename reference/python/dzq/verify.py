@@ -63,9 +63,14 @@ def _period(view, issuer, said, seal):
         raise ValueError("unreadable period seal")
     try:
         record = json.loads(seal["close"])
-        v, i, since, root, count = record["v"], record["i"], record["since"], record["root"], record["count"]
+        v, i, prev, since, root, count = (record["v"], record["i"], record["prev"], record["since"],
+                                          record["root"], record["count"])
     except (json.JSONDecodeError, KeyError, TypeError) as e:
         raise ValueError("unreadable period close record") from e
+    def _uint(x):
+        return isinstance(x, int) and not isinstance(x, bool) and x >= 0
+    if not all(isinstance(x, str) for x in (v, i, prev, root)) or not _uint(since) or not _uint(count):
+        raise ValueError("unreadable period close record")
     if v != "dzq-close/1" or i != issuer:
         raise ValueError("the period close record is not the issuer's")
     close_sn = view.digest_anchor_of(cesr.blake3_said(seal["close"]))
@@ -101,8 +106,10 @@ def check_credential(bundle, seal=None, kel_text=None):
     r.update(said=integ.said, issuer=integ.issuer, recipient=integ.recipient, schema=integ.schema)
 
     try:
-        view = kel.build_view(kel_text if kel_text is not None else bundled_kel, integ.issuer)
-    except (kel.KelError, cesr.CesrError) as e:
+        # A fresher copy first, then the bundle's own: for each sequence number
+        # the first accepted event wins (KERI "first seen").
+        view = kel.build_view((kel_text or "") + bundled_kel, integ.issuer)
+    except (kel.KelError, cesr.CesrError, ValueError, TypeError) as e:
         return r.fail("kel", "issuer KEL unreadable: %s" % e)
     if view is None:
         return r.fail("kel", "issuer KEL unknown or invalid")
@@ -157,9 +164,11 @@ def claim_holds(proof):
         return False
 
 
-def holder_meets(recipient, said, holder, claims):
-    """Is `holder` the recipient: the AID itself, or a condition the holder meets
-    with its claims?"""
+def holder_meets(recipient, said, holder, claims, schema=None):
+    """Is `holder` the recipient: the AID in a.i (schema 1.0.0), or a condition
+    in a.dq (2.0.0) the holder meets with its claims?"""
+    if schema == acdc.SCHEMA_GRATITUDE:
+        return recipient == holder
     cond = dq.parse(recipient)
     if cond is None:
         return False
@@ -191,11 +200,17 @@ def verify_presentation(vp_text, expected_nonce):
         payload_text, signature = signed["payload"], signed["signature"]
         payload = json.loads(payload_text)
         holder = payload["holder"]
-        out["holder"] = holder
-        t, nonce, credentials, holder_kel = payload["t"], payload["nonce"], payload["credentials"], payload["holder_kel"]
+        t, nonce, dt = payload["t"], payload["nonce"], payload["dt"]
+        credentials, holder_kel = payload["credentials"], payload["holder_kel"]
         claims, seals = payload.get("claims", []), payload.get("seals", {})
+        ok = (all(isinstance(x, str) for x in (payload_text, signature, holder, t, nonce, dt, holder_kel))
+              and isinstance(credentials, list) and all(isinstance(c, str) for c in credentials)
+              and isinstance(claims, list) and isinstance(seals, dict))
     except (json.JSONDecodeError, KeyError, TypeError):
+        ok = False
+    if not ok:
         return fail("format", "not a DzenQ presentation")
+    out["holder"] = holder
     out["nonce"] = nonce
     if t != "dzenq-vp/1":
         return fail("format", "unsupported presentation version")
@@ -203,7 +218,7 @@ def verify_presentation(vp_text, expected_nonce):
         return fail("nonce", "nonce mismatch: made for another request")
     try:
         view = kel.build_view(holder_kel, holder)
-    except (kel.KelError, cesr.CesrError):
+    except (kel.KelError, cesr.CesrError, ValueError, TypeError):
         view = None
     if view is None or view.rejected:
         return fail("kel", "holder KEL is invalid")
@@ -220,7 +235,7 @@ def verify_presentation(vp_text, expected_nonce):
         r = check_credential(bundle)
         if r.said and not r.sealed and isinstance(seals, dict) and r.said in seals:
             r = check_credential(bundle, seal=seals[r.said])
-        mine = r.valid and holder_meets(r.recipient, r.said, holder, claims if isinstance(claims, list) else [])
+        mine = r.valid and holder_meets(r.recipient, r.said, holder, claims, r.schema)
         r["holder_is_recipient"] = mine
         if not mine:
             all_ok = False

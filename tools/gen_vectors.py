@@ -70,6 +70,17 @@ class Out:
                                                "nonce": nonce, "expect": expect})
 
 
+def forge_inception(prefix, attacker):
+    """An inception event that claims `prefix` but carries the attacker's keys.
+    Its d and i are the victim's AID, so its SAID cannot recompute."""
+    ev = {"v": "KERI10JSON000000_", "t": "icp", "d": prefix, "i": prefix, "s": "0", "kt": "1",
+          "k": [attacker.current.qb64], "nt": "1", "n": [cesr.blake3_said(attacker.next.qb64)],
+          "bt": "0", "b": [], "c": [], "a": []}
+    ev["v"] = "KERI10JSON%06x_" % len(acdc.dumps(ev).encode())
+    raw = acdc.dumps(ev)
+    return raw + cesr.counter_indexed_sigs([cesr.indexed_sig_qb64(attacker.current.sign(raw), 0)])
+
+
 def valid(**kw):
     e = {"valid": True, "sealed": False}
     e.update(kw)
@@ -178,6 +189,24 @@ def generate(base):
                    alice.bundle(g1, kel=kel_bad), invalid("kel"))
     out.credential("kel-of-someone-else", "The bundle carries another identifier's KEL.",
                    alice.bundle(g1, kel=mallory.kel()), invalid("kel"))
+
+    forged_icp = forge_inception(alice.prefix, mallory)
+    out.credential("kel-forged-inception", "Mallory writes an inception event for Alice's AID with Mallory's own keys "
+                   "(its SAID does not recompute) and signs a thank-you 'from Alice'.",
+                   alice.bundle(g1, key=mallory.current, kel=forged_icp), invalid("kel"))
+    long_a = dict(g1["a"], title="Д" * 201)
+    long_a["d"] = acdc.attribute_said(long_a)
+    long_g = {"v": acdc.version_string(0), "d": cesr.SAID_PLACEHOLDER, "i": g1["i"], "ri": g1["ri"], "s": g1["s"], "a": long_a}
+    long_g["v"] = acdc.version_string(len(acdc.dumps(long_g).encode()))
+    long_g["d"] = cesr.blake3_said(acdc.dumps(long_g))
+    out.credential("title-too-long", "A title of 201 characters (the schema allows 200), SAIDs recomputed.",
+                   alice.bundle(long_g), invalid("schema"))
+    plus = dict(g1, v=g1["v"][:10] + "+" + g1["v"][11:])
+    assert g1["v"][10] == "0"
+    plus_raw = acdc.dumps(dict(plus, d=cesr.SAID_PLACEHOLDER))
+    plus["d"] = cesr.blake3_said(plus_raw)
+    out.credential("version-plus-sign", "The version string writes the size as '+0019c' (same number, not canonical); SAID recomputed.",
+                   alice.bundle(plus), invalid("said"))
 
     # --- extension: periods (rotation, seals) ----------------------------
     issuer = build.Controller("ivan").incept()
@@ -322,6 +351,23 @@ def generate(base):
                      vp(bob, [issuer.bundle(t3, key=build.Key.named("ivan/0"), kel=fresh)]), NONCE,
                      {"valid": False, "code": "credential"})
 
+    fake_bob = build.Controller("mallory-as-bob")
+    fake_bob.prefix = bob.prefix
+    fake_bob.events = [forge_inception(bob.prefix, mallory)]
+    fake_bob.current = mallory.current
+    out.presentation("forged-holder-kel", "Mallory presents Bob's thank-you with a forged inception for Bob's AID carrying Mallory's key.",
+                     vp(fake_bob, [b1]), NONCE, {"valid": False, "code": "kel"})
+    legacy = alice.gratitude(attrs(recipient="any(%s,%s)" % (bob.prefix, mallory.prefix), message="Умова в a.i"))
+    out.presentation("condition-in-a-i", "A schema 1.0.0 thank-you whose a.i holds a condition (pre-1.0 test letters); "
+                     "under dzq/1.0 a.i is one AID, so Mallory does not hold it.",
+                     vp(mallory, [alice.bundle(legacy)]), NONCE, {"valid": False, "code": "credential"})
+    no_dt = json.loads(json.loads(vp(bob, [b1]))["payload"])
+    del no_dt["dt"]
+    no_dt_text = acdc.dumps(no_dt)
+    out.presentation("missing-dt", "A presentation payload without dt.",
+                     acdc.dumps({"payload": no_dt_text, "signature": bob.sign_payload(no_dt_text)}), NONCE,
+                     {"valid": False, "code": "format"})
+
     # --- conditions (a.dq) ------------------------------------------------
     A, B = "a" * 64, "b" * 64
     conds = []
@@ -350,6 +396,8 @@ def generate(base):
     cond("all(claim:%s,txn:x)" % A, "all(claim:%s,txn:x)" % A, ["claim:" + A, "txn:x"], False,
          "an unknown leaf inside all() makes it unmeetable")
     cond(" any( %s , EAID2 ) " % aid, "any(%s,EAID2)" % aid, ["EAID2"], True, "whitespace around items is allowed")
+    cond("\x1c" + aid, None, note="U+001C is not white space")
+    cond("any(x\n:y,EAID1)", None, note="a line break inside a leaf")
     for bad in ["", "any(", "any()", "all(a,", "any(a))", "claim:zz", "claim:abcd", "a b", "any(a)(b)", "Bad:x", "k:",
                 "any(" * 20 + "a" + ")" * 20]:
         cond(bad, None)

@@ -29,7 +29,8 @@ The payload (JSON, signed as the exact bytes of the string):
 
 The presentation is valid when all hold:
 
-1. It parses, `t` is `dzenq-vp/1`. — `format`
+1. It parses, every field of the table has its type (`dt` included;
+   `claims` and `seals` may be absent), `t` is `dzenq-vp/1`. — `format`
 2. If the verifier issued a code: `nonce` equals it. — `nonce`
    A verifier that issued no code MAY still check the rest, but the result
    only *shows* gratitudes; it proves nothing about who is holding the
@@ -39,6 +40,8 @@ The presentation is valid when all hold:
 4. `signature` verifies over the payload bytes with the holder's current
    key. — `signature`
 5. There is at least one credential, and for each: it verifies (SPEC §6,
+   with the KEL in its own bundle plus any fresher KEL the verifier has —
+   not with KELs from other credentials of the same presentation — and
    using its period seal from `seals` if it is not sealed otherwise), and
    the holder is its recipient: `a.i` equals `holder`, or the condition
    `a.dq` holds where an AID leaf is met when it equals `holder` and a

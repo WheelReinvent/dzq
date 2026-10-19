@@ -141,7 +141,7 @@ def check_integrity(raw):
         raise AcdcError("schema", "unknown schema %s" % acdc["s"])
     if attribute_said(a) != a["d"]:
         raise AcdcError("said", "attribute block SAID does not match")
-    if parse_version_size(acdc["v"]) != len(raw.encode("utf-8")):
+    if acdc["v"] != version_string(len(raw.encode("utf-8"))):
         raise AcdcError("said", "version string size does not match")
     tmp = dict(acdc)
     tmp["d"] = SAID_PLACEHOLDER

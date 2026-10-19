@@ -90,6 +90,16 @@
       "note": "whitespace around items is allowed"
     },
     {
+      "dq": "\u001cEBP8abc_-Q",
+      "parses": false,
+      "note": "U+001C is not white space"
+    },
+    {
+      "dq": "any(x\n:y,EAID1)",
+      "parses": false,
+      "note": "a line break inside a leaf"
+    },
+    {
       "dq": "",
       "parses": false
     },
