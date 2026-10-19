@@ -97,54 +97,6 @@ $ dzq verify forged.dzq
 ✗ NOT VALID: the content was changed after it was signed
 ```
 
-## The same in Python
-
-```python
-import dzq
-
-alice = dzq.Identity.create()
-bob = dzq.Identity.create()
-
-# Sign: a type, a recipient, the type's fields
-statement = alice.sign(
-    type="gratitude",
-    to=bob.aid,
-    content={"title": "Thank you", "message": "For fixing my bike.", "category": "help"},
-)
-
-data = statement.to_dzq()          # bytes of a .dzq file — send them any way you like
-
-received = dzq.open(data)          # what it says; trusts nothing yet
-print(received)
-```
-```
-Statement (gratitude)
-  from     EJ4Vy38rSIBGnBHaX6iFdbIBMHhP51hR5WhEthMXChP1
-  to       EGlc_eGY8l1r-YriAbPKIT3a5YZWhENrrXoeGO8EEg92
-  date     2026-10-19T18:49:35+00:00
-  title    Thank you
-  message  For fixing my bike.
-  category help
-```
-```python
-print(received.verify())           # whether to believe it
-```
-```
-✓ VALID
-  signed by  EJ4Vy38rSIBGnBHaX6iFdbIBMHhP51hR5WhEthMXChP1
-  to         EGlc_eGY8l1r-YriAbPKIT3a5YZWhENrrXoeGO8EEg92
-  unchanged  yes, every byte as signed
-  final      not yet: valid as of the signer's key history in hand (event 0)
-```
-
-Change one word inside and `verify()` says
-`✗ NOT VALID: the content was changed after it was signed`.
-
-`dzq.types.TYPES` lists the types and their fields; today that is
-`gratitude` (title, message, category, optional attachment). `to` can also
-be a condition such as `"any(<AID>,<AID>)"`. Runnable, step by step:
-[examples/quickstart.py](examples/quickstart.py).
-
 ## What a file looks like
 
 A `.dzq` is a ZIP with `credential.acdc` inside — a signed
