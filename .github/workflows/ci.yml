@@ -1,0 +1,35 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  reference:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install cryptography
+      - name: Vectors match the generator
+        run: python3 tools/gen_vectors.py --check
+      - name: Reference verifier passes every vector
+        run: python3 -m unittest discover -s reference/python/tests -v
+      - name: Schema SAIDs
+        run: |
+          python3 - <<'EOF'
+          import json, sys
+          sys.path.insert(0, "reference/python")
+          from dzq.cesr import blake3_said, SAID_PLACEHOLDER
+          for name, info in json.load(open("schemas/index.json")).items():
+              text = open("schemas/" + name, encoding="utf-8").read()
+              said = info["said"]
+              assert blake3_said(text.replace(said, SAID_PLACEHOLDER, 1)) == said, name
+              assert json.loads(text)["$id"] == said, name
+          print("schema SAIDs ok")
+          EOF

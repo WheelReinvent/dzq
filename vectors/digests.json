@@ -1,0 +1,53 @@
+{
+  "spec": "dzq/1.0",
+  "schemas": {
+    "gratitude 1.0.0": "EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav",
+    "gratitude-condition 2.0.0": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ",
+    "binding 1.0.0": "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
+  },
+  "blake3_said": [
+    {
+      "input": "",
+      "said": "EK8TSbn1-aGmoEBN6jbcyUmbyyXJrcESt8yak8rkHzJi"
+    },
+    {
+      "input": "dzq",
+      "said": "EC_QpT8dNcGGeigXDJckp_NfUHPT4mb_zear-_xqEiTO"
+    },
+    {
+      "input": "Дякую",
+      "said": "EBAhvBRdaEdIRvebglLxNUwr2OIHHebPXh4-U8wiGyb8"
+    }
+  ],
+  "redemption_said": [
+    {
+      "gratitude": "EM_xnTusP2_H3_i9dPKAtZjMp_T1Oipj6FGMhPaqZ7Rf",
+      "said": "ED0GqtGy5mHyXREQZXJ72KGBeoMQbpvD27NDaxh4bBB9"
+    }
+  ],
+  "claim_keys": [
+    {
+      "letter_key": "8b3ed1eb4723684c777a089a1995c8f5",
+      "scheme": "email",
+      "address": "dave@example.org",
+      "public_key": "405eb123128b51bb931de471b79b94c6ad45950d45e081507e5a96cfe98c4313"
+    },
+    {
+      "letter_key": "8b3ed1eb4723684c777a089a1995c8f5",
+      "scheme": "phone",
+      "address": "+380501234567",
+      "public_key": "417205d14a7feb6f083b51f0ea6fcbf0f00d6c2ea0e368e98dca4e9964ca461b"
+    },
+    {
+      "letter_key": "8b3ed1eb4723684c777a089a1995c8f5",
+      "scheme": "github",
+      "address": "octocat",
+      "public_key": "de55a60b86a8afeb08f8696f0712ded28483b85d118ca6e520cfb04d1abee0c6"
+    }
+  ],
+  "claim_message": {
+    "said": "EKE_Jz7brlYRkBskgb891ppg0UJsRzF4wm0ytOlwMcqE",
+    "aid": "EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv",
+    "message": "dzenq-claim/1|EKE_Jz7brlYRkBskgb891ppg0UJsRzF4wm0ytOlwMcqE|EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv"
+  }
+}

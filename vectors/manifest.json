@@ -1,0 +1,585 @@
+{
+  "spec": "dzq/1.0",
+  "credentials": [
+    {
+      "name": "classic",
+      "description": "A thank-you to one AID (schema 1.0.0), not yet sealed: valid by the issuer's current key.",
+      "bundle": "credentials/classic.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EM_xnTusP2_H3_i9dPKAtZjMp_T1Oipj6FGMhPaqZ7Rf",
+        "issuer": "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+        "recipient": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
+        "schema": "EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav"
+      }
+    },
+    {
+      "name": "condition-group",
+      "description": "A thank-you to a condition (schema 2.0.0): any of two AIDs.",
+      "bundle": "credentials/condition-group.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EI7nYydg4aIxWDzv5SDRxZVMAXVmJHOWn4XF7Dn8u6HP",
+        "recipient": "any(EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj,EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih)",
+        "schema": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ"
+      }
+    },
+    {
+      "name": "condition-claim",
+      "description": "A letter to an e-mail address: the condition is one claim key.",
+      "bundle": "credentials/condition-claim.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EKE_Jz7brlYRkBskgb891ppg0UJsRzF4wm0ytOlwMcqE",
+        "recipient": "claim:405eb123128b51bb931de471b79b94c6ad45950d45e081507e5a96cfe98c4313"
+      }
+    },
+    {
+      "name": "condition-unknown-kind",
+      "description": "A condition with a leaf of a kind this version does not know; the credential is still valid.",
+      "bundle": "credentials/condition-unknown-kind.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "recipient": "any(txn:6H24-KE7X,EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj)"
+      }
+    },
+    {
+      "name": "condition-malformed",
+      "description": "A condition that does not parse: the credential verifies, but nobody can ever hold it (see presentations).",
+      "bundle": "credentials/condition-malformed.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "recipient": "any(EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj,"
+      }
+    },
+    {
+      "name": "attachment",
+      "description": "A thank-you naming an attached file by its BLAKE3 digest.",
+      "bundle": "credentials/attachment.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EM3Df12_RBZCvpBqYvHIoSuIJ1FtqnXL9bJf48g8JyO_"
+      }
+    },
+    {
+      "name": "tampered-message",
+      "description": "The message was changed after signing.",
+      "bundle": "credentials/tampered-message.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "tampered-recipient",
+      "description": "The recipient AID was swapped for another.",
+      "bundle": "credentials/tampered-recipient.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "tampered-version",
+      "description": "The size in the version string is wrong.",
+      "bundle": "credentials/tampered-version.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "non-canonical",
+      "description": "Same content, but not in the canonical serialization (whitespace).",
+      "bundle": "credentials/non-canonical.acdc",
+      "expect": {
+        "valid": false,
+        "code": "canonical"
+      }
+    },
+    {
+      "name": "non-canonical-order",
+      "description": "Same content, fields in another order.",
+      "bundle": "credentials/non-canonical-order.acdc",
+      "expect": {
+        "valid": false,
+        "code": "canonical"
+      }
+    },
+    {
+      "name": "non-canonical-escapes",
+      "description": "Same content, non-ASCII text escaped as \\uXXXX.",
+      "bundle": "credentials/non-canonical-escapes.acdc",
+      "expect": {
+        "valid": false,
+        "code": "canonical"
+      }
+    },
+    {
+      "name": "schema-mismatch",
+      "description": "Recipient in a.i under the condition schema 2.0.0.",
+      "bundle": "credentials/schema-mismatch.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "schema-unknown",
+      "description": "A schema SAID this version does not know.",
+      "bundle": "credentials/schema-unknown.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "unknown-attribute",
+      "description": "An attribute not in the schema (a.mood), with SAIDs recomputed.",
+      "bundle": "credentials/unknown-attribute.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "no-signature",
+      "description": "The signature group is missing.",
+      "bundle": "credentials/no-signature.acdc",
+      "expect": {
+        "valid": false,
+        "code": "no-signature"
+      }
+    },
+    {
+      "name": "forged-signature",
+      "description": "Signed by another identifier's key, claiming to be the issuer.",
+      "bundle": "credentials/forged-signature.acdc",
+      "expect": {
+        "valid": false,
+        "code": "not-current"
+      }
+    },
+    {
+      "name": "kel-bad-signature",
+      "description": "The issuer's inception event carries a broken signature.",
+      "bundle": "credentials/kel-bad-signature.acdc",
+      "expect": {
+        "valid": false,
+        "code": "kel"
+      }
+    },
+    {
+      "name": "kel-of-someone-else",
+      "description": "The bundle carries another identifier's KEL.",
+      "bundle": "credentials/kel-of-someone-else.acdc",
+      "expect": {
+        "valid": false,
+        "code": "kel"
+      }
+    },
+    {
+      "name": "stale-kel-offline",
+      "description": "Signed by the issuer's key at issuance; the bundle carries only that KEL. Offline this verifies (the verifier does not know about the later rotation).",
+      "bundle": "credentials/stale-kel-offline.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "issuer_kel_sn": 0
+      }
+    },
+    {
+      "name": "rotated-unsealed",
+      "description": "Same thank-you, checked against the issuer's fresh KEL: it was never sealed and the key rotated, so it is void.",
+      "bundle": "credentials/rotated-unsealed.acdc",
+      "kel": "credentials/rotated-unsealed.kel",
+      "expect": {
+        "valid": false,
+        "code": "not-current"
+      }
+    },
+    {
+      "name": "rotated-sealed",
+      "description": "Sealed in a period before the rotation: valid with the fresh KEL and its period seal.",
+      "bundle": "credentials/rotated-sealed.acdc",
+      "seal": "credentials/rotated-sealed.seal.json",
+      "kel": "credentials/rotated-sealed.kel",
+      "expect": {
+        "valid": true,
+        "sealed": true,
+        "anchored_at_sn": 1
+      }
+    },
+    {
+      "name": "rotated-sealed-second-leaf",
+      "description": "The other thank-you of the same period.",
+      "bundle": "credentials/rotated-sealed-second-leaf.acdc",
+      "seal": "credentials/rotated-sealed-second-leaf.seal.json",
+      "kel": "credentials/rotated-sealed-second-leaf.kel",
+      "expect": {
+        "valid": true,
+        "sealed": true,
+        "anchored_at_sn": 1
+      }
+    },
+    {
+      "name": "rotated-no-seal",
+      "description": "Sealed, but the holder did not supply the seal: it counts as unsealed.",
+      "bundle": "credentials/rotated-no-seal.acdc",
+      "kel": "credentials/rotated-no-seal.kel",
+      "expect": {
+        "valid": false,
+        "code": "not-current"
+      }
+    },
+    {
+      "name": "seal-of-another",
+      "description": "The period seal of a different thank-you.",
+      "bundle": "credentials/seal-of-another.acdc",
+      "seal": "credentials/seal-of-another.seal.json",
+      "kel": "credentials/seal-of-another.kel",
+      "expect": {
+        "valid": false,
+        "code": "seal"
+      }
+    },
+    {
+      "name": "seal-not-anchored",
+      "description": "A close record that the issuer never anchored.",
+      "bundle": "credentials/seal-not-anchored.acdc",
+      "seal": "credentials/seal-not-anchored.seal.json",
+      "kel": "credentials/seal-not-anchored.kel",
+      "expect": {
+        "valid": false,
+        "code": "seal"
+      }
+    },
+    {
+      "name": "anchored",
+      "description": "An older thank-you anchored on its own (an event seal naming its SAID); still valid after rotation.",
+      "bundle": "credentials/anchored.acdc",
+      "kel": "credentials/anchored.kel",
+      "expect": {
+        "valid": true,
+        "sealed": true,
+        "anchored_at_sn": 1
+      }
+    },
+    {
+      "name": "redeemed",
+      "description": "Valid, and redeemed by the issuer (a digest seal of the redemption record).",
+      "bundle": "credentials/redeemed.acdc",
+      "kel": "credentials/redeemed.kel",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "redeemed_at_sn": 1
+      }
+    },
+    {
+      "name": "abandoned-issuer",
+      "description": "The issuer abandoned its identifier (rotation to no next key); unsealed thanks are void.",
+      "bundle": "credentials/abandoned-issuer.acdc",
+      "kel": "credentials/abandoned-issuer.kel",
+      "expect": {
+        "valid": false,
+        "code": "not-current"
+      }
+    }
+  ],
+  "archives": [
+    {
+      "name": "minimal",
+      "description": "Only credential.acdc.",
+      "file": "archives/minimal.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EM_xnTusP2_H3_i9dPKAtZjMp_T1Oipj6FGMhPaqZ7Rf",
+        "attachment": null
+      }
+    },
+    {
+      "name": "with-metadata",
+      "description": "credential.acdc and metadata.json (display only).",
+      "file": "archives/with-metadata.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EM_xnTusP2_H3_i9dPKAtZjMp_T1Oipj6FGMhPaqZ7Rf"
+      }
+    },
+    {
+      "name": "legacy-signatures-json",
+      "description": "Written by DzenQ before dzq/1.0: an empty signatures.json, ignored.",
+      "file": "archives/legacy-signatures-json.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EM_xnTusP2_H3_i9dPKAtZjMp_T1Oipj6FGMhPaqZ7Rf"
+      }
+    },
+    {
+      "name": "lying-metadata",
+      "description": "metadata.json disagrees with the credential; metadata is never trusted.",
+      "file": "archives/lying-metadata.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EM_xnTusP2_H3_i9dPKAtZjMp_T1Oipj6FGMhPaqZ7Rf"
+      }
+    },
+    {
+      "name": "attachment",
+      "description": "With the attached file the credential names.",
+      "file": "archives/attachment.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "attachment": "ok"
+      }
+    },
+    {
+      "name": "attachment-swapped",
+      "description": "The attached file was replaced; the credential is valid, the file is not its.",
+      "file": "archives/attachment-swapped.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "attachment": "mismatch"
+      }
+    },
+    {
+      "name": "attachment-missing",
+      "description": "The credential names a file the archive lacks.",
+      "file": "archives/attachment-missing.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "attachment": "missing"
+      }
+    },
+    {
+      "name": "tampered",
+      "description": "A .dzq around a tampered credential.",
+      "file": "archives/tampered.dzq",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "path-traversal",
+      "description": "An entry that escapes the archive.",
+      "file": "archives/path-traversal.dzq",
+      "expect": {
+        "valid": false,
+        "code": "archive"
+      }
+    },
+    {
+      "name": "unexpected-entry",
+      "description": "An entry dzq/1.0 does not define.",
+      "file": "archives/unexpected-entry.dzq",
+      "expect": {
+        "valid": false,
+        "code": "archive"
+      }
+    },
+    {
+      "name": "no-credential",
+      "description": "No credential.acdc.",
+      "file": "archives/no-credential.dzq",
+      "expect": {
+        "valid": false,
+        "code": "archive"
+      }
+    },
+    {
+      "name": "too-many-entries",
+      "description": "More than 20 entries.",
+      "file": "archives/too-many-entries.dzq",
+      "expect": {
+        "valid": false,
+        "code": "archive"
+      }
+    },
+    {
+      "name": "not-zip",
+      "description": "Not a ZIP file at all.",
+      "file": "archives/not-zip.dzq",
+      "expect": {
+        "valid": false,
+        "code": "archive"
+      }
+    }
+  ],
+  "presentations": [
+    {
+      "name": "classic",
+      "description": "Bob proves he holds a thank-you addressed to him.",
+      "file": "presentations/classic.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+      }
+    },
+    {
+      "name": "wrong-nonce",
+      "description": "The same proof, made for another request.",
+      "file": "presentations/wrong-nonce.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "nonce"
+      }
+    },
+    {
+      "name": "display-only",
+      "description": "No verifier code was asked for: shown, but proves no freshness.",
+      "file": "presentations/display-only.json",
+      "nonce": "",
+      "expect": {
+        "valid": true,
+        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+      }
+    },
+    {
+      "name": "not-the-recipient",
+      "description": "Carol presents Bob's thank-you as hers.",
+      "file": "presentations/not-the-recipient.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "group-member",
+      "description": "Carol holds the group thank-you (any of Bob, Carol).",
+      "file": "presentations/group-member.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih"
+      }
+    },
+    {
+      "name": "letter-claimed",
+      "description": "Dave got the letter key through his e-mail and claims the letter.",
+      "file": "presentations/letter-claimed.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv"
+      }
+    },
+    {
+      "name": "letter-no-claim",
+      "description": "Dave presents the letter without the claim.",
+      "file": "presentations/letter-no-claim.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "letter-claim-for-another",
+      "description": "Dave presents a claim made out to another AID.",
+      "file": "presentations/letter-claim-for-another.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "letter-claim-bad-signature",
+      "description": "The claim signature does not verify.",
+      "file": "presentations/letter-claim-bad-signature.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "all-of-two-claims",
+      "description": "all(…) of two claim keys, both claimed.",
+      "file": "presentations/all-of-two-claims.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EE6JvGdSCln8k5H6rTyDYHLV3cqm-TEbkWNMHlGDV_Pb"
+      }
+    },
+    {
+      "name": "all-of-two-claims-one-missing",
+      "description": "all(…) with only one of the two claims.",
+      "file": "presentations/all-of-two-claims-one-missing.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "unknown-kind-other-leaf",
+      "description": "Bob meets any(txn:…, Bob) through his AID; the unknown leaf is never met.",
+      "file": "presentations/unknown-kind-other-leaf.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+      }
+    },
+    {
+      "name": "malformed-condition",
+      "description": "Nobody holds a thank-you whose condition does not parse.",
+      "file": "presentations/malformed-condition.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    },
+    {
+      "name": "tampered-payload",
+      "description": "The payload was edited after the holder signed it.",
+      "file": "presentations/tampered-payload.json",
+      "nonce": "door-7Q4M-2027",
+      "expect": {
+        "valid": false,
+        "code": "signature"
+      }
+    },
+    {
+      "name": "sealed-after-rotation",
+      "description": "Bob presents a sealed thank-you whose issuer rotated since; the bundle carries the fresh KEL and the presentation the seal.",
+      "file": "presentations/sealed-after-rotation.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+      }
+    },
+    {
+      "name": "unsealed-after-rotation",
+      "description": "The same issuer's unsealed thank-you, with the fresh KEL: void.",
+      "file": "presentations/unsealed-after-rotation.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
+      }
+    }
+  ]
+}

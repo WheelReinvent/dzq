@@ -1,0 +1,11 @@
+The specification text in this repository (SPEC.md, extensions/*.md,
+docs/*.md) is licensed under the Creative Commons Attribution 4.0
+International License (CC BY 4.0):
+
+    https://creativecommons.org/licenses/by/4.0/legalcode
+
+You may implement the format described here in any software, open or closed,
+without asking. Code, schemas and test vectors are under the Apache License
+2.0 (LICENSE).
+
+Copyright 2026 the DzenQ authors (WheelReinvent).

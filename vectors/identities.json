@@ -1,0 +1,15 @@
+{
+  "note": "TEST KEYS ONLY. Seeds are BLAKE3('dzq test vector key|<name>/<n>'). Never use them for anything real.",
+  "identities": {
+    "alice": "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+    "bob": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
+    "carol": "EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih",
+    "dave": "EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv",
+    "mallory": "EMMLhJnGh2iBSLG1RDWhPA58jyefprpauNNcCxoOSprF",
+    "ivan": "ENgGhY-XLo6bFH6tfevXSxw0jIhCVk9xYGL1ZIcaX7fK",
+    "olena": "EPjGbcqLFgY-S_Hig9w8NQR1ivmSSs7TweWvxuXSNNHG",
+    "roman": "EEdLyO-Mwqc-4qKp4vRIEpN5Xm5_roYhew1Q3AOF0Svr",
+    "zoya": "EFCEjeXpOIWCSIBBAedIbW-y68LxZcgloMJycAVKPLAI",
+    "erin": "EE6JvGdSCln8k5H6rTyDYHLV3cqm-TEbkWNMHlGDV_Pb"
+  }
+}

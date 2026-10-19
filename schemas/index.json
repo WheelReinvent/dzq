@@ -1,0 +1,20 @@
+{
+  "gratitude.schema.json": {
+    "said": "EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav",
+    "title": "DzenQ Gratitude",
+    "version": "1.0.0",
+    "credentialType": "DzenqGratitude"
+  },
+  "gratitude-condition.schema.json": {
+    "said": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ",
+    "title": "DzenQ Gratitude (condition)",
+    "version": "2.0.0",
+    "credentialType": "DzenqGratitudeCondition"
+  },
+  "binding.schema.json": {
+    "said": "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo",
+    "title": "DzenQ Identity Binding",
+    "version": "1.0.0",
+    "credentialType": "DzenqBinding"
+  }
+}

@@ -1,0 +1,141 @@
+{
+  "spec": "dzq/1.0",
+  "conditions": [
+    {
+      "dq": "EBP8abc_-Q",
+      "parses": true,
+      "canonical": "EBP8abc_-Q",
+      "proved": [
+        "EBP8abc_-Q"
+      ],
+      "holds": true,
+      "note": "a plain AID"
+    },
+    {
+      "dq": "claim:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "parses": true,
+      "canonical": "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "proved": [
+        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "holds": true,
+      "note": "claim keys are hex, compared in lower case"
+    },
+    {
+      "dq": "commitment:ff00",
+      "parses": true,
+      "canonical": "commitment:ff00",
+      "proved": [],
+      "holds": false,
+      "note": "older binding flow; not met by dzq/1.0 verifiers"
+    },
+    {
+      "dq": "alias:abcd01",
+      "parses": true,
+      "canonical": "alias:abcd01",
+      "proved": [
+        "alias:abcd01"
+      ],
+      "holds": false,
+      "note": "an unknown kind is kept and never met"
+    },
+    {
+      "dq": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
+      "parses": true,
+      "canonical": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
+      "proved": [
+        "claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "EAID1"
+      ],
+      "holds": true
+    },
+    {
+      "dq": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
+      "parses": true,
+      "canonical": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
+      "proved": [
+        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "holds": false,
+      "note": "all() needs every branch"
+    },
+    {
+      "dq": "any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:6H24-KE7X,key:EAbc/blue)",
+      "parses": true,
+      "canonical": "any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:6H24-KE7X,key:EAbc/blue)",
+      "proved": [
+        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      ],
+      "holds": true
+    },
+    {
+      "dq": "all(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:x)",
+      "parses": true,
+      "canonical": "all(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:x)",
+      "proved": [
+        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "txn:x"
+      ],
+      "holds": false,
+      "note": "an unknown leaf inside all() makes it unmeetable"
+    },
+    {
+      "dq": " any( EBP8abc_-Q , EAID2 ) ",
+      "parses": true,
+      "canonical": "any(EBP8abc_-Q,EAID2)",
+      "proved": [
+        "EAID2"
+      ],
+      "holds": true,
+      "note": "whitespace around items is allowed"
+    },
+    {
+      "dq": "",
+      "parses": false
+    },
+    {
+      "dq": "any(",
+      "parses": false
+    },
+    {
+      "dq": "any()",
+      "parses": false
+    },
+    {
+      "dq": "all(a,",
+      "parses": false
+    },
+    {
+      "dq": "any(a))",
+      "parses": false
+    },
+    {
+      "dq": "claim:zz",
+      "parses": false
+    },
+    {
+      "dq": "claim:abcd",
+      "parses": false
+    },
+    {
+      "dq": "a b",
+      "parses": false
+    },
+    {
+      "dq": "any(a)(b)",
+      "parses": false
+    },
+    {
+      "dq": "Bad:x",
+      "parses": false
+    },
+    {
+      "dq": "k:",
+      "parses": false
+    },
+    {
+      "dq": "any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(a))))))))))))))))))))",
+      "parses": false
+    }
+  ]
+}
