@@ -61,8 +61,10 @@ your AID: EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
 $ dzq types
 gratitude
   public:   category
-  private:  title, message
-  optional: attachment (private; use --attach for a file)
+  private:  title, message, [attachment], [look]
+certificate
+  public:   [until]
+  private:  what, [note], [look]
 
 $ dzq sign --as alice.id --type gratitude --to EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ \
       title="Thank you" message="For fixing my bike." category=help -o thanks.dzq
@@ -126,6 +128,26 @@ Each type declares which fields stay public; for a thank-you that is the
 category. Title, message and attachment travel in a salted block that only
 the holder decides to reveal.
 
+### Promise something: certificates
+
+A certificate is a promise, given to someone or earned with thank-yous:
+
+```
+$ dzq sign --as dad.id --type certificate \
+      --to "all(any(<Marko>,<Sofia>),thanks:3/cleaned%20the%20room/<Dad>)" \
+      what="A trip to the mountains" until=2027-06-01T00:00:00Z -o trip.dzq
+
+$ dzq present --as marko.id --nonce DOOR-1234 trip.dzq t1.dzq t2.dzq t3.dzq -o vp.json
+$ dzq presentation vp.json --nonce DOOR-1234
+✓ VALID
+  ✓ certificate EOAfm5_0z-…  usable
+  ✓ gratitude   EF-BBVCstj…
+  …
+```
+
+Marko shows the certificate with three thank-yous from Dad — without their
+words. No use counter; Dad can close the certificate early (`dzq close`).
+
 ## What a file looks like
 
 A `.dzq` is a ZIP with `credential.acdc` inside — a signed
@@ -160,9 +182,9 @@ in the same envelope, and verification does not change.
 |---|---|
 | ✅ Gratitude (to an AID or a condition) | `dzq/1.0` draft, implemented in DzenQ |
 | ✅ Letters to an e-mail / phone, sealing, redemption, holder-bound presentation | optional extensions |
-| ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier; DzenQ core next |
-| 🔜 Certificate: a promise, given or earned with thank-yous ([proposal 0002](proposals/0002-certificate.md)) | new type |
-| 🔜 Look: point to a template (blank, colours, fonts) the giver chose ([proposal 0003](proposals/0003-look.md)) | signed hint |
+| ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier |
+| ✅ Certificate: a promise, given or earned with thank-yous | `dzq/1.2` draft, reference verifier |
+| ✅ Look: a signed pointer to the blank the giver chose, and the look/1 document | `dzq/1.2` draft, reference verifier |
 | 🔜 Apology | new type |
 
 ## In this repository
@@ -172,7 +194,7 @@ in the same envelope, and verification does not change.
 | [SPEC.md](SPEC.md) | the format: envelope, types, signing, verification, the `.dzq` file |
 | [extensions/](extensions/) | letters, periods (sealing), redemption, presentation |
 | [schemas/](schemas/) | the schemas, byte for byte, with their fixed SAIDs |
-| [vectors/](vectors/) | 76 cases with expected results — pass them and you're compatible |
+| [vectors/](vectors/) | 101 cases with expected results — pass them and you're compatible |
 | [reference/python/](reference/python/) | the reference verifier |
 | [conformance/rust/](conformance/rust/) | runs the vectors through DzenQ's Rust core |
 | [docs/](docs/) | relation to KERI/ACDC; where DzenQ differs from the spec today |

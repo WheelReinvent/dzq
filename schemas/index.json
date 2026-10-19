@@ -28,5 +28,35 @@
     "title": "dzq Gratitude (private content, condition)",
     "version": "2.1.0",
     "credentialType": "DzqGratitude"
+  },
+  "gratitude-1.2.schema.json": {
+    "said": "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81",
+    "title": "dzq Gratitude",
+    "version": "1.2.0",
+    "credentialType": "DzqGratitude"
+  },
+  "gratitude-condition-1.2.schema.json": {
+    "said": "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V",
+    "title": "dzq Gratitude (condition)",
+    "version": "2.2.0",
+    "credentialType": "DzqGratitude"
+  },
+  "certificate.schema.json": {
+    "said": "EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk",
+    "title": "dzq Certificate",
+    "version": "1.1.0",
+    "credentialType": "DzqCertificate"
+  },
+  "certificate-condition.schema.json": {
+    "said": "EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j",
+    "title": "dzq Certificate (condition)",
+    "version": "2.1.0",
+    "credentialType": "DzqCertificate"
+  },
+  "look.schema.json": {
+    "said": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
+    "title": "dzq look",
+    "version": "1.0.0",
+    "credentialType": "look"
   }
 }

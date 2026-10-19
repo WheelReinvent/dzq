@@ -15,9 +15,54 @@ SCHEMA_BINDING = "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
 SCHEMA_GRATITUDE_PRIVATE = "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_"            # 1.1.0, to one AID
 SCHEMA_GRATITUDE_PRIVATE_CONDITION = "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc"  # 2.1.0, to a condition
 
-TO_AID = (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_PRIVATE)
-TO_CONDITION = (SCHEMA_GRATITUDE_CONDITION, SCHEMA_GRATITUDE_PRIVATE_CONDITION)
-PRIVATE = (SCHEMA_GRATITUDE_PRIVATE, SCHEMA_GRATITUDE_PRIVATE_CONDITION)
+# dzq/1.2: gratitude with `look`; certificates.
+SCHEMA_GRATITUDE_12 = "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81"            # 1.2.0, to one AID
+SCHEMA_GRATITUDE_12_CONDITION = "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V"  # 2.2.0, to a condition
+SCHEMA_CERTIFICATE = "EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk"             # 1.1.0, to one AID
+SCHEMA_CERTIFICATE_CONDITION = "EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j"   # 2.1.0, to a condition
+SCHEMA_LOOK = "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv"                    # look/1 document
+
+
+class Layout:
+    """A private-content schema: its type, recipient field, public fields
+    (after `dt`) and content-block fields (after `d`, `u`), in order.
+    Each field: (name, required, max length or None, kind)."""
+
+    def __init__(self, type, to, public, content):
+        self.type, self.to, self.public, self.content = type, to, public, content
+
+
+_GRAT_PUBLIC = [("category", True, 64, "text")]
+_GRAT_11 = [("title", True, 200, "text"), ("message", True, 5000, "text"), ("attachment", False, None, "attachment")]
+_GRAT_12 = _GRAT_11 + [("look", False, None, "look")]
+_CERT_PUBLIC = [("until", False, None, "text")]
+_CERT = [("what", True, 200, "text"), ("note", False, 5000, "text"), ("look", False, None, "look")]
+
+LAYOUTS = {
+    SCHEMA_GRATITUDE_PRIVATE: Layout("gratitude", "i", _GRAT_PUBLIC, _GRAT_11),
+    SCHEMA_GRATITUDE_PRIVATE_CONDITION: Layout("gratitude", "dq", _GRAT_PUBLIC, _GRAT_11),
+    SCHEMA_GRATITUDE_12: Layout("gratitude", "i", _GRAT_PUBLIC, _GRAT_12),
+    SCHEMA_GRATITUDE_12_CONDITION: Layout("gratitude", "dq", _GRAT_PUBLIC, _GRAT_12),
+    SCHEMA_CERTIFICATE: Layout("certificate", "i", _CERT_PUBLIC, _CERT),
+    SCHEMA_CERTIFICATE_CONDITION: Layout("certificate", "dq", _CERT_PUBLIC, _CERT),
+}
+
+TO_AID = (SCHEMA_GRATITUDE,) + tuple(k for k, l in LAYOUTS.items() if l.to == "i")
+TO_CONDITION = (SCHEMA_GRATITUDE_CONDITION,) + tuple(k for k, l in LAYOUTS.items() if l.to == "dq")
+PRIVATE = tuple(LAYOUTS)
+GRATITUDE_SCHEMAS = (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_CONDITION) + tuple(
+    k for k, l in LAYOUTS.items() if l.type == "gratitude")
+CERTIFICATE_SCHEMAS = tuple(k for k, l in LAYOUTS.items() if l.type == "certificate")
+
+import re as _re  # noqa: E402
+LOOK_RE = _re.compile(r"[a-z0-9-]+:\S+")
+
+
+def type_of(schema):
+    if schema in (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_CONDITION):
+        return "gratitude"
+    layout = LAYOUTS.get(schema)
+    return layout.type if layout else None
 
 
 class AcdcError(ValueError):
@@ -69,45 +114,58 @@ def _salt_ok(u):
         return False
 
 
-def _content(c):
+def _field(where, name, value, max_len, kind):
+    if kind == "attachment":
+        return _attachment(value, where)
+    if not isinstance(value, str):
+        raise AcdcError("schema", "%s.%s must be a string" % (where, name))
+    if max_len is not None and len(value) > max_len:
+        raise AcdcError("schema", "a text field is too long")
+    if kind == "look" and not LOOK_RE.fullmatch(value):
+        raise AcdcError("schema", "%s.look must be <source>:<id>" % where)
+    return value
+
+
+def _content(c, layout):
     """The private content block (expanded form) in canonical order."""
     if not isinstance(c, dict):
         raise AcdcError("schema", "a.c must be a SAID or the content block")
-    allowed = ("d", "u", "title", "message", "attachment")
-    extra = set(c) - set(allowed)
+    allowed = {"d", "u"} | {f[0] for f in layout.content}
+    extra = set(c) - allowed
     if extra:
         raise AcdcError("schema", "unknown content field(s): %s" % ", ".join(sorted(extra)))
-    for k in ("d", "u", "title", "message"):
+    for k in ("d", "u"):
         if not isinstance(c.get(k), str):
             raise AcdcError("schema", "a.c.%s is required and must be a string" % k)
     if not _salt_ok(c["u"]):
         raise AcdcError("schema", "a.c.u must be a 128-bit salt (CESR 0A…)")
-    if len(c["title"]) > 200 or len(c["message"]) > 5000:
-        raise AcdcError("schema", "a text field is too long")
-    out = {k: c[k] for k in ("d", "u", "title", "message")}
-    if "attachment" in c:
-        out["attachment"] = _attachment(c["attachment"], "a.c")
+    out = {"d": c["d"], "u": c["u"]}
+    for name, required, max_len, kind in layout.content:
+        if name in c:
+            out[name] = _field("a.c", name, c[name], max_len, kind)
+        elif required:
+            raise AcdcError("schema", "a.c.%s is required" % name)
     return out
 
 
-def _private_attributes(a):
-    allowed = {"d", "i", "dq", "dt", "category", "c"}
+def _private_attributes(a, layout):
+    allowed = {"d", layout.to, "dt", "c"} | {f[0] for f in layout.public}
     extra = set(a) - allowed
     if extra:
         raise AcdcError("schema", "unknown attribute(s): %s" % ", ".join(sorted(extra)))
     out = {}
-    for k in ("d", "i", "dq", "dt", "category"):
-        if k in a:
-            if not isinstance(a[k], str):
-                raise AcdcError("schema", "a.%s must be a string" % k)
-            out[k] = a[k]
-        elif k not in ("i", "dq"):
-            raise AcdcError("schema", "missing a.%s" % k)
-    if len(out["category"]) > 64:
-        raise AcdcError("schema", "a text field is too long")
+    for k in ("d", layout.to, "dt"):
+        if not isinstance(a.get(k), str):
+            raise AcdcError("schema", "a.%s is required and must be a string" % k)
+        out[k] = a[k]
+    for name, required, max_len, kind in layout.public:
+        if name in a:
+            out[name] = _field("a", name, a[name], max_len, kind)
+        elif required:
+            raise AcdcError("schema", "missing a.%s" % name)
     if "c" not in a:
         raise AcdcError("schema", "missing a.c")
-    out["c"] = a["c"] if isinstance(a["c"], str) else _content(a["c"])
+    out["c"] = a["c"] if isinstance(a["c"], str) else _content(a["c"], layout)
     return out
 
 
@@ -125,12 +183,12 @@ def compact(acdc):
     return out
 
 
-def _attributes(a, private=False):
+def _attributes(a, layout=None):
     """The attribute block in canonical field order. Rejects unknown fields."""
     if not isinstance(a, dict):
         raise AcdcError("schema", "a must be an object")
-    if private:
-        return _private_attributes(a)
+    if layout is not None:
+        return _private_attributes(a, layout)
     allowed = {"d", "i", "dq", "dt", "title", "message", "category", "attachment"}
     extra = set(a) - allowed
     if extra:
@@ -160,7 +218,7 @@ def _top(acdc):
         if not isinstance(acdc[k], str):
             raise AcdcError("schema", "%s must be a string" % k)
     return {"v": acdc["v"], "d": acdc["d"], "i": acdc["i"], "ri": acdc["ri"], "s": acdc["s"],
-            "a": _attributes(acdc["a"], private=acdc["s"] in PRIVATE)}
+            "a": _attributes(acdc["a"], LAYOUTS.get(acdc["s"]))}
 
 
 def attribute_said(a):
@@ -197,18 +255,26 @@ def new_gratitude(issuer, registry, attributes):
     return saidify({"v": "", "d": "", "i": issuer, "ri": registry, "s": schema, "a": a})
 
 
-def new_private_gratitude(issuer, registry, attributes, salt):
-    """A dzq/1.1 gratitude: category public; title, message, attachment in a.c."""
-    a = {"d": ""}
-    for k in ("i", "dq", "dt", "category"):
-        if k in attributes:
-            a[k] = attributes[k]
-    c = {"d": "", "u": salt, "title": attributes["title"], "message": attributes["message"]}
-    if "attachment" in attributes:
-        c["attachment"] = attributes["attachment"]
+def new_statement(issuer, registry, schema, attributes, salt):
+    """A private-content statement of any layout: envelope (i or dq, dt),
+    the layout's public fields, and its content fields in a salted block."""
+    layout = LAYOUTS[schema]
+    a = {"d": "", layout.to: attributes[layout.to], "dt": attributes["dt"]}
+    for name, _, _, _ in layout.public:
+        if name in attributes:
+            a[name] = attributes[name]
+    c = {"d": "", "u": salt}
+    for name, _, _, _ in layout.content:
+        if name in attributes:
+            c[name] = attributes[name]
     a["c"] = c
-    schema = SCHEMA_GRATITUDE_PRIVATE_CONDITION if "dq" in a else SCHEMA_GRATITUDE_PRIVATE
     return saidify({"v": "", "d": "", "i": issuer, "ri": registry, "s": schema, "a": a})
+
+
+def new_private_gratitude(issuer, registry, attributes, salt):
+    """A dzq/1.1 gratitude (schema 1.1.0 / 2.1.0)."""
+    schema = SCHEMA_GRATITUDE_PRIVATE_CONDITION if "dq" in attributes else SCHEMA_GRATITUDE_PRIVATE
+    return new_statement(issuer, registry, schema, attributes, salt)
 
 
 class Integrity:
@@ -257,6 +323,11 @@ def check_integrity(raw):
     if blake3_said(dumps(tmp)) != acdc["d"]:
         raise AcdcError("said", "credential SAID does not match its content")
     return Integrity(acdc["d"], acdc["i"], recipient, acdc["s"], acdc, signed_raw, content)
+
+
+def close_said(statement_said):
+    """Digest an issuer anchors to close a certificate early (certificates)."""
+    return blake3_said(dumps({"d": SAID_PLACEHOLDER, "t": "close", "g": statement_said}))
 
 
 def redemption_said(gratitude_said):

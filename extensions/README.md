@@ -9,15 +9,14 @@ valid; an extension adds a way to prove or report something more.
 | [periods](periods.md) | seal many gratitudes with one key event; survive rotation | dzq/1.0 |
 | [redemption](redemption.md) | the issuer marks a gratitude as used | dzq/1.0 |
 | [presentation](presentation.md) | prove to a verifier that you hold gratitudes, now | dzq/1.0 |
+| [certificates](certificates.md) | `thanks:` conditions, when a certificate is usable, closing early | dzq/1.2 |
+| [looks](looks.md) | the look/1 document and carrying it in a `.dzq` | dzq/1.2 |
 
 ## Not yet specified
 
 Built in DzenQ on top of gratitudes, but not part of the format yet. They
 need their own documents before other apps can rely on them:
 
-- **Certificates**: a promise to named people or to whoever earns it with
-  gratitudes. Proposed as a new type:
-  [proposals/0002-certificate.md](../proposals/0002-certificate.md).
 - **Stamps** (categories with a picture and a weight).
 - **Doors**: the verifier service and its nonce protocol.
 - **Period seal inside the `.dzq` file** (an entry like `period-seal.json`),

@@ -90,6 +90,23 @@
       "note": "whitespace around items is allowed"
     },
     {
+      "dq": "thanks:3/help/EAID1",
+      "parses": true,
+      "canonical": "thanks:3/help/EAID1",
+      "proved": [],
+      "holds": false,
+      "note": "thanks: is proved by gratitudes in a presentation, never by naming the leaf"
+    },
+    {
+      "dq": "any(EAID2,thanks:3/help/EAID1)",
+      "parses": true,
+      "canonical": "any(EAID2,thanks:3/help/EAID1)",
+      "proved": [
+        "EAID2"
+      ],
+      "holds": true
+    },
+    {
       "dq": "\u001cEBP8abc_-Q",
       "parses": false,
       "note": "U+001C is not white space"

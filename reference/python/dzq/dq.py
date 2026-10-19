@@ -17,9 +17,40 @@ _KIND = re.compile(r"[a-z0-9-]+")
 _HEX64 = re.compile(r"[0-9a-fA-F]{64}")
 
 
+class Thanks:
+    """thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>] (dzq/1.2)."""
+
+    def __init__(self, count, category, issuers, since):
+        self.count, self.category, self.issuers, self.since = count, category, issuers, since
+
+
+def _thanks(value):
+    from urllib.parse import unquote
+    body, at, since = value.rpartition("@")
+    if not at:
+        body, since = value, None
+    parts = body.split("/")
+    if len(parts) != 3:
+        return None
+    n, cat, issuers = parts
+    if not re.fullmatch(r"[1-9][0-9]{0,4}", n):
+        return None
+    try:
+        category = unquote(cat, errors="strict")
+    except UnicodeDecodeError:
+        return None
+    ids = issuers.split("+")
+    if not category or not all(_AID.fullmatch(i) for i in ids):
+        return None
+    if since is not None and not since:
+        return None
+    return Thanks(int(n), category, ids, since)
+
+
 class Leaf:
     def __init__(self, kind, value):
-        self.kind, self.value = kind, value   # kind: "aid", "claim", "commitment" or the unknown kind
+        self.kind, self.value = kind, value   # kind: "aid", "claim", "commitment", "thanks" or the unknown kind
+        self.thanks = _thanks(value) if kind == "thanks" else None
 
     def __eq__(self, other):
         return isinstance(other, Leaf) and (self.kind, self.value) == (other.kind, other.value)
@@ -31,7 +62,7 @@ class Leaf:
         return "Leaf(%s)" % self
 
 
-KNOWN = ("aid", "claim", "commitment")
+KNOWN = ("aid", "claim", "commitment", "thanks")
 
 
 class Node:
@@ -106,7 +137,7 @@ def holds(cond, leaf_ok):
         if cond.op == "any":
             return any(holds(c, leaf_ok) for c in cond.items)
         return bool(cond.items) and all(holds(c, leaf_ok) for c in cond.items)
-    if cond.kind not in KNOWN:
+    if cond.kind not in KNOWN or (cond.kind == "thanks" and cond.thanks is None):
         return False
     return bool(leaf_ok(cond))
 

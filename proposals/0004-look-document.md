@@ -1,6 +1,6 @@
 # Proposal 0004: the look document (`look/1`)
 
-**Status:** draft for discussion · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
+**Status:** implemented in dzq/1.2 (spec, reference verifier, CLI, vectors); DzenQ core pending · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
 
 ## Problem
 

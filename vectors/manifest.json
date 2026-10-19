@@ -398,6 +398,88 @@
         "schema": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
         "content": "shown"
       }
+    },
+    {
+      "name": "look-full",
+      "description": "dzq/1.2 gratitude naming a look (dzenq:<SAID>), full form.",
+      "bundle": "credentials/look-full.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EA3LUeQipZYxF-gMHWqy-4Mh_or-pfNYo93xL0xYA41U",
+        "schema": "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "look-compact",
+      "description": "The same, compact: the look is hidden with the text.",
+      "bundle": "credentials/look-compact.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EA3LUeQipZYxF-gMHWqy-4Mh_or-pfNYo93xL0xYA41U",
+        "content": "hidden"
+      }
+    },
+    {
+      "name": "look-changed",
+      "description": "The look was swapped for another after signing.",
+      "bundle": "credentials/look-changed.acdc",
+      "expect": {
+        "valid": false,
+        "code": "said"
+      }
+    },
+    {
+      "name": "look-without-source",
+      "description": "A look with no source (SAIDs recomputed): refused.",
+      "bundle": "credentials/look-without-source.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "certificate",
+      "description": "dzq/1.2 certificate to a condition: Marko or Sofia, after 3 thank-yous 'cleaned the room' from Dad.",
+      "bundle": "credentials/certificate.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EIsJZg3cyUjSyfpEoP4GuNDeIcV1FSYWowWQmSdkuKqG",
+        "schema": "EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "certificate-to-one",
+      "description": "A certificate to one AID, no condition, no until.",
+      "bundle": "credentials/certificate-to-one.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "schema": "EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk"
+      }
+    },
+    {
+      "name": "certificate-without-what",
+      "description": "A certificate without 'what' (SAIDs recomputed).",
+      "bundle": "credentials/certificate-without-what.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "certificate-closed",
+      "description": "The issuer closed the certificate early (a close digest in its KEL): still valid, reports closed_at_sn.",
+      "bundle": "credentials/certificate-closed.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "closed_at_sn": 1
+      }
     }
   ],
   "archives": [
@@ -546,6 +628,45 @@
         "sealed": false,
         "attachment": null,
         "content": "hidden"
+      }
+    },
+    {
+      "name": "look-carried",
+      "description": "A gratitude with its look/1 document and picture inside the .dzq.",
+      "file": "archives/look-carried.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "look": "ok",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "look-named-only",
+      "description": "A catalogue look, named but not carried.",
+      "file": "archives/look-named-only.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "look": "named"
+      }
+    },
+    {
+      "name": "look-document-tampered",
+      "description": "The carried look document was edited: the statement is valid, the look is not used.",
+      "file": "archives/look-document-tampered.dzq",
+      "expect": {
+        "valid": true,
+        "look": "invalid: the look's SAID does not match its content"
+      }
+    },
+    {
+      "name": "look-forbidden-file",
+      "description": "A carried look uses a GIF: not an allowed file type.",
+      "file": "archives/look-forbidden-file.dzq",
+      "expect": {
+        "valid": true,
+        "look": "invalid: images must be PNG, JPEG or WebP"
       }
     }
   ],
@@ -758,6 +879,149 @@
       "expect": {
         "valid": true,
         "holder": "EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv"
+      }
+    },
+    {
+      "name": "certificate-earned",
+      "description": "Marko shows the certificate with three thank-yous from Dad (all compact).",
+      "file": "presentations/certificate-earned.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": true,
+        "certificate": "usable"
+      }
+    },
+    {
+      "name": "certificate-too-few",
+      "description": "Only two of the three thank-yous.",
+      "file": "presentations/certificate-too-few.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-same-thanks-twice",
+      "description": "The same thank-you three times counts once.",
+      "file": "presentations/certificate-same-thanks-twice.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-wrong-category",
+      "description": "Three thank-yous, but two are in another category.",
+      "file": "presentations/certificate-wrong-category.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-wrong-issuer",
+      "description": "Two of the thank-yous come from a neighbour, not from Dad.",
+      "file": "presentations/certificate-wrong-issuer.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-not-a-holder",
+      "description": "Sofia's friend Erin is not in any(Marko, Sofia), even with three thank-yous.",
+      "file": "presentations/certificate-not-a-holder.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-expired",
+      "description": "Earned, but shown after 'until'.",
+      "file": "presentations/certificate-expired.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2027-07-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "expired"
+      }
+    },
+    {
+      "name": "certificate-two-issuers-add-up",
+      "description": "thanks:3 from Dad+Neighbour: one from Dad and two from the neighbour.",
+      "file": "presentations/certificate-two-issuers-add-up.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": true,
+        "certificate": "usable"
+      }
+    },
+    {
+      "name": "certificate-before-since",
+      "description": "The only thank-you is dated before the condition's 'since'.",
+      "file": "presentations/certificate-before-since.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-self-thanks-elsewhere",
+      "description": "Marko's thank-yous to himself do not count toward Dad's certificate.",
+      "file": "presentations/certificate-self-thanks-elsewhere.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-self-promise",
+      "description": "Marko's promise to himself, earned with his own thank-yous.",
+      "file": "presentations/certificate-self-promise.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": true,
+        "certificate": "usable"
+      }
+    },
+    {
+      "name": "certificate-is-not-a-thank-you",
+      "description": "A certificate never counts as a thank-you: two certificates, no gratitude.",
+      "file": "presentations/certificate-is-not-a-thank-you.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "not-earned"
+      }
+    },
+    {
+      "name": "certificate-closed",
+      "description": "Marko shows a certificate the issuer has closed.",
+      "file": "presentations/certificate-closed.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "expect": {
+        "valid": false,
+        "certificate": "closed"
       }
     }
   ]

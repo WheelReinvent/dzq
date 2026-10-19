@@ -1,12 +1,12 @@
-# dzq/1.1 — Signed gestures between people
+# dzq/1.2 — Signed gestures between people
 
 **dzq** (pronounced *dee-zik*) is a file format for signed gestures from one
 person to another: a thank-you, and later an apology, a promise, a
 certificate. The name comes from DzenQ, the first application that used it;
 DzenQ is the first implementation, not the owner of the format.
 
-**Status:** draft 2 (2026-10-19). Editors: the DzenQ team.
-**This version:** `dzq/1.1` — adds private content (3.5) to `dzq/1.0`; everything valid under 1.0 stays valid. The text is under CC BY 4.0, the code and vectors under Apache-2.0.
+**Status:** draft 3 (2026-10-20). Editors: the DzenQ team.
+**This version:** `dzq/1.2` — 1.1 added private content (3.5); 1.2 adds the certificate type (3.6), looks (3.7) and the `thanks:` condition (4). Everything valid under an earlier 1.x stays valid. The text is under CC BY 4.0, the code and vectors under Apache-2.0.
 
 A dzq file is a small, signed statement: one person says something to
 another person — or to whoever meets a condition — and signs it. Anyone can
@@ -21,8 +21,8 @@ Every dzq file has two layers:
   every kind of gesture, and so is its verification;
 - the **type**: what is being said. The type is named by the schema SAID in
   the envelope and defines the content fields. dzq/1.0 defines one type,
-  **gratitude** (a thank-you). New types are new schemas inside the same
-  envelope (section 8.5).
+  **gratitude** (a thank-you) and, since 1.2, **certificate** (a promise).
+  New types are new schemas inside the same envelope (section 8.5).
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 RFC 2119 / RFC 8174.
@@ -180,6 +180,11 @@ are published byte for byte in [`schemas/`](schemas/). A verifier compares
 | gratitude | [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
 | gratitude, private content (3.5) | [gratitude-private.schema.json](schemas/gratitude-private.schema.json) — to one AID | 1.1.0 | `EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_` |
 | gratitude, private content (3.5) | [gratitude-private-condition.schema.json](schemas/gratitude-private-condition.schema.json) — to a condition | 2.1.0 | `EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc` |
+| gratitude, private content + look (3.7) | [gratitude-1.2.schema.json](schemas/gratitude-1.2.schema.json) — to one AID | 1.2.0 | `EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81` |
+| gratitude, private content + look (3.7) | [gratitude-condition-1.2.schema.json](schemas/gratitude-condition-1.2.schema.json) — to a condition | 2.2.0 | `EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V` |
+| certificate (3.6) | [certificate.schema.json](schemas/certificate.schema.json) — to one AID | 1.1.0 | `EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk` |
+| certificate (3.6) | [certificate-condition.schema.json](schemas/certificate-condition.schema.json) — to a condition | 2.1.0 | `EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j` |
+| — | [look.schema.json](schemas/look.schema.json) — the look/1 document, not a statement (3.7) | 1.0.0 | `EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv` |
 | — | [binding.schema.json](schemas/binding.schema.json) — not a dzq type; DzenQ's identity binding, published for reference | 1.0.0 | `ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo` |
 
 The schema files carry DzenQ-era titles ("DzenQ Gratitude"). They are part
@@ -202,7 +207,7 @@ visible) and which are **private** (in `a.c`). For gratitude 1.1.0 / 2.1.0:
 | Where | Fields |
 |---|---|
 | `a` (public) | `d`, `i` or `dq`, `dt`, `category`, `c` — in this order |
-| `a.c` (private) | `d`, `u`, `title`, `message`, optional `attachment` — in this order |
+| `a.c` (private) | `d`, `u`, `title`, `message`, optional `attachment`, optional `look` (1.2.0 / 2.2.0 only) — in this order |
 
 - `a.c.u` is a **salt**: 128 random bits, CESR qb64 with code `0A` (24
   characters). It is required; without it a short text could be found by
@@ -222,6 +227,38 @@ visible) and which are **private** (in `a.c`). For gratitude 1.1.0 / 2.1.0:
 This is ACDC partial disclosure of a nested block with a salt (`u`).
 Gratitude 1.0.0 / 2.0.0 stay valid and fully public.
 
+### 3.6 Type: certificate (dzq/1.2)
+
+A certificate is **a promise from its issuer to whoever meets its
+condition**: "a trip to the mountains for Marko or Sofia, after five
+'cleaned the room' from Dad". It uses the private-content layout of 3.5:
+
+| Where | Fields |
+|---|---|
+| `a` (public) | `d`, `i` or `dq`, `dt`, optional `until` (RFC 3339), `c` — in this order |
+| `a.c` (private) | `d`, `u`, `what` (≤ 200 characters, required), optional `note` (≤ 5000), optional `look` — in this order |
+
+- One certificate has one issuer: the envelope's `i`.
+- `what` is always private, even for certificates anyone may earn.
+- A certificate is never a gratitude: it never counts in a `thanks:`
+  condition.
+- There is **no use counter and no "used" state**. Counting uses needs one
+  place that counts; a promise between people does not.
+- The issuer may **close** a certificate early. Whether a holder can use
+  it now is decided at presentation time:
+  [extensions/certificates.md](extensions/certificates.md).
+
+### 3.7 Look (dzq/1.2)
+
+The private block of gratitude 1.2.0 / 2.2.0 and of certificates may hold
+`look` = `<source>:<id>`: which app or catalogue to ask (`[a-z0-9-]+`) and
+what exactly — the SAID of a look/1 document, or for now a plain name
+(`dzenq:gold`). The source is required. The look is signed and private
+with the rest of the block, and it is **only a hint**: it never affects
+validity, and a reader that does not know it shows its default. The look/1
+document and how it may travel inside a `.dzq`:
+[extensions/looks.md](extensions/looks.md).
+
 ## 4. Conditions (`a.dq`)
 
 A credential to a condition names no person (for gratitude: schema 2.0.0).
@@ -235,6 +272,8 @@ condition := "any(" condition ("," condition)* ")"
 leaf      := AID                         [A-Za-z0-9_-]+
            | "claim:" 64 hex digits      a one-time Ed25519 claim key (letters extension)
            | "commitment:" non-empty     older binding flow (deprecated)
+           | "thanks:" N "/" category "/" issuer ("+" issuer)* ["@" since]
+                                         at least N gratitudes (dzq/1.2, extensions/certificates.md)
            | kind ":" value              kind = [a-z0-9-]+, value has no whitespace , ( )
 ```
 
@@ -248,7 +287,11 @@ leaf      := AID                         [A-Za-z0-9_-]+
   `any(txn:…, <AID>)` can still be met through the AID; `all(txn:…, …)`
   cannot be met at all. This is how new kinds are added without a new
   format (section 8).
-- `commitment:` leaves are not met by dzq/1.0 verifiers.
+- `commitment:` leaves are not met by dzq/1.x verifiers.
+- `thanks:` leaves are met only in a presentation, by gratitudes the holder
+  shows ([extensions/certificates.md](extensions/certificates.md)). In
+  `thanks:`, the category is percent-encoded where it contains white
+  space, `%`, `,`, `/`, `+`, `@`, `(` or `)`.
 - A condition that does not parse is met by nobody. The credential itself
   still verifies (its signature is fine); it simply has no holder.
 
@@ -377,8 +420,9 @@ A verifier reports at least: `valid`; on failure one `code`:
 | `archive` | (`.dzq` only) the archive is refused before verification: section 7 |
 
 and on success `said`, `issuer`, `recipient`, `sealed`, `anchored_at_sn`,
-`redeemed_at_sn`, and for private-content schemas `content` = `shown` or
-`hidden`. Implementations MAY add human-readable reasons.
+`redeemed_at_sn`, for private-content schemas `content` = `shown` or
+`hidden`, and for certificates `closed_at_sn` (and, in a presentation,
+whether it is usable: extensions/certificates.md). Implementations MAY add human-readable reasons.
 
 ## 7. The `.dzq` file
 
@@ -390,6 +434,7 @@ A ZIP archive (deflate or stored) with these entries:
 | `metadata.json` | no | for display only, never trusted: `{id, title, message, issuedAt, issuer_aid, recipient_aid}` |
 | `assets/` | no | the directory entry, if the ZIP tool writes one |
 | `assets/<file name>` | no | the file named by `a.attachment` |
+| `looks/<SAID>.json`, `looks/<SAID>` | no | (dzq/1.2) the look/1 document the statement names, and the files it uses ([extensions/looks.md](extensions/looks.md)) |
 | `signatures.json` | no | **deprecated**; written as `{}` by DzenQ before dzq/1.0. Readers ignore it; writers MUST NOT write it. |
 
 - Writers MUST NOT add other entries in dzq/1.0. Readers MUST reject

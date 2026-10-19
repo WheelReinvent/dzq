@@ -63,6 +63,7 @@ has the same code.
 | 15 | `a.i` under schema 1.0.0 | parsed as a condition (pre-1.0 test letters) | one AID | Treat `a.i` as an AID, keep the old reading only for SAIDs issued before 2026-10-12 if needed (vector `condition-in-a-i`). |
 | 16 | `verify_kel` "all offered events accepted" | counts events with a JSON stream reader that stops at the first `-AAB`, so it only ever sees sn 0 | every event must be accepted | Count events with the CESR parser. |
 | 18 | Private content (dzq/1.1, SPEC §3.5) | not implemented: schemas 1.1.0 / 2.1.0 are unknown | issue with a salted block; verify full and compact forms | Implement: expand-check-compact before the SAID checks; sign the compact form; issue 1.1.0 / 2.1.0 (vectors `private-*`). |
+| 19 | dzq/1.2: certificates, `thanks:` conditions, looks | own formats `dzenq-key/1` and `dzenq-promise/1`; `blank` / `color` | certificate type (SPEC §3.6, extensions/certificates.md); `look` (SPEC §3.7, extensions/looks.md) | Issue certificates as dzq statements; map `stamps`/`count`/`since` to `thanks:`; map `blank` to `look: "dzenq:<name>"`; drop "all my people" from the format (send one certificate per person). |
 | 17 | KELs inside one presentation | one shared database: a credential can be judged with another credential's issuer KEL, depending on order | each credential with its own bundle (plus the verifier's fresher KEL) | Order-independence; or specify a merge rule both follow. |
 
 ## What the conformance test does not cover

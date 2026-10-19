@@ -127,6 +127,9 @@ class Verification:
         "not-current": "signed by a key the signer no longer uses, and never sealed",
         "seal": "the seal supplied does not prove it",
         "archive": "the file is not a safe .dzq archive",
+        "not-earned": "the holder does not meet the certificate's condition",
+        "expired": "the certificate is past its \"until\" date",
+        "closed": "the issuer closed the certificate",
     }
 
     def __init__(self, result):
@@ -159,6 +162,13 @@ class Verification:
                          % r.get("issuer_kel_sn"))
         if r.get("redeemed_at_sn") is not None:
             lines.append("  redeemed   at event %s" % r["redeemed_at_sn"])
+        if r.get("type") == "certificate":
+            if r.get("closed_at_sn") is not None:
+                lines.append("  closed     yes: the issuer closed it at event %s — no longer usable" % r["closed_at_sn"])
+            if r.get("until"):
+                lines.append("  until      %s" % r["until"])
+        if r.get("look"):
+            lines.append("  look       %s" % r["look"])
         if r.get("attachment"):
             lines.append("  attachment %s" % r["attachment"])
         return "\n".join(lines)
@@ -185,9 +195,10 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True):
     """Builds and signs a statement of `type` from `identity` to `to`
     (an AID, or a condition like "any(<AID>,<AID>)").
 
-    private=True (the default, dzq/1.1): the type's private fields go into a
-    salted block that can later be hidden without breaking the signature.
-    private=False: the dzq/1.0 layout, every field public forever."""
+    `content` holds the type's fields (see dzq.types); `look` may be one of
+    them ("<source>:<id>"). private=True (default): the type's private
+    fields go into a salted block that can be hidden later. private=False:
+    the dzq/1.0 layout, every field public forever (gratitude only)."""
     import datetime
     import os
 
@@ -202,6 +213,8 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True):
                                             "; not allowed: " + ", ".join(unknown) if unknown else ""))
     asset = None
     if attachment is not None:
+        if "attachment" not in t.fields:
+            raise ValueError("%s takes no attachment" % t.name)
         name, body, mime = attachment
         content["attachment"] = {"d": blake3(body).hex(), "filename": name, "mime_type": mime, "size": len(body)}
         asset = (name, body)
@@ -209,14 +222,18 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True):
     attrs = {"dt": when.isoformat(timespec="seconds") if hasattr(when, "isoformat") else when}
     to_condition = to.startswith(("any(", "all(")) or ":" in to
     attrs["dq" if to_condition else "i"] = to
-    for f in t.fields:
-        if f in content:
-            attrs[f] = content[f]
+    attrs.update(content)
     if private:
-        credential = acdc.new_private_gratitude(identity.prefix, identity.registry, attrs,
-                                                salt=encode("0A", os.urandom(16)))
+        schema = t.latest_to_condition if to_condition else t.latest_to_aid
+        try:
+            credential = acdc.new_statement(identity.prefix, identity.registry, schema, attrs,
+                                            salt=encode("0A", os.urandom(16)))
+        except acdc.AcdcError as e:
+            raise ValueError(str(e)) from e
     else:
-        schema = t.schema_to_condition if to_condition else t.schema_to_aid
+        if t.name != "gratitude" or "look" in content:
+            raise ValueError("only a gratitude without a look can be signed all-public (dzq/1.0)")
+        schema = acdc.SCHEMA_GRATITUDE_CONDITION if to_condition else acdc.SCHEMA_GRATITUDE
         credential = acdc.saidify({"v": "", "d": "", "i": identity.prefix,
                                    "ri": identity.registry, "s": schema, "a": dict({"d": ""}, **attrs)})
     return Statement(identity.bundle(credential), attachment=asset)

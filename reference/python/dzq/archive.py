@@ -30,6 +30,16 @@ def asset_basename(entry):
     return name if ok else None
 
 
+def look_entry(name):
+    """`looks/<SAID>.json` (a look/1 document) or `looks/<SAID>` (a file it uses)."""
+    from .look import SAID_RE
+    if not name.startswith("looks/"):
+        return None
+    rest = name[len("looks/"):]
+    said = rest[:-5] if rest.endswith(".json") else rest
+    return said if SAID_RE.fullmatch(said) else None
+
+
 def _safe_name(name):
     return not (name.startswith("/") or "\\" in name or ".." in name.split("/") or ":" in name.split("/")[0])
 
@@ -50,7 +60,8 @@ def open_dzq(data):
         name = info.filename
         if not _safe_name(name):
             raise ArchiveError("unsafe entry name %r" % name)
-        allowed = name in (CREDENTIAL, METADATA, SIGNATURES, "assets/") or asset_basename(name)
+        allowed = (name in (CREDENTIAL, METADATA, SIGNATURES, "assets/", "looks/") or asset_basename(name)
+                   or look_entry(name))
         if not allowed:
             raise ArchiveError("unexpected entry %r" % name)
         if info.file_size > MAX_ENTRY:
@@ -119,10 +130,32 @@ def check_dzq(data, seal=None, kel_text=None):
                 except KeyError:
                     att = "missing"
     r["attachment"] = att
+    r["look"] = _check_look(z, bundle) if r.valid else None
     return r
 
 
-def make_dzq(bundle, metadata=None, attachment=None):
+def _check_look(z, bundle):
+    """None (no look), "named" (named, not carried), "ok", or "invalid: …"."""
+    from . import look as look_
+    cred = json.loads(verify.split_bundle(bundle)[0])
+    c = cred.get("a", {}).get("c")
+    ref = c.get("look") if isinstance(c, dict) else None
+    if not ref:
+        return None
+    _, ident, is_said = look_.split_ref(ref)
+    names = set(z.namelist())
+    if not is_said or "looks/%s.json" % ident not in names:
+        return "named"
+    files = {n[len("looks/"):]: _read(z, n) for n in names
+             if n.startswith("looks/") and not n.endswith(".json") and n != "looks/"}
+    try:
+        look_.check_document(_read(z, "looks/%s.json" % ident).decode("utf-8"), files, expect=ident)
+        return "ok"
+    except (look_.LookError, UnicodeDecodeError) as e:
+        return "invalid: %s" % e
+
+
+def make_dzq(bundle, metadata=None, attachment=None, look=None):
     """Writes a dzq/1.0 archive: credential.acdc, optional metadata.json and
     optional assets/<filename> (attachment = (filename, bytes))."""
     entries = [(CREDENTIAL, bundle.encode("utf-8"))]
@@ -130,6 +163,11 @@ def make_dzq(bundle, metadata=None, attachment=None):
         entries.append((METADATA, json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8")))
     if attachment is not None:
         entries.append(("assets/" + attachment[0], attachment[1]))
+    if look is not None:   # (said, document text, {file said: bytes})
+        said, text, files = look
+        entries.append(("looks/%s.json" % said, text.encode("utf-8")))
+        for fs, body in sorted(files.items()):
+            entries.append(("looks/" + fs, body))
     return zip_entries(entries)
 
 

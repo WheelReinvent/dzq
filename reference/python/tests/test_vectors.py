@@ -55,8 +55,17 @@ class Presentations(unittest.TestCase):
     def test_all(self):
         for v in MANIFEST["presentations"]:
             with self.subTest(v["name"]):
-                r = verify.verify_presentation(load(v["file"]), v["nonce"])
-                matches(self, r, v["expect"])
+                now = None
+                if "now" in v:
+                    import datetime
+                    now = datetime.datetime.fromisoformat(v["now"])
+                r = verify.verify_presentation(load(v["file"]), v["nonce"], now=now)
+                expect = dict(v["expect"])
+                want = expect.pop("certificate", None)
+                matches(self, r, expect)
+                if want is not None:
+                    cert = next(c for c in r["credentials"] if c.get("type") == "certificate")
+                    self.assertEqual("usable" if cert.get("usable") else cert.get("why"), want)
 
 
 class Conditions(unittest.TestCase):
