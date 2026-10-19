@@ -1,14 +1,28 @@
-# dzq/1.0 — Signed gratitude
+# dzq/1.0 — Signed gestures between people
+
+**dzq** (pronounced *dee-zik*) is a file format for signed gestures from one
+person to another: a thank-you, and later an apology, a promise, a
+certificate. The name comes from DzenQ, the first application that used it;
+DzenQ is the first implementation, not the owner of the format.
 
 **Status:** draft 1 (2026-10-19). Editors: the DzenQ team.
 **This version:** `dzq/1.0`. The text is under CC BY 4.0, the code and vectors under Apache-2.0.
 
-A *gratitude* (a thank-you) is a small file in which one person states, and
-signs, that they are grateful to another person — or to whoever meets a
-condition. Anyone can check that file later, offline, without asking the
-app that made it. This document says what the file contains, how it is
-signed and how to check it, so that any application can write and read
-gratitudes. DzenQ is the first implementation, not the owner of the format.
+A dzq file is a small, signed statement: one person says something to
+another person — or to whoever meets a condition — and signs it. Anyone can
+check the file later, offline, without asking the app that made it. This
+document says what the file contains, how it is signed and how to check it,
+so that any application can write and read it.
+
+Every dzq file has two layers:
+
+- the **envelope**: who says it, to whom (a person or a condition), when,
+  the signature and the signer's key history. The envelope is the same for
+  every kind of gesture, and so is its verification;
+- the **type**: what is being said. The type is named by the schema SAID in
+  the envelope and defines the content fields. dzq/1.0 defines one type,
+  **gratitude** (a thank-you). New types are new schemas inside the same
+  envelope (section 8.5).
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
 RFC 2119 / RFC 8174.
@@ -17,7 +31,7 @@ RFC 2119 / RFC 8174.
 
 1. [What dzq/1.0 is](#1-what-dzq10-is)
 2. [Building blocks](#2-building-blocks)
-3. [The gratitude credential](#3-the-gratitude-credential)
+3. [The credential: envelope and type](#3-the-credential-envelope-and-type)
 4. [Conditions](#4-conditions-adq)
 5. [The credential bundle](#5-the-credential-bundle)
 6. [Verification](#6-verification)
@@ -27,10 +41,10 @@ RFC 2119 / RFC 8174.
 10. [Conformance](#10-conformance)
 
 Extensions, each optional: [letters](extensions/letters.md) (claim keys for
-thanks sent to an e-mail or phone), [periods](extensions/periods.md)
-(sealing many thanks with one key event), [redemption](extensions/redemption.md),
+gestures sent to an e-mail or phone), [periods](extensions/periods.md)
+(sealing many gestures with one key event), [redemption](extensions/redemption.md),
 [presentation](extensions/presentation.md) (proving to a door that you hold
-gratitudes). How this relates to standard KERI/ACDC:
+them). How this relates to standard KERI/ACDC:
 [docs/keri-acdc-alignment.md](docs/keri-acdc-alignment.md). Where DzenQ
 today differs from this text: [docs/dzenq-implementation.md](docs/dzenq-implementation.md).
 
@@ -38,28 +52,32 @@ today differs from this text: [docs/dzenq-implementation.md](docs/dzenq-implemen
 
 ## 1. What dzq/1.0 is
 
-A gratitude is an [ACDC](https://trustoverip.github.io/tswg-acdc-specification/)
+A dzq credential is an [ACDC](https://trustoverip.github.io/tswg-acdc-specification/)
 (Authentic Chained Data Container, version 1 serialization) issued by a
 [KERI](https://trustoverip.github.io/tswg-keri-specification/) identifier and
 signed with its key. It travels as a **credential bundle**: the ACDC, the
 signature, and the issuer's key event log (KEL), so that a verifier needs
 nothing else. On disk it is a **`.dzq` file**, a ZIP archive around the bundle.
 
-The core (sections 2–7) is everything needed to issue a valid gratitude and
-to check one. A core gratitude is valid by itself: it does not need any
+The core (sections 2–7) is everything needed to issue a valid credential and
+to check one. A core credential is valid by itself: it does not need any
 extension, server, registry or network.
 
 Out of scope of dzq/1.0: how keys are stored or recovered, how files are
-delivered, any server API, the meaning of categories, certificates, stamps,
-doors and other application features built on gratitudes.
+delivered, any server API, the meaning of categories, and application
+features built on top (stamps, doors). Types other than gratitude are not
+defined yet; section 8.5 says how they will be added.
+
+In the rest of this document, *gratitude* means a credential of the
+gratitude type; rules said of "a credential" hold for every type.
 
 ### 1.1 Roles
 
-- **Issuer** — the identifier that says thank you and signs.
-- **Recipient** — an identifier (AID) named in the gratitude, *or*
+- **Issuer** — the identifier that makes the gesture and signs.
+- **Recipient** — an identifier (AID) named in the credential, *or*
 - **Condition** — a rule saying who may hold it (section 4).
 - **Holder** — whoever keeps the file and may present it.
-- **Verifier** — any software that checks a gratitude.
+- **Verifier** — any software that checks a credential.
 
 ## 2. Building blocks
 
@@ -83,11 +101,12 @@ required by dzq/1.0; a verifier that does not process witness receipts MAY
 treat a witnessed KEL as unsupported. The DzenQ profile is one current key,
 one pre-rotated next key, no witnesses.
 
-## 3. The gratitude credential
+## 3. The credential: envelope and type
 
 ### 3.1 Fields
 
-Top level, in this order: `v, d, i, ri, s, a`.
+**Envelope.** Every dzq credential has, at the top level and in this order,
+`v, d, i, ri, s, a`:
 
 | Field | Content |
 |---|---|
@@ -95,24 +114,33 @@ Top level, in this order: `v, d, i, ri, s, a`.
 | `d` | SAID of the whole ACDC (3.3) |
 | `i` | issuer AID |
 | `ri` | identifier of the issuer's credential registry. Verifiers MUST NOT require it to resolve. |
-| `s` | SAID of the schema (3.4) |
-| `a` | attribute block, below |
+| `s` | SAID of the schema: names the type and its version (3.4) |
+| `a` | attribute block |
 
-Attribute block `a`, in this order (absent optional fields are omitted, not `null`):
+and the attribute block `a` begins with the envelope attributes:
 
 | Field | Required | Content |
 |---|---|---|
 | `d` | yes | SAID of the attribute block |
-| `i` | schema 1.0.0 only | recipient AID |
-| `dq` | schema 2.0.0 only | condition (section 4), at most 65 536 bytes |
+| `i` | when addressed to one AID | recipient AID |
+| `dq` | when addressed to a condition | condition (section 4), at most 65 536 bytes |
 | `dt` | yes | issuance time, RFC 3339 |
+
+Each schema says which of `a.i` / `a.dq` it uses: exactly one of them.
+
+**Type: gratitude.** After the envelope attributes, a gratitude has, in this
+order (absent optional fields are omitted, not `null`):
+
+| Field | Required | Content |
+|---|---|---|
 | `title` | yes | at most 200 characters |
 | `message` | yes | at most 5000 characters |
 | `category` | yes | at most 64 characters (8.3) |
 | `attachment` | no | `{"d", "filename", "mime_type", "size"}`, in this order: lowercase hex Blake3-256 of the file, file name, media type, size in bytes |
 
-A gratitude under schema 1.0.0 MUST have `a.i` and MUST NOT have `a.dq`;
-under 2.0.0 the reverse. No other fields are allowed at any level.
+Gratitude has two schemas: 1.0.0 (to one AID: MUST have `a.i`, MUST NOT have
+`a.dq`) and 2.0.0 (to a condition: the reverse). No other fields are allowed
+at any level.
 
 `dt` is what the issuer states; it is not a trusted timestamp. Order in time
 comes from the issuer's KEL (section 6 and the periods extension).
@@ -128,7 +156,7 @@ appear as themselves. `size` is a JSON integer.
 
 A verifier MUST reject a credential whose bytes are not exactly the
 canonical serialization of its content (vectors `non-canonical*`). This
-rules out two byte strings for one gratitude.
+rules out two byte strings for one credential.
 
 ### 3.3 Computing the SAIDs
 
@@ -140,15 +168,18 @@ rules out two byte strings for one gratitude.
 
 ### 3.4 Schemas
 
-The schemas are JSON Schema documents whose `$id` is their own SAID. They
+Each type is defined by JSON Schema documents whose `$id` is their own SAID. They
 are published byte for byte in [`schemas/`](schemas/). A verifier compares
 `s` with the SAIDs below; it never needs to fetch a schema.
 
-| Schema | Version | SAID |
-|---|---|---|
-| [gratitude.schema.json](schemas/gratitude.schema.json) — to one AID | 1.0.0 | `EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav` |
-| [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
-| [binding.schema.json](schemas/binding.schema.json) — not a gratitude; used by DzenQ's identity binding | 1.0.0 | `ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo` |
+| Type | Schema | Version | SAID |
+|---|---|---|---|
+| gratitude | [gratitude.schema.json](schemas/gratitude.schema.json) — to one AID | 1.0.0 | `EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav` |
+| gratitude | [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
+| — | [binding.schema.json](schemas/binding.schema.json) — not a dzq type; DzenQ's identity binding, published for reference | 1.0.0 | `ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo` |
+
+The schema files carry DzenQ-era titles ("DzenQ Gratitude"). They are part
+of the signed SAIDs and stay as they are.
 
 A schema's SAID is Blake3-256 over the file with `$id` set to 44 `#`.
 The schema text is normative only through its SAID and section 3.1; where
@@ -156,8 +187,8 @@ they differ, section 3.1 wins.
 
 ## 4. Conditions (`a.dq`)
 
-A gratitude to a condition (schema 2.0.0) names no person. `a.dq` says who
-may hold it; whoever proves it holds it, and if ten people prove it, all ten
+A credential to a condition names no person (for gratitude: schema 2.0.0).
+`a.dq` says who may hold it; whoever proves it holds it, and if ten people prove it, all ten
 hold it.
 
 ```
@@ -360,6 +391,22 @@ version, while verifiers keep accepting the old ones.
 extensions, archive entries announced with a version marker). A major
 version may change the serialization; it will be a new schema family and
 a new file signature.
+
+### 8.5 New types
+
+An apology, a promise or a certificate is a new **type**: a new schema (or a
+pair, to one AID and to a condition) that keeps the envelope of 3.1 and
+defines its own content attributes after `a.dt`. Everything else stays: the
+canonical form, SAIDs, conditions, bundle, `.dzq` file, verification and all
+extensions work unchanged, because none of them reads the content
+attributes.
+
+A type is added in a minor version of this document, which gives its schema
+SAIDs and fields. Until a verifier knows a type, it reports `schema`
+(unknown schema) — it cannot tell a new type from a forgery of an old one.
+Applications that experiment with a type before it is standardized SHOULD
+say so in the schema's `title` and MUST NOT reuse the gratitude schemas for
+other meanings.
 
 ## 9. Security considerations
 

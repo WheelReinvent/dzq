@@ -1,8 +1,13 @@
-# dzq — signed gratitude as a file format
+# dzq — signed gestures between people
 
-A *gratitude* is a small file in which one person signs that they are
-grateful to another — or to whoever meets a condition. Anyone can check it
-later, offline, with no account and no server.
+**dzq** (pronounced *dee-zik*) is a file format for a signed gesture from one
+person to another — a thank-you today; an apology, a promise or a
+certificate later. Anyone can check the file, offline, with no account and
+no server.
+
+Every dzq file is an **envelope** (who, to whom, when, signature, key
+history — the same for every gesture) around a **type** (what is said). The
+first type is **gratitude**.
 
 This repository is the format: the specification, its schemas, test
 vectors, and a reference verifier that has nothing to do with any app.
@@ -84,9 +89,12 @@ permission.
 
 ## Коротко українською
 
-Подяка — це файл, а не функція застосунку. Тут описано, що в ньому, як його
+dzq (читається «дізік») — формат підписаних жестів між людьми: сьогодні
+подяка, згодом вибачення, обіцянка, сертифікат. Кожен файл — це конверт
+(хто, кому, коли, підпис, журнал ключів — однаковий для всіх жестів) і тип
+(що саме сказано). Перший тип — подяка. Тут описано, що у файлі, як його
 підписати й перевірити, тож будь-який застосунок може видавати й читати
-подяки. DzenQ — перший, хто це робить, а не власник формату.
+такі файли. DzenQ — перший, хто це робить, а не власник формату.
 
 - `SPEC.md` — ядро формату dzq/1.0; `extensions/` — необов'язкові частини
   (листи на адресу, періоди-печатки, погашення, пред'явлення).
