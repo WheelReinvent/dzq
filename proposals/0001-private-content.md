@@ -20,7 +20,10 @@ scale.
 ## Proposal
 
 Split the attribute block into a **public part** and a **private content
-block**. The private block can be replaced by its digest when the statement
+block**. The public part is the envelope (`i`/`dq`, `dt`) plus whatever
+fields the **type** declares public; the private block holds the type's
+other fields. Each type decides its own split — a category belongs to
+gratitude, not to every statement. The private block can be replaced by its digest when the statement
 is shown, and the signature still verifies. This is ACDC's own *partial
 disclosure* of nested blocks, with a salt so that short texts cannot be
 guessed.
@@ -75,13 +78,23 @@ The same statement, **compacted** for showing:
 
 ### What stays public, and why
 
-| Field | Public | Why |
+Always public — the envelope, the same for every type:
+
+| Field | Why |
+|---|---|
+| issuer | the point of a signature is knowing who signed |
+| recipient / condition | the verifier must check the holder is the recipient |
+| `dt` | ordering, "since 2026", certificates by date |
+
+Per type — each type's schema lists its public and private fields:
+
+| Type | Public | Private |
 |---|---|---|
-| issuer | yes | the point of a signature is knowing who signed |
-| recipient / condition | yes | the verifier must check the holder is the recipient |
-| `dt` | yes | ordering, "thanks since 2026", certificates by date |
-| `category` | yes, by default | certificates are defined by categories ("3 thank-yous with stamp X") |
-| title, message, attachment | **no** | the words are between the two people |
+| gratitude | `category` (certificates are built on categories: "3 thank-yous with stamp X") | `title`, `message`, `attachment` |
+| future types | whatever they need to be checked without the text — possibly nothing | the rest |
+
+A type with no public fields simply has the envelope and `c`. `category`
+is not part of the envelope and other types are not required to have it.
 
 ## What changes
 
@@ -105,14 +118,17 @@ salt (`u`), as the ACDC specification describes it. It does not use the
 flexible but heavier; the content here is one unit — title and message
 make sense together.
 
+## Decided
+
+- **Date is public** (envelope).
+- **Category is public for gratitude**, and it stays a gratitude field, not
+  an envelope field: other types may have no category at all.
+- **The public/private split is declared per type.**
+
 ## Open questions
 
-1. **Category public or private?** Public makes certificates simple ("show
-   me three thank-yous with stamp X" without the text). Private hides more
-   but then certificates need a separate proof.
-2. **Date public?** Same trade-off; public is simpler.
-3. **One private block or several** (title public, message private)? One
+1. **One private block or several** (title public, message private)? One
    block is simpler and matches how people think about a note.
-4. **Encryption for transport** stays out of the format (delivery's job).
+2. **Encryption for transport** stays out of the format (delivery's job).
    Do we also want an optional "sealed for the recipient" wrapper?
-5. **Timing:** ship with the next DzenQ release, before the public pilot.
+3. **Timing:** ship with the next DzenQ release, before the public pilot.
