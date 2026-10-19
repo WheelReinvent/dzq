@@ -162,6 +162,7 @@ in the same envelope, and verification does not change.
 | ✅ Letters to an e-mail / phone, sealing, redemption, holder-bound presentation | optional extensions |
 | ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier; DzenQ core next |
 | 🔜 Certificate: a promise, given or earned with thank-yous ([proposal 0002](proposals/0002-certificate.md)) | new type |
+| 🔜 Look: point to a template (blank, colours, fonts) the giver chose ([proposal 0003](proposals/0003-look.md)) | signed hint |
 | 🔜 Apology | new type |
 
 ## In this repository
