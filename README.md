@@ -39,34 +39,52 @@ a thousand lines of Python that was written from the spec alone. A second
 implementation is an afternoon's job, and the vectors tell you when you're
 done.
 
-## The whole flow in 20 lines
+## The whole flow
 
 ```python
-from dzq import Identity, read_dzq, check_dzq
+import dzq
 
-alice = Identity.create()            # an identifier: keys + key history
-bob = Identity.create()
+alice = dzq.Identity.create()
+bob = dzq.Identity.create()
 
-# 1. Alice writes a thank-you and signs it
-file_bytes = alice.thank(to=bob.aid, title="Thank you", message="For fixing my bike.")
+# Sign: a type, a recipient, the type's fields
+statement = alice.sign(
+    type="gratitude",
+    to=bob.aid,
+    content={"title": "Thank you", "message": "For fixing my bike.", "category": "help"},
+)
 
-# 2. Send it any way you like: e-mail, chat, QR, AirDrop. It's just a file.
-open("thank-you.dzq", "wb").write(file_bytes)
+data = statement.to_dzq()          # bytes of a .dzq file — send them any way you like
 
-# 3. Bob opens it and reads what it says
-received = open("thank-you.dzq", "rb").read()
-note = read_dzq(received)
-print(note["title"], "—", note["message"])      # Thank you — For fixing my bike.
-
-# 4. Bob checks it: signed by Alice, to Bob, unchanged
-r = check_dzq(received)
-r.valid                    # True
-r.issuer == alice.aid      # True
-r.recipient == bob.aid     # True
+received = dzq.open(data)          # what it says; trusts nothing yet
+print(received)
+```
+```
+Statement (gratitude)
+  from     EJ4Vy38rSIBGnBHaX6iFdbIBMHhP51hR5WhEthMXChP1
+  to       EGlc_eGY8l1r-YriAbPKIT3a5YZWhENrrXoeGO8EEg92
+  date     2026-10-19T18:49:35+00:00
+  title    Thank you
+  message  For fixing my bike.
+  category help
+```
+```python
+print(received.verify())           # whether to believe it
+```
+```
+✓ VALID
+  signed by  EJ4Vy38rSIBGnBHaX6iFdbIBMHhP51hR5WhEthMXChP1
+  to         EGlc_eGY8l1r-YriAbPKIT3a5YZWhENrrXoeGO8EEg92
+  unchanged  yes, every byte as signed
+  final      not yet: valid as of the signer's key history in hand (event 0)
 ```
 
-Edit one character of the text inside the file and `check_dzq` returns
-`valid = False`, `code = "said"`. Runnable version:
+Change one word inside and `verify()` says
+`✗ NOT VALID: the content was changed after it was signed`.
+
+`dzq.types.TYPES` lists the types and their fields; today that is
+`gratitude` (title, message, category, optional attachment). `to` can also
+be a condition such as `"any(<AID>,<AID>)"`. Runnable, step by step:
 [examples/quickstart.py](examples/quickstart.py).
 
 ## What a file looks like

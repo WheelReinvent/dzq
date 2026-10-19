@@ -1,19 +1,19 @@
-"""A minimal signer: enough to create, sign and hand over a gratitude.
+"""A minimal signer: enough to create and sign a statement.
 
-    from dzq import Identity
-    me = Identity.create()
-    file_bytes = me.thank(to=friend_aid, title="Thank you", message="…")
+    import dzq
+    me = dzq.Identity.create()
+    st = me.sign(type="gratitude", to=friend_aid,
+                 content={"title": "Thank you", "message": "…", "category": "help"})
 
 Keys come from one 32-byte secret. Keep `secret_hex` private; with it,
 `Identity.from_secret` recreates the same identifier. This is a reference
 tool, not a wallet: it keeps no history across key rotations.
 """
 
-import datetime
 import os
 
-from . import archive, build
-from .blake3 import blake3, derive_key
+from . import build
+from .blake3 import derive_key
 
 
 class Identity(build.Controller):
@@ -43,20 +43,20 @@ class Identity(build.Controller):
         """The public identifier others send gratitudes to."""
         return self.prefix
 
-    def thank(self, to, title, message, category="thanks", attachment=None, when=None):
-        """A signed gratitude as .dzq bytes.
+    @property
+    def registry(self):
+        return blake3_said_registry(self.prefix)
 
-        `to` is an AID, or a condition such as "any(<AID>,<AID>)".
-        `attachment` is an optional (filename, bytes, media type).
-        """
-        attrs = {"dt": (when or datetime.datetime.now(datetime.timezone.utc)).isoformat(timespec="seconds"),
-                 "title": title, "message": message, "category": category}
-        cond = to.startswith(("any(", "all(")) or ":" in to
-        attrs["dq" if cond else "i"] = to
-        asset = None
-        if attachment is not None:
-            name, body, mime = attachment
-            attrs["attachment"] = {"d": blake3(body).hex(), "filename": name, "mime_type": mime, "size": len(body)}
-            asset = (name, body)
-        credential = self.gratitude(attrs)
-        return archive.make_dzq(self.bundle(credential), attachment=asset)
+    def sign(self, type, to, content, when=None, attachment=None):
+        """A signed statement of `type` (e.g. "gratitude") to `to` (an AID or a
+        condition). `content` holds the type's fields. See dzq.types."""
+        from .statement import sign
+        return sign(self, type, to, content, when=when, attachment=attachment)
+
+    def __repr__(self):
+        return "Identity(%s)" % self.aid
+
+
+def blake3_said_registry(prefix):
+    from .cesr import blake3_said
+    return blake3_said("registry|" + prefix)
