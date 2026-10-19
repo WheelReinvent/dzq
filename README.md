@@ -185,7 +185,7 @@ in the same envelope, and verification does not change.
 | ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier |
 | ✅ Promise: given, or earned with thank-yous | `dzq/1.2` draft, reference verifier |
 | ✅ Look: a signed pointer to the blank the giver chose (look/1 optional) | `dzq/1.2` draft, reference verifier |
-| 🔜 Apology | new type |
+| 🔜 Sorry, please, and links between statements ([idea 0005](proposals/0005-gesture-family.md)) | TBD |
 
 ## In this repository
 
