@@ -441,40 +441,40 @@
       }
     },
     {
-      "name": "certificate",
-      "description": "dzq/1.2 certificate to a condition: Marko or Sofia, after 3 thank-yous 'cleaned the room' from Dad.",
-      "bundle": "credentials/certificate.acdc",
+      "name": "promise",
+      "description": "dzq/1.2 promise to a condition: Marko or Sofia, after 3 thank-yous 'cleaned the room' from Dad.",
+      "bundle": "credentials/promise.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EIsJZg3cyUjSyfpEoP4GuNDeIcV1FSYWowWQmSdkuKqG",
-        "schema": "EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j",
+        "said": "EGxgtOVO8TQb9qmwDAa_L_sDfJixrRIC12xx_mQUVsKb",
+        "schema": "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5",
         "content": "shown"
       }
     },
     {
-      "name": "certificate-to-one",
-      "description": "A certificate to one AID, no condition, no until.",
-      "bundle": "credentials/certificate-to-one.acdc",
+      "name": "promise-to-one",
+      "description": "A promise to one AID, no condition, no until.",
+      "bundle": "credentials/promise-to-one.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "schema": "EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk"
+        "schema": "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6"
       }
     },
     {
-      "name": "certificate-without-what",
-      "description": "A certificate without 'what' (SAIDs recomputed).",
-      "bundle": "credentials/certificate-without-what.acdc",
+      "name": "promise-without-what",
+      "description": "A promise without 'what' (SAIDs recomputed).",
+      "bundle": "credentials/promise-without-what.acdc",
       "expect": {
         "valid": false,
         "code": "schema"
       }
     },
     {
-      "name": "certificate-closed",
-      "description": "The issuer closed the certificate early (a close digest in its KEL): still valid, reports closed_at_sn.",
-      "bundle": "credentials/certificate-closed.acdc",
+      "name": "promise-closed",
+      "description": "The issuer closed the promise early (a close digest in its KEL): still valid, reports closed_at_sn.",
+      "bundle": "credentials/promise-closed.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
@@ -882,146 +882,146 @@
       }
     },
     {
-      "name": "certificate-earned",
-      "description": "Marko shows the certificate with three thank-yous from Dad (all compact).",
-      "file": "presentations/certificate-earned.json",
+      "name": "promise-earned",
+      "description": "Marko shows the promise with three thank-yous from Dad (all compact).",
+      "file": "presentations/promise-earned.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": true,
-        "certificate": "usable"
+        "promise": "usable"
       }
     },
     {
-      "name": "certificate-too-few",
+      "name": "promise-too-few",
       "description": "Only two of the three thank-yous.",
-      "file": "presentations/certificate-too-few.json",
+      "file": "presentations/promise-too-few.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-same-thanks-twice",
+      "name": "promise-same-thanks-twice",
       "description": "The same thank-you three times counts once.",
-      "file": "presentations/certificate-same-thanks-twice.json",
+      "file": "presentations/promise-same-thanks-twice.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-wrong-category",
+      "name": "promise-wrong-category",
       "description": "Three thank-yous, but two are in another category.",
-      "file": "presentations/certificate-wrong-category.json",
+      "file": "presentations/promise-wrong-category.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-wrong-issuer",
+      "name": "promise-wrong-issuer",
       "description": "Two of the thank-yous come from a neighbour, not from Dad.",
-      "file": "presentations/certificate-wrong-issuer.json",
+      "file": "presentations/promise-wrong-issuer.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-not-a-holder",
+      "name": "promise-not-a-holder",
       "description": "Sofia's friend Erin is not in any(Marko, Sofia), even with three thank-yous.",
-      "file": "presentations/certificate-not-a-holder.json",
+      "file": "presentations/promise-not-a-holder.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-expired",
+      "name": "promise-expired",
       "description": "Earned, but shown after 'until'.",
-      "file": "presentations/certificate-expired.json",
+      "file": "presentations/promise-expired.json",
       "nonce": "door-7Q4M-2026",
       "now": "2027-07-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "expired"
+        "promise": "expired"
       }
     },
     {
-      "name": "certificate-two-issuers-add-up",
+      "name": "promise-two-issuers-add-up",
       "description": "thanks:3 from Dad+Neighbour: one from Dad and two from the neighbour.",
-      "file": "presentations/certificate-two-issuers-add-up.json",
+      "file": "presentations/promise-two-issuers-add-up.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": true,
-        "certificate": "usable"
+        "promise": "usable"
       }
     },
     {
-      "name": "certificate-before-since",
+      "name": "promise-before-since",
       "description": "The only thank-you is dated before the condition's 'since'.",
-      "file": "presentations/certificate-before-since.json",
+      "file": "presentations/promise-before-since.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-self-thanks-elsewhere",
-      "description": "Marko's thank-yous to himself do not count toward Dad's certificate.",
-      "file": "presentations/certificate-self-thanks-elsewhere.json",
+      "name": "promise-self-thanks-elsewhere",
+      "description": "Marko's thank-yous to himself do not count toward Dad's promise.",
+      "file": "presentations/promise-self-thanks-elsewhere.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-self-promise",
+      "name": "promise-self-promise",
       "description": "Marko's promise to himself, earned with his own thank-yous.",
-      "file": "presentations/certificate-self-promise.json",
+      "file": "presentations/promise-self-promise.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": true,
-        "certificate": "usable"
+        "promise": "usable"
       }
     },
     {
-      "name": "certificate-is-not-a-thank-you",
-      "description": "A certificate never counts as a thank-you: two certificates, no gratitude.",
-      "file": "presentations/certificate-is-not-a-thank-you.json",
+      "name": "promise-is-not-a-thank-you",
+      "description": "A promise never counts as a thank-you: two promises, no gratitude.",
+      "file": "presentations/promise-is-not-a-thank-you.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "not-earned"
+        "promise": "not-earned"
       }
     },
     {
-      "name": "certificate-closed",
-      "description": "Marko shows a certificate the issuer has closed.",
-      "file": "presentations/certificate-closed.json",
+      "name": "promise-closed",
+      "description": "Marko shows a promise the issuer has closed.",
+      "file": "presentations/promise-closed.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "expect": {
         "valid": false,
-        "certificate": "closed"
+        "promise": "closed"
       }
     }
   ]

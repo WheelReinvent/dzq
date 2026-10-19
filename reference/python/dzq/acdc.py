@@ -15,11 +15,11 @@ SCHEMA_BINDING = "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
 SCHEMA_GRATITUDE_PRIVATE = "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_"            # 1.1.0, to one AID
 SCHEMA_GRATITUDE_PRIVATE_CONDITION = "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc"  # 2.1.0, to a condition
 
-# dzq/1.2: gratitude with `look`; certificates.
+# dzq/1.2: gratitude with `look`; promises.
 SCHEMA_GRATITUDE_12 = "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81"            # 1.2.0, to one AID
 SCHEMA_GRATITUDE_12_CONDITION = "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V"  # 2.2.0, to a condition
-SCHEMA_CERTIFICATE = "EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk"             # 1.1.0, to one AID
-SCHEMA_CERTIFICATE_CONDITION = "EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j"   # 2.1.0, to a condition
+SCHEMA_PROMISE = "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6"                 # 1.0.0, to one AID
+SCHEMA_PROMISE_CONDITION = "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5"       # 2.0.0, to a condition
 SCHEMA_LOOK = "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv"                    # look/1 document
 
 
@@ -35,16 +35,16 @@ class Layout:
 _GRAT_PUBLIC = [("category", True, 64, "text")]
 _GRAT_11 = [("title", True, 200, "text"), ("message", True, 5000, "text"), ("attachment", False, None, "attachment")]
 _GRAT_12 = _GRAT_11 + [("look", False, None, "look")]
-_CERT_PUBLIC = [("until", False, None, "text")]
-_CERT = [("what", True, 200, "text"), ("note", False, 5000, "text"), ("look", False, None, "look")]
+_PROMISE_PUBLIC = [("until", False, None, "text")]
+_PROMISE = [("what", True, 200, "text"), ("note", False, 5000, "text"), ("look", False, None, "look")]
 
 LAYOUTS = {
     SCHEMA_GRATITUDE_PRIVATE: Layout("gratitude", "i", _GRAT_PUBLIC, _GRAT_11),
     SCHEMA_GRATITUDE_PRIVATE_CONDITION: Layout("gratitude", "dq", _GRAT_PUBLIC, _GRAT_11),
     SCHEMA_GRATITUDE_12: Layout("gratitude", "i", _GRAT_PUBLIC, _GRAT_12),
     SCHEMA_GRATITUDE_12_CONDITION: Layout("gratitude", "dq", _GRAT_PUBLIC, _GRAT_12),
-    SCHEMA_CERTIFICATE: Layout("certificate", "i", _CERT_PUBLIC, _CERT),
-    SCHEMA_CERTIFICATE_CONDITION: Layout("certificate", "dq", _CERT_PUBLIC, _CERT),
+    SCHEMA_PROMISE: Layout("promise", "i", _PROMISE_PUBLIC, _PROMISE),
+    SCHEMA_PROMISE_CONDITION: Layout("promise", "dq", _PROMISE_PUBLIC, _PROMISE),
 }
 
 TO_AID = (SCHEMA_GRATITUDE,) + tuple(k for k, l in LAYOUTS.items() if l.to == "i")
@@ -52,7 +52,7 @@ TO_CONDITION = (SCHEMA_GRATITUDE_CONDITION,) + tuple(k for k, l in LAYOUTS.items
 PRIVATE = tuple(LAYOUTS)
 GRATITUDE_SCHEMAS = (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_CONDITION) + tuple(
     k for k, l in LAYOUTS.items() if l.type == "gratitude")
-CERTIFICATE_SCHEMAS = tuple(k for k, l in LAYOUTS.items() if l.type == "certificate")
+PROMISE_SCHEMAS = tuple(k for k, l in LAYOUTS.items() if l.type == "promise")
 
 import re as _re  # noqa: E402
 LOOK_RE = _re.compile(r"[a-z0-9-]+:\S+")
@@ -326,7 +326,7 @@ def check_integrity(raw):
 
 
 def close_said(statement_said):
-    """Digest an issuer anchors to close a certificate early (certificates)."""
+    """Digest an issuer anchors to close a promise early (promises)."""
     return blake3_said(dumps({"d": SAID_PLACEHOLDER, "t": "close", "g": statement_said}))
 
 

@@ -1,7 +1,7 @@
 # dzq
 
 **An open file format for signed statements between people** — thank-yous
-today, apologies, promises and certificates next. One file holds the
+and promises today, apologies next. One file holds the
 statement, the signature and everything needed to check it. Any app can
 write it, any app can read it, and checking needs no server.
 
@@ -62,7 +62,7 @@ $ dzq types
 gratitude
   public:   category
   private:  title, message, [attachment], [look]
-certificate
+promise
   public:   [until]
   private:  what, [note], [look]
 
@@ -128,25 +128,25 @@ Each type declares which fields stay public; for a thank-you that is the
 category. Title, message and attachment travel in a salted block that only
 the holder decides to reveal.
 
-### Promise something: certificates
+### Promise something
 
-A certificate is a promise, given to someone or earned with thank-yous:
+A promise is given to someone, or earned with thank-yous:
 
 ```
-$ dzq sign --as dad.id --type certificate \
+$ dzq sign --as dad.id --type promise \
       --to "all(any(<Marko>,<Sofia>),thanks:3/cleaned%20the%20room/<Dad>)" \
       what="A trip to the mountains" until=2027-06-01T00:00:00Z -o trip.dzq
 
 $ dzq present --as marko.id --nonce DOOR-1234 trip.dzq t1.dzq t2.dzq t3.dzq -o vp.json
 $ dzq presentation vp.json --nonce DOOR-1234
 ✓ VALID
-  ✓ certificate EOAfm5_0z-…  usable
+  ✓ promise     EOAfm5_0z-…  usable
   ✓ gratitude   EF-BBVCstj…
   …
 ```
 
-Marko shows the certificate with three thank-yous from Dad — without their
-words. No use counter; Dad can close the certificate early (`dzq close`).
+Marko shows the promise with three thank-yous from Dad — without their
+words. No use counter; Dad can close the promise early (`dzq close`).
 
 ## What a file looks like
 
@@ -183,8 +183,8 @@ in the same envelope, and verification does not change.
 | ✅ Gratitude (to an AID or a condition) | `dzq/1.0` draft, implemented in DzenQ |
 | ✅ Letters to an e-mail / phone, sealing, redemption, holder-bound presentation | optional extensions |
 | ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier |
-| ✅ Certificate: a promise, given or earned with thank-yous | `dzq/1.2` draft, reference verifier |
-| ✅ Look: a signed pointer to the blank the giver chose, and the look/1 document | `dzq/1.2` draft, reference verifier |
+| ✅ Promise: given, or earned with thank-yous | `dzq/1.2` draft, reference verifier |
+| ✅ Look: a signed pointer to the blank the giver chose (look/1 optional) | `dzq/1.2` draft, reference verifier |
 | 🔜 Apology | new type |
 
 ## In this repository

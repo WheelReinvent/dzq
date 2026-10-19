@@ -8,10 +8,10 @@
     dzq open thanks.dzq                   # what the file says (trusts nothing)
     dzq verify thanks.dzq                 # whether to believe it
     dzq hide thanks.dzq -o shown.dzq      # a copy without the private text, still valid
-    dzq sign --as bob.id --type certificate --to "thanks:3/help/<AID>" what="Lunch" -o lunch.dzq
+    dzq sign --as bob.id --type promise --to "thanks:3/help/<AID>" what="Lunch" -o lunch.dzq
     dzq present --as alice.id --nonce CODE lunch.dzq thanks*.dzq -o vp.json
     dzq presentation vp.json --nonce CODE --kel bob.kel
-    dzq close --as bob.id lunch.dzq       # the issuer closes a certificate early
+    dzq close --as bob.id lunch.dzq       # the issuer closes a promise early
     dzq kel bob.id -o bob.kel             # export a key history
     dzq look make gold.json -o looks/     # build a look/1 document and its files
     dzq presentation vp.json --nonce CODE
@@ -265,7 +265,7 @@ def cmd_presentation(a):
             ok = c.get("usable", c.get("holder_is_recipient"))
             label = c.get("type") or "?"
             why = ""
-            if c.get("type") == "certificate":
+            if c.get("type") == "promise":
                 why = "usable" if c.get("usable") else Verification.REASONS.get(c.get("why"), c.get("why"))
             elif not c.get("valid"):
                 why = c.get("reason")
@@ -304,7 +304,7 @@ def main(argv=None):
     s.add_argument("--look-source", default="local", help="where others can ask for this look (default: local)")
     s.set_defaults(fn=cmd_sign)
 
-    s = sub.add_parser("close", help="close a certificate you issued (no longer usable by anyone)")
+    s = sub.add_parser("close", help="close a promise you issued (no longer usable by anyone)")
     s.add_argument("--as", dest="identity", required=True)
     s.add_argument("file")
     s.set_defaults(fn=cmd_close)

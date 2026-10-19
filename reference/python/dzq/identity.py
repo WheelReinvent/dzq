@@ -69,13 +69,13 @@ class Identity(build.Controller):
     # --- acting ---------------------------------------------------------------
 
     def close(self, statement):
-        """Closes a certificate this identity issued: one interaction event
+        """Closes a promise this identity issued: one interaction event
         with the close digest. Returns the event's sequence number."""
         from . import acdc as acdc_
         if statement.issuer != self.aid:
-            raise ValueError("only the issuer can close a certificate")
-        if statement.type != "certificate":
-            raise ValueError("only certificates can be closed")
+            raise ValueError("only the issuer can close a promise")
+        if statement.type != "promise":
+            raise ValueError("only promises can be closed")
         self.interact([{"d": acdc_.close_said(statement.said)}])
         return self.sn
 

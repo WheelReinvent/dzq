@@ -61,10 +61,10 @@ class Presentations(unittest.TestCase):
                     now = datetime.datetime.fromisoformat(v["now"])
                 r = verify.verify_presentation(load(v["file"]), v["nonce"], now=now)
                 expect = dict(v["expect"])
-                want = expect.pop("certificate", None)
+                want = expect.pop("promise", None)
                 matches(self, r, expect)
                 if want is not None:
-                    cert = next(c for c in r["credentials"] if c.get("type") == "certificate")
+                    cert = next(c for c in r["credentials"] if c.get("type") == "promise")
                     self.assertEqual("usable" if cert.get("usable") else cert.get("why"), want)
 
 

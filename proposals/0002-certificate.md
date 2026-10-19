@@ -1,5 +1,7 @@
 # Proposal 0002: certificates (a promise, earned or given)
 
+> **Renamed on 2026-10-20: the type is `promise`.** A thank-you, an apology and a promise are one family of gestures; "certificate" is an attestation word. See SPEC §3.6 and extensions/promises.md. The text below keeps its original wording.
+
 **Status:** implemented in dzq/1.2 (spec, reference verifier, CLI, vectors); DzenQ core pending · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
 
 ## Problem

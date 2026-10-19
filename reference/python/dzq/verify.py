@@ -145,8 +145,8 @@ def check_credential(bundle, seal=None, kel_text=None):
         if not keys or not _signed_by(integ.signed_raw, sigs, keys):
             return r.fail("not-current", "not sealed, and not signed by the issuer's current keys")
 
-    if r["type"] == "certificate":
-        # No redemption for certificates; the issuer may close one early.
+    if r["type"] == "promise":
+        # No redemption for promises; the issuer may close one early.
         r["closed_at_sn"] = view.digest_anchor_of(acdc.close_said(integ.said))
     else:
         r["redeemed_at_sn"] = view.digest_anchor_of(acdc.redemption_said(integ.said))
@@ -168,7 +168,7 @@ def _instant(text):
 def thanks_met(leaf, holder, statement_issuer, pool):
     """Does `holder` have enough gratitudes in `pool` (results of valid
     gratitudes the holder holds) for a thanks: leaf of a statement issued by
-    `statement_issuer`? (extensions/certificates.md)"""
+    `statement_issuer`? (extensions/promises.md)"""
     t = leaf.thanks
     if t is None:
         return False
@@ -294,7 +294,7 @@ def verify_presentation(vp_text, expected_nonce, now=None, kels=()):
     for r in results:
         mine = r.valid and holder_meets(r.recipient, r.said, holder, claims, r.schema, r.issuer, pool)
         r["holder_is_recipient"] = mine
-        if r.valid and r.get("type") == "certificate":
+        if r.valid and r.get("type") == "promise":
             until = _instant(r.get("until")) if r.get("until") else None
             if r.get("until") and (until is None or until <= now):
                 r["usable"], r["why"] = False, "expired"
@@ -310,6 +310,6 @@ def verify_presentation(vp_text, expected_nonce, now=None, kels=()):
             all_ok = False
         out["credentials"].append(r)
     if not all_ok:
-        return fail("credential", "a credential is invalid, not the holder's, or a certificate is not usable")
+        return fail("credential", "a credential is invalid, not the holder's, or a promise is not usable")
     out["valid"] = True
     return out

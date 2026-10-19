@@ -1,8 +1,8 @@
-# Extension: certificates — earning, using, closing (dzq/1.2)
+# Extension: promises — earning, using, closing (dzq/1.2)
 
-**Status:** part of dzq/1.2. The certificate type itself: SPEC §3.6.
+**Status:** part of dzq/1.2. The promise type itself: SPEC §3.6.
 
-A certificate verifies like any statement (SPEC §6): signed by its issuer,
+A promise verifies like any statement (SPEC §6): signed by its issuer,
 unchanged. This extension answers the other question a door asks: **can
 this holder use it now?**
 
@@ -20,7 +20,7 @@ thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]
   percent-decoding (UTF-8). Encode white space, `%`, `,`, `/`, `+`, `@`,
   `(` and `)`; other characters may appear as they are.
 - `<issuer>`: an AID. Several are joined with `+`; their gratitudes add up.
-  These are the issuers of the **gratitudes** — the certificate always has
+  These are the issuers of the **gratitudes** — the promise always has
   exactly one issuer of its own.
 - `@<since>` (optional): RFC 3339; only gratitudes with `a.dt` at or after it
   count. `a.dt` is what each gratitude's issuer stated.
@@ -30,7 +30,7 @@ treats `thanks:` as an unknown kind, also never met.
 
 Examples:
 
-| Certificate | Condition |
+| Promise | Condition |
 |---|---|
 | lunch for anyone with a "help" thank-you from me | `thanks:1/help/<me>` |
 | for Marko or Sofia, after 3 × "cleaned the room" from Dad | `all(any(<Marko>,<Sofia>),thanks:3/cleaned%20the%20room/<Dad>)` |
@@ -42,7 +42,7 @@ whoever already has three from me"); the same rules apply.
 
 ## Proving it: in a presentation
 
-The holder shows the certificate together with the gratitudes that earn
+The holder shows the promise together with the gratitudes that earn
 it, in one presentation (extensions/presentation.md). Compact forms are
 enough: the door sees who thanked whom, when and in which category, not
 the words.
@@ -50,7 +50,7 @@ the words.
 A verifier evaluates the presentation in two passes:
 
 1. **Pool.** Every credential verifies (SPEC §6). The pool is the
-   gratitudes (gratitude type only — never certificates) that the holder
+   gratitudes (gratitude type only — never promises) that the holder
    holds **without** counting other gratitudes: `a.i` = holder, or `a.dq`
    met through AID and `claim:` leaves alone.
 2. **Conditions.** Each credential's condition is evaluated again with
@@ -67,7 +67,7 @@ A verifier evaluates the presentation in two passes:
 
 ## Usable
 
-A certificate in a valid presentation is **usable** when all hold; else
+A promise in a valid presentation is **usable** when all hold; else
 the first failing reason is reported:
 
 | Check | Reason |
@@ -76,28 +76,28 @@ the first failing reason is reported:
 | no close digest (below) in the issuer's KEL | `closed` |
 | the holder meets the condition (passes 1 and 2) | `not-earned` |
 
-The presentation is valid only if every certificate in it is usable and
+The presentation is valid only if every promise in it is usable and
 every gratitude in it is the holder's.
 
-There is no use counter. Showing the same certificate twice is between
+There is no use counter. Showing the same promise twice is between
 the holder and the issuer.
 
 ## Closing early
 
 ```
-close digest(S) = SAID of {"d":"<44 #>","t":"close","g":"<certificate SAID>"}
+close digest(S) = SAID of {"d":"<44 #>","t":"close","g":"<promise SAID>"}
 ```
 
 The issuer anchors it as a digest seal in an `ixn` event. From then on the
-certificate is not usable by anyone; as a signed record of what was
+promise is not usable by anyone; as a signed record of what was
 promised it stays valid, and a verifier reports `closed_at_sn`. Like every
 KEL fact, a close is only visible to a verifier with a KEL recent enough;
 doors that give real things SHOULD load the issuer's KEL fresh.
 
 ## Vectors
 
-Credentials `certificate*`; presentations `certificate-*` (earned, too few,
+Credentials `promise*`; presentations `promise-*` (earned, too few,
 the same thank-you three times, wrong category, wrong issuer, not a holder,
 expired, two issuers adding up, before `since`, self-thanks elsewhere, a
-self-promise, a certificate is not a thank-you, closed); `close_said` in
+self-promise, a promise is not a thank-you, closed); `close_said` in
 `vectors/digests.json`.

@@ -7,8 +7,8 @@
     "gratitude-private-condition 2.1.0": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
     "gratitude 1.2.0": "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81",
     "gratitude-condition 2.2.0": "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V",
-    "certificate 1.1.0": "EP1v8jIBloNuOHRz9j3BlFwpHkI_iGLkyC6UJAwjt-Yk",
-    "certificate-condition 2.1.0": "EEO24n7vWuRj5pYYVJGCSg1tYqz267qHGrE-Q5oYUk2j",
+    "promise 1.0.0": "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6",
+    "promise-condition 2.0.0": "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5",
     "look/1": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
     "binding 1.0.0": "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
   },
@@ -34,8 +34,8 @@
   ],
   "close_said": [
     {
-      "certificate": "EIsJZg3cyUjSyfpEoP4GuNDeIcV1FSYWowWQmSdkuKqG",
-      "said": "EL2_5IGJjtSR56uduViCdEdAfkHYHL0F2SAE-5qqbR_e"
+      "promise": "EGxgtOVO8TQb9qmwDAa_L_sDfJixrRIC12xx_mQUVsKb",
+      "said": "ELQb2Kd5dFaF7hxJQ7XJA2GtBuIWtM1Fongp_jH310QD"
     }
   ],
   "claim_keys": [

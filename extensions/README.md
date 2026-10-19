@@ -9,8 +9,8 @@ valid; an extension adds a way to prove or report something more.
 | [periods](periods.md) | seal many gratitudes with one key event; survive rotation | dzq/1.0 |
 | [redemption](redemption.md) | the issuer marks a gratitude as used | dzq/1.0 |
 | [presentation](presentation.md) | prove to a verifier that you hold gratitudes, now | dzq/1.0 |
-| [certificates](certificates.md) | `thanks:` conditions, when a certificate is usable, closing early | dzq/1.2 |
-| [looks](looks.md) | the look/1 document and carrying it in a `.dzq` | dzq/1.2 |
+| [promises](promises.md) | `thanks:` conditions, when a promise is usable, closing early | dzq/1.2 |
+| [looks](looks.md) | optional: a common look document (look/1), carried in a `.dzq` | dzq/1.2 |
 
 ## Not yet specified
 

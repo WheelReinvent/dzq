@@ -1,11 +1,14 @@
 # Extension: looks (dzq/1.2)
 
-**Status:** part of dzq/1.2. The `look` field: SPEC §3.7.
+**Status:** optional, dzq/1.2. The `look` field itself (the pointer) is
+core: SPEC §3.7.
 
 A statement may point to how it wants to be shown — a blank, colours, a
 font — the way an XML document points to its stylesheet. The pointer is
-`look = "<source>:<id>"` in the private block. This page defines what it
-points to and how it can travel.
+`look = "<source>:<id>"` in the private block. **What a source returns is
+the source's business**: an app may use its own look format. This page
+defines an optional common one, look/1, for apps that want to share looks
+or carry them inside a `.dzq`. Nothing else in dzq depends on it.
 
 ## Principles
 
@@ -61,8 +64,9 @@ Schema: [schemas/look.schema.json](../schemas/look.schema.json).
 
 ## In a `.dzq` file
 
-A `.dzq` MAY carry the look the statement names: `looks/<SAID>.json` (the
-document) and `looks/<SAID>` (each file, no extension). Never required.
+A `.dzq` MAY carry the look the statement names, if it is a look/1
+document: `looks/<SAID>.json` (the document) and `looks/<SAID>` (each file,
+no extension). Never required.
 Givers carry their own, custom looks and leave out catalogue looks every
 app already has. Compact copies made for showing never carry a look.
 

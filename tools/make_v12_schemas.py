@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Writes the dzq/1.2 schemas (gratitude 1.2.0/2.2.0, certificate 1.1.0/2.1.0,
+"""Writes the dzq/1.2 schemas (gratitude 1.2.0/2.2.0, promise 1.0.0/2.0.0,
 look/1) and their SAIDs. Existing files are never changed."""
 
 import json
@@ -41,7 +41,7 @@ def acdc_schema(version, title, description, ctype, a_props, a_required):
 
 GRAT_C = content({"title": {"type": "string", "maxLength": 200}, "message": {"type": "string", "maxLength": 5000},
                   "attachment": ATTACHMENT, "look": LOOK}, ["title", "message"])
-CERT_C = content({"what": {"type": "string", "maxLength": 200}, "note": {"type": "string", "maxLength": 5000},
+PROMISE_C = content({"what": {"type": "string", "maxLength": 200}, "note": {"type": "string", "maxLength": 5000},
                   "look": LOOK}, ["what"])
 DT = {"type": "string", "format": "date-time"}
 
@@ -56,14 +56,14 @@ def gratitude(version, to):
                        "DzqGratitude", props, ["d", rf, "dt", "category", "c"])
 
 
-def certificate(version, to):
+def promise(version, to):
     rf = "i" if to == "aid" else "dq"
     props = dict({"d": S}, **(RECIPIENT if to == "aid" else CONDITION))
-    props.update({"dt": DT, "until": DT, "c": CERT_C})
-    return acdc_schema(version, "dzq Certificate" + ("" if to == "aid" else " (condition)"),
+    props.update({"dt": DT, "until": DT, "c": PROMISE_C})
+    return acdc_schema(version, "dzq Promise" + ("" if to == "aid" else " (condition)"),
                        "A signed promise from the issuer to whoever meets its condition. What is promised, a note "
                        "and the look are in a salted block. No use counter; the issuer may close it early.",
-                       "DzqCertificate", props, ["d", rf, "dt", "c"])
+                       "DzqPromise", props, ["d", rf, "dt", "c"])
 
 
 COLOR = {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}
@@ -88,8 +88,8 @@ LOOK_DOC = {"$id": "%SAID%", "$schema": "http://json-schema.org/draft-07/schema#
 SCHEMAS = {
     "gratitude-1.2.schema.json": gratitude("1.2.0", "aid"),
     "gratitude-condition-1.2.schema.json": gratitude("2.2.0", "condition"),
-    "certificate.schema.json": certificate("1.1.0", "aid"),
-    "certificate-condition.schema.json": certificate("2.1.0", "condition"),
+    "promise.schema.json": promise("1.0.0", "aid"),
+    "promise-condition.schema.json": promise("2.0.0", "condition"),
     "look.schema.json": LOOK_DOC,
 }
 

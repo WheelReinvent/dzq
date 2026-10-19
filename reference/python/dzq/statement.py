@@ -127,9 +127,9 @@ class Verification:
         "not-current": "signed by a key the signer no longer uses, and never sealed",
         "seal": "the seal supplied does not prove it",
         "archive": "the file is not a safe .dzq archive",
-        "not-earned": "the holder does not meet the certificate's condition",
-        "expired": "the certificate is past its \"until\" date",
-        "closed": "the issuer closed the certificate",
+        "not-earned": "the holder does not meet the promise's condition",
+        "expired": "the promise is past its \"until\" date",
+        "closed": "the issuer closed the promise",
     }
 
     def __init__(self, result):
@@ -162,7 +162,7 @@ class Verification:
                          % r.get("issuer_kel_sn"))
         if r.get("redeemed_at_sn") is not None:
             lines.append("  redeemed   at event %s" % r["redeemed_at_sn"])
-        if r.get("type") == "certificate":
+        if r.get("type") == "promise":
             if r.get("closed_at_sn") is not None:
                 lines.append("  closed     yes: the issuer closed it at event %s — no longer usable" % r["closed_at_sn"])
             if r.get("until"):
