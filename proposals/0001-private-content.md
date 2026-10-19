@@ -1,6 +1,6 @@
 # Proposal 0001: private content (show the proof, not the text)
 
-**Status:** draft for discussion · **Target:** dzq/1.1 · **Author:** DzenQ team, 2026-10-19
+**Status:** accepted design, not yet released · **Target:** dzq/1.1 · **Author:** DzenQ team, 2026-10-19
 
 ## Problem
 
@@ -124,11 +124,16 @@ make sense together.
 - **Category is public for gratitude**, and it stays a gratitude field, not
   an envelope field: other types may have no category at all.
 - **The public/private split is declared per type.**
+- **One private block** per statement: title, message and attachment
+  together. They make sense only together.
+- **No encryption in the format** for now. Hiding the file in transit is
+  the delivery channel's job; a "sealed for the recipient" wrapper can be a
+  separate proposal if a real need appears.
+- **Release: later**, as a separate decision. Until then gratitudes keep
+  being issued under 1.0.0 / 2.0.0 (fully public); the trade-off is that
+  those stay public forever.
 
 ## Open questions
 
-1. **One private block or several** (title public, message private)? One
-   block is simpler and matches how people think about a note.
-2. **Encryption for transport** stays out of the format (delivery's job).
-   Do we also want an optional "sealed for the recipient" wrapper?
-3. **Timing:** ship with the next DzenQ release, before the public pilot.
+None at the moment. Next step: write the spec text, schemas 1.1.0 / 2.1.0
+and vectors, then implement in the reference verifier and DzenQ's core.
