@@ -29,7 +29,8 @@ Exit code 0 = valid, 1 = invalid, 2 = could not read the input.
 | `verify.py` | credential verification (SPEC §6), claims, presentations |
 | `merkle.py` | period trees (extensions/periods.md) |
 | `archive.py` | `.dzq` reading and writing (SPEC §7) |
-| `build.py` | issuing side, used to make the test vectors |
+| `identity.py` | `Identity`: create an identifier, `thank(...)` → signed `.dzq` bytes |
+| `build.py` | issuing side underneath, also used to make the test vectors |
 
 Not supported (reported, never silently accepted): delegated identifiers,
 witnessed KELs, weighted thresholds, pre-1.0 legacy credentials.

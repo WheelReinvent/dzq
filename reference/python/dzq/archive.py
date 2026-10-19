@@ -76,6 +76,18 @@ def _read(z, name):
     return data
 
 
+def read_dzq(data):
+    """What a .dzq says, WITHOUT checking it: issuer, recipient (or condition),
+    date, title, message, category, attachment name. Call check_dzq to know
+    whether to believe it."""
+    bundle, _ = open_dzq(data)
+    a = json.loads(verify.split_bundle(bundle)[0])
+    attrs = a.get("a", {})
+    return {"issuer": a.get("i"), "recipient": attrs.get("i") or attrs.get("dq"), "date": attrs.get("dt"),
+            "title": attrs.get("title"), "message": attrs.get("message"), "category": attrs.get("category"),
+            "attachment": (attrs.get("attachment") or {}).get("filename")}
+
+
 def check_dzq(data, seal=None, kel_text=None):
     """Verifies a .dzq file. Adds `attachment`: None (none named), "ok",
     "missing" or "mismatch" (the file is not the one the credential names)."""

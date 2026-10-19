@@ -39,6 +39,36 @@ a thousand lines of Python that was written from the spec alone. A second
 implementation is an afternoon's job, and the vectors tell you when you're
 done.
 
+## The whole flow in 20 lines
+
+```python
+from dzq import Identity, read_dzq, check_dzq
+
+alice = Identity.create()            # an identifier: keys + key history
+bob = Identity.create()
+
+# 1. Alice writes a thank-you and signs it
+file_bytes = alice.thank(to=bob.aid, title="Thank you", message="For fixing my bike.")
+
+# 2. Send it any way you like: e-mail, chat, QR, AirDrop. It's just a file.
+open("thank-you.dzq", "wb").write(file_bytes)
+
+# 3. Bob opens it and reads what it says
+received = open("thank-you.dzq", "rb").read()
+note = read_dzq(received)
+print(note["title"], "—", note["message"])      # Thank you — For fixing my bike.
+
+# 4. Bob checks it: signed by Alice, to Bob, unchanged
+r = check_dzq(received)
+r.valid                    # True
+r.issuer == alice.aid      # True
+r.recipient == bob.aid     # True
+```
+
+Edit one character of the text inside the file and `check_dzq` returns
+`valid = False`, `code = "said"`. Runnable version:
+[examples/quickstart.py](examples/quickstart.py).
+
 ## What a file looks like
 
 A `.dzq` is a ZIP with `credential.acdc` inside — a signed
@@ -67,21 +97,12 @@ condition, date, signature, key history. The **type**, named by `s`, defines
 the content fields. Gratitude is the first type; new types are new schemas
 in the same envelope, and verification does not change.
 
-## Verify one
+## From the command line
 
 ```
 pip install cryptography
 cd reference/python
 python3 -m dzq verify ../../vectors/archives/minimal.dzq
-```
-
-```python
-from dzq import check_dzq
-
-r = check_dzq(open("thanks.dzq", "rb").read())
-r.valid       # True / False
-r.code        # why not: "said" (changed), "not-current" (key rotated), "kel", …
-r.issuer, r.recipient, r.sealed
 ```
 
 The answer is honest about freshness: a statement that isn't sealed is

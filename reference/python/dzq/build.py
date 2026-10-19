@@ -51,11 +51,12 @@ def _keri_event(fields, self_addressing_prefix=False):
 class Controller:
     """A single-key identifier with pre-rotation, like a DzenQ root identity."""
 
-    def __init__(self, name):
+    def __init__(self, name, key_for=None):
         self.name = name
+        self.key_for = key_for or (lambda gen: Key.named("%s/%d" % (name, gen)))
         self.generation = 0
-        self.current = Key.named("%s/0" % name)
-        self.next = Key.named("%s/1" % name)
+        self.current = self.key_for(0)
+        self.next = self.key_for(1)
         self.events = []        # (raw, signed stream text)
         self.sn = -1
         self.last = None
@@ -83,7 +84,7 @@ class Controller:
     def rotate(self, abandon=False, seals=()):
         self.generation += 1
         new_current = self.next
-        new_next = None if abandon else Key.named("%s/%d" % (self.name, self.generation + 1))
+        new_next = None if abandon else self.key_for(self.generation + 1)
         ev = _keri_event({
             "v": "", "t": "rot", "d": "", "i": self.prefix, "s": "%x" % (self.sn + 1), "p": self.last,
             "kt": "1", "k": [new_current.qb64],
