@@ -37,8 +37,11 @@ start; certificate 1.1.0 to one AID, 2.1.0 to a condition):
 |---|---|---|---|
 | `until` | public | no | RFC 3339; after it the certificate cannot be used |
 | `what` | private | yes | what is promised, ≤ 200 characters ("a trip to the mountains") |
-| `ask` | private | no | what to do to earn it, ≤ 1000 characters |
-| `note` | private | no | a few words, ≤ 5000 characters |
+| `note` | private | no | a few words: why, or what to do to earn it, ≤ 5000 characters |
+
+The issuer of a certificate is always exactly one identifier: the envelope's
+`i`. (The gratitudes that earn it may come from many issuers — see
+`thanks:` below.)
 
 `until` is public because a door must check it without the text. Whether
 `what` should be public for rules meant for everyone is an open question.
@@ -63,7 +66,8 @@ thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]
 - `<category>` is percent-encoded UTF-8 (so it can hold spaces, `/`, `,`,
   `(`, `)`); compared byte for byte after decoding.
 - `<issuer>` is an AID; several are joined with `+` and their gratitudes
-  add up.
+  add up ("3 thank-yous from any of my neighbours"). These are the issuers
+  of the gratitudes, not of the certificate.
 - `@<since>` (optional) is an RFC 3339 date; only gratitudes with `a.dt` at
   or after it count. (`a.dt` is what each gratitude's issuer stated.)
 
