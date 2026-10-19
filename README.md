@@ -131,7 +131,7 @@ in the same envelope, and verification does not change.
 |---|---|
 | ✅ Gratitude (to an AID or a condition) | `dzq/1.0` draft, implemented in DzenQ |
 | ✅ Letters to an e-mail / phone, sealing, redemption, holder-bound presentation | optional extensions |
-| 🔜 Selective disclosure (hide the text, keep the signature checkable) | before a public pilot |
+| 🔜 Private content: show the proof, not the text ([proposal 0001](proposals/0001-private-content.md)) | before a public pilot |
 | 🔜 Apology, promise, certificate | new types |
 
 ## In this repository
@@ -145,6 +145,7 @@ in the same envelope, and verification does not change.
 | [reference/python/](reference/python/) | the reference verifier |
 | [conformance/rust/](conformance/rust/) | runs the vectors through DzenQ's Rust core |
 | [docs/](docs/) | relation to KERI/ACDC; where DzenQ differs from the spec today |
+| [proposals/](proposals/) | changes under discussion |
 
 ```
 python3 -m unittest discover -s reference/python/tests

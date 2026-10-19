@@ -19,9 +19,9 @@ need their own documents before other apps can rely on them:
   certain gratitudes ("pizza for whoever has three thanks from me").
 - **Stamps** (categories with a picture and a weight).
 - **Doors**: the verifier service and its nonce protocol.
-- **Selective disclosure**: hiding title and message while keeping the
-  signature verifiable (ACDC salted attribute blocks). Planned before a
-  public pilot; see [docs/keri-acdc-alignment.md](../docs/keri-acdc-alignment.md).
+- **Private content**: hiding title and message while keeping the
+  signature verifiable. Proposed for dzq/1.1:
+  [proposals/0001-private-content.md](../proposals/0001-private-content.md).
 - **Period seal inside the `.dzq` file** (an entry like `period-seal.json`),
   so a sealed gratitude can be checked offline from one file. Needs a minor
   version, since dzq/1.0 readers reject unknown entries.
