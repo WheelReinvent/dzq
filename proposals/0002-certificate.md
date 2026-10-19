@@ -24,8 +24,8 @@ condition**. The condition is the ordinary `a.dq` (or `a.i` for one
 person), plus one new leaf kind that counts gratitudes.
 
 Certificate and gratitude stay separate types on purpose: a gratitude is a
-fact that never expires and is never used up; a certificate expires, is used
-per holder, and can be closed. A certificate never counts as a gratitude in
+fact that never expires; a certificate expires and can be closed by its
+issuer. A certificate never counts as a gratitude in
 anyone's condition.
 
 ### Fields
@@ -117,7 +117,7 @@ close digest(S) = SAID of {"d":"<44 #>","t":"close","g":"<certificate SAID>"}
 ```
 
 anchored as a digest seal. From the sequence number of that event on, the
-certificate cannot be used by anyone. Earlier redemptions stay as they are.
+certificate cannot be used by anyone.
 The certificate itself remains valid as a signed record of what was
 promised; it is just no longer usable.
 
@@ -142,7 +142,7 @@ the verifier has; doors that hand out real things SHOULD load it fresh.
   extension gains the "usable" result and the `thanks:` proof rules. No
   per-holder redemption, no counters.
 - **Reference verifier and CLI:** `dzq sign --type certificate …`,
-  `thanks:` evaluation in presentations, usable/expired/closed/used.
+  `thanks:` evaluation in presentations, usable / expired / closed.
 - **Vectors:** earned / not earned (too few, wrong category, wrong issuer,
   before `since`, self-issued), expired, closed, a certificate presented as
   a gratitude (refused).
