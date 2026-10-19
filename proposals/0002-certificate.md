@@ -43,8 +43,9 @@ The issuer of a certificate is always exactly one identifier: the envelope's
 `i`. (The gratitudes that earn it may come from many issuers — see
 `thanks:` below.)
 
-`until` is public because a door must check it without the text. Whether
-`what` should be public for rules meant for everyone is an open question.
+`until` is public because a door must check it without the text. `what`
+stays private, also for certificates that anyone may earn: the promise is
+between the issuer and whoever holds it.
 
 ### Who can hold it: conditions
 
@@ -159,9 +160,8 @@ the verifier has; doors that hand out real things SHOULD load it fresh.
 - One free-text field `note` (no separate `ask`).
 - No use counter and no "used" state. The issuer can close a certificate
   early.
+- `what` is private, always.
 
 ## Open questions
 
-1. Should `what` be public, at least for certificates to a condition that
-   anyone may meet ("lunch for anyone with a Help thank-you")? Public makes
-   such rules discoverable; private keeps the promise between the people.
+None at the moment.
