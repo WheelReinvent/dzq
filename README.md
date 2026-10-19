@@ -161,7 +161,8 @@ in the same envelope, and verification does not change.
 | ✅ Gratitude (to an AID or a condition) | `dzq/1.0` draft, implemented in DzenQ |
 | ✅ Letters to an e-mail / phone, sealing, redemption, holder-bound presentation | optional extensions |
 | ✅ Private content: show the proof, not the text (`dzq hide`) | `dzq/1.1` draft, reference verifier; DzenQ core next |
-| 🔜 Apology, promise, certificate | new types |
+| 🔜 Certificate: a promise, given or earned with thank-yous ([proposal 0002](proposals/0002-certificate.md)) | new type |
+| 🔜 Apology | new type |
 
 ## In this repository
 

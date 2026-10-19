@@ -1,0 +1,164 @@
+# Proposal 0002: certificates (a promise, earned or given)
+
+**Status:** draft for discussion · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
+
+## Problem
+
+A gratitude records the past: *you helped me*. People also want to promise
+the future: *a trip to the mountains for Marko and Sofia*, *lunch for anyone
+who has a "Help" thank-you from me*, *a dinner for whoever collects five
+"Cleaned the room"*. DzenQ does this today with two formats of its own
+(`dzenq-key/1`, a public rule by stamps; `dzenq-promise/1`, a private
+promise to named people). Neither is part of dzq, so no other app can issue,
+hold or check one.
+
+## Proposal
+
+A second **type**, `certificate`, in the same envelope as gratitude.
+Everything that is not about the promise itself — issuer, recipient or
+condition, date, signature, key history, private content, letters to an
+address, presentation — is reused unchanged.
+
+A certificate is **a promise from the issuer to whoever meets its
+condition**. The condition is the ordinary `a.dq` (or `a.i` for one
+person), plus one new leaf kind that counts gratitudes.
+
+Certificate and gratitude stay separate types on purpose: a gratitude is a
+fact that never expires and is never used up; a certificate expires, is used
+per holder, and can be closed. A certificate never counts as a gratitude in
+anyone's condition.
+
+### Fields
+
+Envelope as in SPEC §3.1, then (private-content layout of SPEC §3.5 from the
+start; certificate 1.1.0 to one AID, 2.1.0 to a condition):
+
+| Field | Where | Required | Content |
+|---|---|---|---|
+| `until` | public | no | RFC 3339; after it the certificate cannot be used |
+| `what` | private | yes | what is promised, ≤ 200 characters ("a trip to the mountains") |
+| `ask` | private | no | what to do to earn it, ≤ 1000 characters |
+| `note` | private | no | a few words, ≤ 5000 characters |
+
+`until` is public because a door must check it without the text. Whether
+`what` should be public for rules meant for everyone is an open question.
+
+### Who can hold it: conditions
+
+Existing leaves already cover named people:
+
+| Certificate | `a.i` / `a.dq` |
+|---|---|
+| for Marko | `a.i` = Marko's AID |
+| for Marko and Sofia | `any(<Marko>,<Sofia>)` |
+| for an e-mail address | `claim:<key>` (letters extension) |
+
+New leaf, `thanks:` — *the holder has at least N gratitudes in category C
+from these issuers*:
+
+```
+thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]
+```
+
+- `<category>` is percent-encoded UTF-8 (so it can hold spaces, `/`, `,`,
+  `(`, `)`); compared byte for byte after decoding.
+- `<issuer>` is an AID; several are joined with `+` and their gratitudes
+  add up.
+- `@<since>` (optional) is an RFC 3339 date; only gratitudes with `a.dt` at
+  or after it count. (`a.dt` is what each gratitude's issuer stated.)
+
+Examples:
+
+| Certificate | Condition |
+|---|---|
+| lunch for anyone with a "Help" thank-you from me | `thanks:1/help/<me>` |
+| for Marko or Sofia, after 5 × "Cleaned the room" from Dad | `all(any(<Marko>,<Sofia>),thanks:5/cleaned%20the%20room/<Dad>)` |
+| to myself, for 100 days without smoking | `all(<me>,thanks:100/no%20smoking/<me>)` |
+| 3 thank-yous from any of my two neighbours since October | `thanks:3/neighbour/<A>+<B>@2026-10-01T00:00:00Z` |
+
+**Proving a `thanks:` leaf** (in a presentation): the holder includes the
+gratitudes. The leaf holds when there are at least N **distinct** gratitudes
+(by SAID) that each
+
+1. verify (SPEC §6) — compact (private content hidden) is enough;
+2. are held by the presenting holder (`a.i` = holder, or `a.dq` met by the
+   holder, presentation extension);
+3. are of the gratitude type, with `category` equal to `<category>`;
+4. have an issuer in the leaf's issuer list;
+5. have `a.dt` ≥ `<since>`, if given;
+6. **are not self-issued** (gratitude issuer = holder), unless the
+   certificate's issuer is the holder too. A thank-you to yourself counts
+   only toward your own promises to yourself.
+
+### Using it: redemption per holder
+
+A certificate for many people is used by each of them separately. The
+redemption record names the holder:
+
+```
+redemption digest(S, H) = SAID of {"d":"<44 #>","t":"redeem","g":"<certificate SAID>","h":"<holder AID>"}
+```
+
+The certificate's issuer anchors it (a digest seal in an `ixn`) when the
+holder has used it — after the issuer confirms ("promise kept ✓"), or when
+a door does so on the issuer's behalf. A verifier reports the certificate as
+**used by this holder** if that digest is in the issuer's KEL. Other
+holders are unaffected.
+
+(Gratitude redemption, `{"t":"redeem","g"}` without `h`, is unchanged.)
+
+### Closing early
+
+The issuer can close a certificate for everyone, for example when it can no
+longer keep the promise:
+
+```
+close digest(S) = SAID of {"d":"<44 #>","t":"close","g":"<certificate SAID>"}
+```
+
+anchored as a digest seal. From the sequence number of that event on, the
+certificate cannot be used by anyone. Earlier redemptions stay as they are.
+The certificate itself remains valid as a signed record of what was
+promised; it is just no longer usable.
+
+### Verification: valid and usable
+
+A certificate verifies like any statement (SPEC §6). On top of that, a
+verifier answers **"can this holder use it now?"**:
+
+| Check | Result if it fails |
+|---|---|
+| the holder meets the condition (with the gratitudes and claims presented) | `not-earned` |
+| `until` is absent or later than the verifier's clock | `expired` |
+| no close digest in the issuer's KEL | `closed` |
+| no redemption digest for (certificate, holder) in the issuer's KEL | `used` |
+
+As with everything KEL-based, `closed` and `used` are only as fresh as the
+issuer's KEL the verifier has; doors that hand out real things SHOULD load
+it fresh.
+
+## What changes
+
+- **Spec:** new type `certificate` (schemas 1.1.0 / 2.1.0 of the certificate
+  family); new condition leaf `thanks:`; redemption extension gains the
+  per-holder record and the close record; presentation extension gains the
+  "usable" result and the `thanks:` proof rules.
+- **Reference verifier and CLI:** `dzq sign --type certificate …`,
+  `thanks:` evaluation in presentations, usable/expired/closed/used.
+- **Vectors:** earned / not earned (too few, wrong category, wrong issuer,
+  before `since`, self-issued), expired, closed, used by this holder but not
+  by another, a certificate presented as a gratitude (refused).
+- **DzenQ:** `dzenq-key/1` maps to a certificate with a `thanks:` condition;
+  `dzenq-promise/1` to a certificate to named people. "All my people" is not
+  part of the format: an app that wants it issues certificates to the people
+  it means, one by one.
+
+## Open questions
+
+1. Should `what` be public, at least for certificates to a condition that
+   anyone may meet ("lunch for anyone with a Help thank-you")? Public makes
+   such rules discoverable; private keeps the promise between the people.
+2. Who may anchor a redemption: only the issuer, or also a door the issuer
+   delegates to? (KERI delegation would allow the latter.)
+3. Do we need "used N times" (a certificate good for three coffees), or is
+   one use per holder enough for now?

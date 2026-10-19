@@ -15,13 +15,11 @@ valid; an extension adds a way to prove or report something more.
 Built in DzenQ on top of gratitudes, but not part of the format yet. They
 need their own documents before other apps can rely on them:
 
-- **Certificates** (`dzenq-key/1`): what an issuer gives to holders of
-  certain gratitudes ("pizza for whoever has three thanks from me").
+- **Certificates**: a promise to named people or to whoever earns it with
+  gratitudes. Proposed as a new type:
+  [proposals/0002-certificate.md](../proposals/0002-certificate.md).
 - **Stamps** (categories with a picture and a weight).
 - **Doors**: the verifier service and its nonce protocol.
-- **Private content**: hiding title and message while keeping the
-  signature verifiable. Proposed for dzq/1.1:
-  [proposals/0001-private-content.md](../proposals/0001-private-content.md).
 - **Period seal inside the `.dzq` file** (an entry like `period-seal.json`),
   so a sealed gratitude can be checked offline from one file. Needs a minor
   version, since dzq/1.0 readers reject unknown entries.
