@@ -1,9 +1,17 @@
-# dzq/1.0 and standard KERI / ACDC
+# dzq and standard KERI / ACDC
 
-dzq/1.0 is built on KERI and ACDC, but it is not "plain ACDC with a
-schema". This page lists every place where a gratitude differs from what a
-generic KERI/ACDC tool expects, so that such a tool can be taught to read
-gratitudes, and so that the differences are decisions rather than accidents.
+dzq takes from KERI the key event log — a chain of key events with the next
+key committed in advance — and from ACDC the self-addressing document. It
+makes the rest optional: witnesses, watchers, registries (TEL), edges.
+The reason is one decision (SPEC §0): dzq statements do not fear being used
+twice, so they need no record of "already used". Most differences below
+follow from it.
+
+So dzq is not "plain ACDC with a schema". This page lists every place where
+a dzq statement differs from what a generic KERI/ACDC tool expects, so that
+such a tool can be taught to read them, and so that the differences are
+decisions rather than accidents. (Rows say "gratitude" where they date from
+dzq/1.0; they hold for every type.)
 
 ## Versions
 

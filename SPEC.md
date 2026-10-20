@@ -6,7 +6,7 @@ whatever an app defines. The name comes from DzenQ, the first application
 that used it; DzenQ is the first implementation, not the owner of the
 format.
 
-**Status:** draft 4 (2026-10-20). Editors: the DzenQ team.
+**Status:** draft 5 (2026-10-20). Editors: the DzenQ team.
 **This version:** `dzq/1.2` — 1.1 added private content (3.5); 1.2 opens
 types to everyone (3.6: type documents, unknown types still verify) and adds
 two general fields, `look` and `re` (3.7). Everything valid under an
@@ -15,9 +15,11 @@ under Apache-2.0.
 
 A dzq file is a small, signed statement: one person says something to
 another person — or to whoever meets a condition — and signs it. Anyone can
-check the file later, offline, without asking the app that made it. This
-document says what the file contains, how it is signed and how to check it,
-so that any application can write and read it.
+check the file later, offline, without asking the app that made it — and
+without a ledger, a registry or a server, because dzq leaves out the one
+problem that needs them: double spending (section 0). This document says
+what the file contains, how it is signed and how to check it, so that any
+application can write and read it.
 
 Every dzq file has two layers:
 
@@ -35,7 +37,7 @@ RFC 2119 / RFC 8174.
 
 ## Contents
 
-0. [Scope: is dzq for you?](#0-scope-is-dzq-for-you)
+0. [Why dzq, and is it for you?](#0-why-dzq-and-is-it-for-you)
 1. [What dzq is](#1-what-dzq-is)
 2. [Building blocks](#2-building-blocks)
 3. [The statement: envelope and type](#3-the-statement-envelope-and-type)
@@ -59,30 +61,53 @@ today differs from this text: [docs/dzenq-implementation.md](docs/dzenq-implemen
 
 ---
 
-## 0. Scope: is dzq for you?
+## 0. Why dzq, and is it for you?
 
-dzq is for **a gesture from one person to another — or to whoever meets a
-condition — kept as a file**. One question decides whether your use case
-fits:
+**Not every interaction between people is money.** Banks and blockchains
+make transactions unforgeable and verifiable, but nearly all of their
+complexity — global ordering, consensus, ledgers, registries — goes into
+one problem: that nothing is spent twice. A developer who wants to make a
+thank-you, an apology or an official statement unforgeable today chooses
+between a ledger whose features they mostly do not need and simple
+signatures that hand a monopoly to whoever holds the register of keys (a
+certificate authority, a signing platform). The decentralised alternative,
+PGP, lost on key management: a lost or stolen key meant a lost identity.
+
+**KERI found the balance.** A key event log kept as a chain, with the hash
+of the next key committed in advance, removed the need for a central
+authority and made key rotation safe. Around it grew witnesses, watchers
+and status registries (TEL) — because KERI, too, guards against things
+happening twice: two versions of a key history (duplicity), and a
+credential used or revoked.
+
+**dzq takes from KERI the key event log and self-addressing documents, and
+makes the rest optional.** It is for statements between people where what
+matters is *who said it* and *that it is unchanged* — not *how many times
+it was shown*. A thank-you shown twice does not become two thank-yous.
+
+One question decides whether your use case fits:
 
 > **Would anything break if the same statement were shown twice — to two
 > different people, or a year later?**
 
-- **No** → dzq fits: a thank-you, an apology, a notice on a board, an
-  achievement, "I was there", a recommendation, a promise between people.
-  Showing a thank-you twice does not make two thank-yous.
+- **No** → dzq fits: a thank-you, an apology, an official statement, a
+  notice on a board, an achievement, "I was there", a recommendation.
 - **Yes** → dzq does not fit: a balance, a ticket, a one-time coupon, a vote,
   a place in a queue. Those need a place that records "already used"
-  (a registry: a KERI TEL, vLEI, a ledger, your database). dzq has none, on
-  purpose: **dzq does not prevent double spending.**
+  (a KERI TEL, vLEI, a ledger, your database). dzq has none, on purpose:
+  **dzq does not prevent double spending.**
 
-**Why this keeps dzq simple.** Almost all heavy infrastructure — global
-consensus, ledgers, credential registries, revocation lists — exists to
-answer one question: *has this already been spent?* A gesture does not ask
-it. So a dzq statement needs only a signature and the signer's key
-history, carried in the file, and is protected against forgery just as
-well: nobody but the issuer can make it, nobody can change it, and anyone
-can check it offline.
+Leaving that out is what lets a dzq statement need only a signature and
+the signer's key history, carried in the file — and it is no easier to
+forge for it: nobody but the issuer can make it, nobody can change it, and
+anyone can check it offline.
+
+What dzq does **not** leave out is the key history's own "twice": someone
+who steals a key could try to show two versions of the issuer's history.
+That is a problem about the signer, not about the statement, and dzq
+handles it the KERI way — first seen wins, offline results say they are
+offline, and witnesses or watchers remain available to issuers who want
+them (6.3, section 9).
 
 To keep the format small, dzq will not add:
 
@@ -148,7 +173,8 @@ CESR qb64: `"E" + base64url(0x00 ‖ digest)[1:]` (44 characters).
 **Issuer profile.** In dzq the issuer's KEL MUST consist of `icp`, `rot`
 and `ixn` events of a non-delegated identifier, with simple (hex number)
 thresholds and Ed25519 keys. Witnesses are allowed by KERI but are not
-required by dzq; a verifier that does not process witness receipts MAY
+required by dzq (section 0): they protect against a forked key history,
+which an issuer may want, but no statement needs. A verifier that does not process witness receipts MAY
 treat a witnessed KEL as unsupported. The DzenQ profile is one current key,
 one pre-rotated next key, no witnesses.
 
@@ -594,7 +620,8 @@ Applications MUST NOT reuse a built-in type for other meanings.
 ## 9. Security considerations
 
 - **Double use.** dzq does not prevent it (section 0). A verifier that must
-  accept something only once keeps its own record of what it accepted.
+  accept something only once keeps its own record of what it accepted —
+  and at that point it is keeping a registry, which is outside dzq.
 - **Unknown types.** A valid statement of an unknown type proves who
   signed which bytes, not what the fields mean. Do not act on the fields of
   a type you do not know; a carried type document tells you its rules, not
@@ -606,10 +633,11 @@ Applications MUST NOT reuse a built-in type for other meanings.
 - **Stale KEL.** Offline verification cannot see rotations it was not
   given. See 6.3.
 - **Forked KELs.** Two different events at one sequence number are
-  duplicity. A verifier keeps the first it saw. Gratitudes are only as
-  strong as the verifier's view of the KEL; sources that keep "first seen"
-  logs (KERI watchers, witnesses) protect against a thief rewriting
-  history after stealing recovery words.
+  duplicity — the one "twice" dzq cannot leave out, because it concerns the
+  signer, not the statement (section 0). A verifier keeps the first it saw.
+  Statements are only as strong as the verifier's view of the KEL; sources
+  that keep "first seen" logs (KERI watchers, witnesses) protect against a
+  thief rewriting history after stealing recovery words.
 - **Conditions to addresses** (letters extension) are held by whoever
   receives the claim key through that address, including someone who has
   taken over the address. The issuer accepts that risk when choosing an

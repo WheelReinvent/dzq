@@ -8,6 +8,20 @@ it. Any app can write it, any app can read it, and checking needs no server.
 *dzq* is pronounced *dee-zik*. It comes from DzenQ, the first app that
 uses it.
 
+## Why it exists
+
+Not every interaction between people is money. Banks and blockchains make
+transactions unforgeable and verifiable, but most of their weight goes into
+one problem: making sure nothing is spent twice. If you want a thank-you,
+an apology or an official statement to be unforgeable, you usually pick
+between a ledger you mostly don't need and a signing service that owns the
+keys.
+
+dzq takes the part of [KERI](https://trustoverip.github.io/tswg-keri-specification/)
+that removes the central authority — a key history with the next key
+committed in advance — and leaves out everything that exists only to stop
+double spending.
+
 ## Is it for you?
 
 Ask one question: **would anything break if the same statement were shown
@@ -18,9 +32,9 @@ twice — to two people, or a year later?**
 - **Yes** — a balance, a ticket, a one-time coupon, a vote. That needs a
   ledger or a registry that records "already used"; dzq has none.
 
-Leaving double spending out is what lets dzq work without servers or
-ledgers: a signature and the signer's key history are enough, and the file
-is no easier to forge for it.
+A thank-you shown twice does not become two thank-yous. That is why a dzq
+file needs only a signature and the signer's key history — no server, no
+ledger — and is no easier to forge for it.
 
 ## Why adopt it
 
