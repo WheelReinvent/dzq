@@ -1,64 +1,63 @@
 """Conditions (`a.req`): who may hold a statement (SPEC §4).
 
 `a.req` is one condition (a string) or a list of conditions, any of which
-is enough. A condition reads like a URL:
+is enough. A condition is a URL: a type, `?`, and a query string encoded as
+`application/x-www-form-urlencoded` — what URLSearchParams (JS),
+urllib.parse (Python) and url::form_urlencoded (Rust) produce and read:
 
-    <type>?from=<AID>&<field>=<value>&…&count=3  the holder shows at least 3 such records
-    ?aid=<AID>                                   the holder is this AID
-    ?claim=<64 hex>                              the holder has the claim key (letters)
+    ?aid=<AID>                                    the holder is this AID
+    ?claim=<64 hex>                               the holder has this claim key (letters)
+    <type>?from=<AID>&<field>=<value>&…&count=3   the holder shows at least 3 such statements
 
-`<type>` is a type name (`dzq:gratitude`) or a type SAID. In values only
-`%`, `&` and `=` are percent-encoded. `from`, `to`, `since` and `count` are
-reserved: they say who issued the records, to whom, since when and how many
-(at least).
-Every other key is a public field of the type.
+A key may repeat: any of its values (`from=<Mom>&from=<Dad>`). `since` and
+`count` appear at most once. `from`, `to`, `since`, `count` are reserved;
+every other key of a statement condition is a public field of the type.
 """
 
 import re
-from urllib.parse import unquote
+from urllib.parse import unquote_plus
 
 from .typedoc import FIELD_RE, NAME_RE
 
-MAX_LEN = 64 * 1024     # all of a.dq, UTF-8
+MAX_LEN = 64 * 1024     # all of a.req, UTF-8
 MAX_ITEMS = 64
 
 AID_RE = re.compile(r"[A-Za-z0-9_-]{44}")
 SAID_RE = re.compile(r"E[A-Za-z0-9_-]{43}")
 _HEX64 = re.compile(r"[0-9a-fA-F]{64}")
 _COUNT = re.compile(r"[1-9][0-9]{0,4}")
+# RFC 3986 query characters, with %XX escapes: a condition must be a valid URL.
+_URL = re.compile(r"(?:[A-Za-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*")
 RESERVED = ("from", "to", "since", "count")
+ONCE = ("since", "count")
 
 
 class Holder:
-    """`?aid=…` or `?claim=…`: a condition on the holder itself."""
+    """`?aid=…` or `?claim=…` (repeated: any of them): the holder itself."""
 
-    def __init__(self, key, value):
-        self.key, self.value = key, value
+    def __init__(self, key, values):
+        self.key, self.values = key, values
 
-    def __str__(self):
-        return "?%s=%s" % (self.key, self.value)
+    def to_json(self):
+        return {self.key: list(self.values)}
 
 
 class Records:
-    """`<type>?from=…`: the holder shows at least `count` such records."""
+    """`<type>?from=…`: the holder shows at least `count` such statements."""
 
-    def __init__(self, type_, issuer, to, since, n, fields):
-        self.type, self.issuer, self.to, self.since, self.count, self.fields = type_, issuer, to, since, n, fields
+    def __init__(self, type_, issuers, to, since, n, fields):
+        self.type, self.issuers, self.to, self.since, self.count, self.fields = type_, issuers, to, since, n, fields
 
-    def __str__(self):
-        q = ["from=" + self.issuer]
+    def to_json(self):
+        out = {"type": self.type, "from": list(self.issuers)}
         if self.to:
-            q.append("to=" + self.to)
-        q += ["%s=%s" % (k, _enc(v)) for k, v in self.fields]
+            out["to"] = list(self.to)
+        if self.fields:
+            out["fields"] = {k: list(v) for k, v in self.fields.items()}
         if self.since:
-            q.append("since=" + _enc(self.since))
-        if self.count != 1:
-            q.append("count=%d" % self.count)
-        return "%s?%s" % (self.type, "&".join(q))
-
-
-def _enc(v):
-    return v.replace("%", "%25").replace("&", "%26").replace("=", "%3D")
+            out["since"] = self.since
+        out["count"] = self.count
+        return out
 
 
 def _instant(text):
@@ -70,51 +69,61 @@ def _instant(text):
     return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
 
 
+def encode(type_, pairs):
+    """A condition from (key, value) pairs, encoded like URLSearchParams."""
+    from urllib.parse import urlencode
+    return "%s?%s" % (type_ or "", urlencode(list(pairs)))
+
+
 def parse_one(text):
     """One condition → Holder or Records, or None if malformed (never met)."""
-    if not isinstance(text, str) or "?" not in text:
+    if not isinstance(text, str) or "?" not in text or not _URL.fullmatch(text):
         return None
     head, _, query = text.partition("?")
-    pairs = []
+    values = {}
     for part in query.split("&"):
-        key, eq, raw = part.partition("=")
-        if not eq or not FIELD_RE.fullmatch(key) or any(k == key for k, _ in pairs):
-            return None
+        raw_key, eq, raw = part.partition("=")
         try:
-            value = unquote(raw, errors="strict")
+            key = unquote_plus(raw_key, errors="strict")
+            value = unquote_plus(raw, errors="strict")
         except UnicodeDecodeError:
             return None
-        if not value:
+        if not eq or not FIELD_RE.fullmatch(key) or not value:
             return None
-        pairs.append((key, value))
+        values.setdefault(key, []).append(value)
+    if any(len(values.get(k, ())) > 1 for k in ONCE):
+        return None
     if head == "":
-        if len(pairs) != 1:
+        if len(values) != 1:
             return None
-        key, value = pairs[0]
-        if key == "aid" and AID_RE.fullmatch(value):
-            return Holder("aid", value)
-        if key == "claim" and _HEX64.fullmatch(value):
-            return Holder("claim", value.lower())
+        (key, vals), = values.items()
+        if key == "aid" and all(AID_RE.fullmatch(v) for v in vals):
+            return Holder("aid", vals)
+        if key == "claim" and all(_HEX64.fullmatch(v) for v in vals):
+            return Holder("claim", [v.lower() for v in vals])
         return None
     if not (NAME_RE.fullmatch(head) or SAID_RE.fullmatch(head)):
         return None
-    got = dict(pairs)
-    if not AID_RE.fullmatch(got.get("from", "")):
+    issuers = values.get("from", [])
+    if not issuers or not all(AID_RE.fullmatch(v) for v in issuers):
         return None
-    if "to" in got and not AID_RE.fullmatch(got["to"]):
+    to = values.get("to", [])
+    if not all(AID_RE.fullmatch(v) for v in to):
         return None
-    if "since" in got and _instant(got["since"]) is None:
+    since = values.get("since", [None])[0]
+    if since is not None and _instant(since) is None:
         return None
-    if "count" in got and not _COUNT.fullmatch(got["count"]):
+    count = values.get("count", ["1"])[0]
+    if not _COUNT.fullmatch(count):
         return None
-    fields = [(k, v) for k, v in pairs if k not in RESERVED]
-    return Records(head, got["from"], got.get("to"), got.get("since"), int(got.get("count", "1")), fields)
+    fields = {k: v for k, v in values.items() if k not in RESERVED}
+    return Records(head, issuers, to, since, int(count), fields)
 
 
-def parse(dq):
+def parse(req):
     """a.req → list of conditions (None for each malformed one), or None if
     a.req itself is not a string or a non-empty list of strings."""
-    items = [dq] if isinstance(dq, str) else dq
+    items = [req] if isinstance(req, str) else req
     if not isinstance(items, list) or not items or len(items) > MAX_ITEMS:
         return None
     if not all(isinstance(i, str) for i in items):
@@ -124,12 +133,12 @@ def parse(dq):
     return [parse_one(i) for i in items]
 
 
-def well_formed(dq):
+def well_formed(req):
     """a.req has the right shape (a string or a non-empty list of strings,
     within limits). Conditions that do not parse are allowed: never met."""
-    return parse(dq) is not None
+    return parse(req) is not None
 
 
-def names_holder(dq, holder):
+def names_holder(req, holder):
     """Is `holder` named directly (`?aid=<holder>`)?"""
-    return any(isinstance(c, Holder) and c.key == "aid" and c.value == holder for c in (parse(dq) or []))
+    return any(isinstance(c, Holder) and c.key == "aid" and holder in c.values for c in (parse(req) or []))

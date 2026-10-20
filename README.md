@@ -60,6 +60,7 @@ now, repay later" works:
 "req": ["?aid=<Marko>", "?aid=<Sofia>"]                     Marko or Sofia
 "req": "?claim=<key>"                                       whoever got the letter by e-mail
 "req": "dzq:gratitude?from=<Dad>&category=help&count=3"     three thank-yous from Dad for help
+"req": "dzq:gratitude?from=<Mom>&from=<Dad>&count=5"        five from Mom and Dad, any mix
 ```
 
 Every type can also say how it wants to be shown (`look`) and which
@@ -76,10 +77,10 @@ reasoning: [SPEC.md](SPEC.md), starting with §0.
 
 | | |
 |---|---|
-| [SPEC.md](SPEC.md) | the format, `dzq/1.3` |
+| [SPEC.md](SPEC.md) | the format, `dzq/1.4` |
 | [types/](types/) | base types |
 | [extensions/](extensions/) | optional: letters to e-mail/phone, sealing, presentations, looks, promises |
-| [vectors/](vectors/) | 137 test cases with expected results |
+| [vectors/](vectors/) | 140 test cases with expected results |
 | [reference/python/](reference/python/) | reference verifier and the `dzq` CLI |
 | [examples/](examples/) | a Python quickstart and a custom type |
 | [docs/](docs/) | relation to KERI/ACDC; DzenQ's implementation status |

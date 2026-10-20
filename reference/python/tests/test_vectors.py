@@ -85,7 +85,7 @@ class Conditions(unittest.TestCase):
                 p = conditions.parse_one(c["condition"])
                 self.assertEqual(p is not None, c["parses"])
                 if p is not None:
-                    self.assertEqual(str(p), c["canonical"])
+                    self.assertEqual(p.to_json(), c["parsed"])
 
 
 class Merkle(unittest.TestCase):

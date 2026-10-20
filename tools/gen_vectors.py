@@ -36,7 +36,7 @@ def attrs(recipient=None, condition=None, title="Дякую", message="За до
 class Out:
     def __init__(self, base):
         self.base = base
-        self.manifest = {"spec": "dzq/1.3", "credentials": [], "archives": [], "presentations": []}
+        self.manifest = {"spec": "dzq/1.4", "credentials": [], "archives": [], "presentations": []}
 
     def write(self, rel, data):
         path = os.path.join(self.base, rel)
@@ -613,11 +613,12 @@ def generate(base):
     mom = build.Controller("mom").incept()
     room = "cleaned the room"
 
-    def want(who, type_="dzq:gratitude", count=1, **q):
-        parts = ["from=" + who.prefix] + ["%s=%s" % (k, conditions._enc(v)) for k, v in q.items()]
+    def want(who, type_="dzq:gratitude", count=1, also=(), **q):
+        froms = [who] + list(also)
+        pairs = [("from", w.prefix) for w in froms] + list(q.items())
         if count != 1:
-            parts.append("count=%d" % count)
-        return "%s?%s" % (type_, "&".join(parts))
+            pairs.append(("count", str(count)))
+        return conditions.encode(type_, pairs)
 
     def thanks(frm, to, name, category=room, dt=DT):
         g = acdc.new_typed(frm.prefix, cesr.blake3_said("registry|" + frm.prefix), GRAT,
@@ -661,6 +662,16 @@ def generate(base):
        marko, [either_b] + mom5, "usable")
     pv("promise-counts-do-not-add-up", "Two from Dad and four from Mom: each condition counts on its own.",
        marko, [either_b, t1, t2] + mom5[:4], "not-earned")
+    family = stmt(dad, PROMISE, "family", req=want(mom, also=[dad], count=5), what="Зоопарк")
+    family_b = dad.bundle(acdc.compact(family))
+    pv("promise-sum-two-issuers", "from=<Mom>&from=<Dad>&count=5: two from Dad and three from Mom add up.",
+       marko, [family_b, t1, t2] + mom5[:3], "usable")
+    pv("promise-sum-too-few", "Four of five in total.", marko, [family_b, t1] + mom5[:3], "not-earned")
+    cats = stmt(dad, PROMISE, "cats", req=conditions.encode("dzq:gratitude", [("from", dad.prefix), ("category", room),
+                                                                              ("category", "help"), ("count", "3")]),
+                what="Кіно")
+    pv("promise-any-of-two-categories", "category=…&category=help: Dad's room or help thank-yous, three together.",
+       marko, [dad.bundle(acdc.compact(cats)), t1] + wrong_cat, "usable")
     any_cert = stmt(dad, PROMISE, "any", req=want(dad, count=2), what="Морозиво")
     any_b = dad.bundle(acdc.compact(any_cert))
     pv("promise-any-gratitude", "dzq:gratitude?from=<Dad>&count=2: two thank-yous from Dad, any fields.",
@@ -734,38 +745,54 @@ def generate(base):
     AID1, AID2 = alice.prefix, bob.prefix
     conds = []
 
-    def cond(text, canonical, note=""):
-        c = {"condition": text, "parses": canonical is not None}
-        if canonical is not None:
-            c["canonical"] = canonical
+    def cond(text, parsed, note=""):
+        c = {"condition": text, "parses": parsed is not None}
+        if parsed is not None:
+            c["parsed"] = parsed
         if note:
             c["note"] = note
         conds.append(c)
 
-    cond("?aid=" + AID1, "?aid=" + AID1, "the holder is this AID")
-    cond("?claim=" + A.upper(), "?claim=" + A, "claim keys are hex, compared in lower case")
-    cond("dzq:gratitude?from=" + AID1, "dzq:gratitude?from=" + AID1, "one thank-you from AID1")
-    cond("dzq:gratitude?from=%s&category=help&count=3" % AID1, "dzq:gratitude?from=%s&category=help&count=3" % AID1)
-    cond("dzq:gratitude?count=3&category=help&from=%s" % AID1, "dzq:gratitude?from=%s&category=help&count=3" % AID1,
-         "reserved keys in any order; canonical: from, to, fields, since, count")
-    cond("dzq:gratitude?from=%s&category=cleaned the room" % AID1, "dzq:gratitude?from=%s&category=cleaned the room" % AID1,
-         "values are not URL-encoded except %, & and =")
-    cond("dzq:gratitude?from=%s&category=a%%26b" % AID1, "dzq:gratitude?from=%s&category=a%%26b" % AID1, "& in a value")
+    G = "dzq:gratitude"
+    cond("?aid=" + AID1, {"aid": [AID1]}, "the holder is this AID")
+    cond("?aid=%s&aid=%s" % (AID1, AID2), {"aid": [AID1, AID2]}, "a repeated key: any of its values")
+    cond("?claim=" + A.upper(), {"claim": [A]}, "claim keys are hex, compared in lower case")
+    cond(G + "?from=" + AID1, {"type": G, "from": [AID1], "count": 1}, "one thank-you from AID1")
+    cond(G + "?from=%s&category=help&count=3" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["help"]}, "count": 3})
+    cond(G + "?count=3&category=help&from=%s" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["help"]}, "count": 3}, "keys in any order")
+    cond(G + "?from=%s&from=%s&count=5" % (AID1, AID2), {"type": G, "from": [AID1, AID2], "count": 5},
+         "five from either, together")
+    cond(G + "?from=%s&category=cleaned+the+room" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["cleaned the room"]}, "count": 1}, "+ is a space")
+    cond(G + "?from=%s&category=cleaned%%20the%%20room" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["cleaned the room"]}, "count": 1}, "%20 is a space too")
+    cond(conditions.encode(G, [("from", AID1), ("category", "прибирання")]),
+         {"type": G, "from": [AID1], "fields": {"category": ["прибирання"]}, "count": 1}, "non-ASCII is percent-encoded UTF-8")
+    cond(G + "?from=%s&category=a%%26b%%2Bc%%3Dd" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["a&b+c=d"]}, "count": 1}, "&, + and = in a value")
     cond("myshop:visit?from=%s&to=%s&since=2026-10-01&count=5" % (AID1, AID2),
-         "myshop:visit?from=%s&to=%s&since=2026-10-01&count=5" % (AID1, AID2))
+         {"type": "myshop:visit", "from": [AID1], "to": [AID2], "since": "2026-10-01", "count": 5})
     cond("?txn=6H24-KE7X", None, "unknown holder key: never met")
-    for bad in ["", "?", "?aid=", "?aid=short", "?aid=%s&aid=%s" % (AID1, AID2), "?claim=abcd",
-                "dzq:gratitude", "dzq:gratitude?category=help", "dzq:gratitude?from=x",
-                "dzq:gratitude?from=%s&count=0" % AID1, "dzq:gratitude?from=%s&count=many" % AID1,
-                "dzq:gratitude?from=%s&since=yesterday" % AID1, "dzq:gratitude?from=%s&from=%s" % (AID1, AID2),
-                "Bad Type?from=" + AID1, "any(%s,%s)" % (AID1, AID2), "dzq:gratitude?from=%s&Category=x" % AID1]:
-        cond(bad, None)
+    for bad, note in [("", ""), ("?", ""), ("?aid=", ""), ("?aid=short", ""), ("?aid=%s&claim=%s" % (AID1, A), "two holder keys"),
+                      ("?claim=abcd", ""), (G, "no query"), (G + "?category=help", "no from"), (G + "?from=x", ""),
+                      (G + "?from=%s&count=0" % AID1, ""), (G + "?from=%s&count=many" % AID1, ""),
+                      (G + "?from=%s&count=2&count=3" % AID1, "count at most once"),
+                      (G + "?from=%s&since=yesterday" % AID1, ""), ("Bad Type?from=" + AID1, ""),
+                      ("any(%s,%s)" % (AID1, AID2), "the pre-1.3 form"),
+                      (G + "?from=%s&Category=x" % AID1, "keys are lowercase"),
+                      (G + "?from=%s&category=cleaned the room" % AID1, "a space is not valid in a URL"),
+                      (G + "?from=%s&category=прибирання" % AID1, "non-ASCII must be percent-encoded"),
+                      (G + "?from=%s&category=%%FF" % AID1, "not UTF-8")]:
+        cond(bad, None, note)
     for c in conds:  # self-check against the reference parser
         p = conditions.parse_one(c["condition"])
         assert (p is not None) == c["parses"], c
         if p is not None:
-            assert str(p) == c["canonical"], (str(p), c)
-    out.json("conditions.json", {"spec": "dzq/1.3", "note": "one condition each; a.req is one of these or a list of them",
+            assert p.to_json() == c["parsed"], (p.to_json(), c)
+    out.json("conditions.json", {"spec": "dzq/1.4", "note": "one condition each; a.req is one of these or a list of them. "
+                                 "'parsed' is the decoded condition; compare it, not the text",
                                  "conditions": conds})
 
     # --- Merkle, digests, claim keys --------------------------------------

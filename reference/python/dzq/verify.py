@@ -193,9 +193,9 @@ def held_directly(r, holder, claims=()):
         return r.get("recipient") == holder
     for cond in dq.parse(r.get("recipient")) or []:
         if isinstance(cond, dq.Holder):
-            if cond.key == "aid" and cond.value == holder:
+            if cond.key == "aid" and holder in cond.values:
                 return True
-            if cond.key == "claim" and _claimed(cond.value, r.get("said"), holder, claims):
+            if cond.key == "claim" and any(_claimed(k, r.get("said"), holder, claims) for k in cond.values):
                 return True
     return False
 
@@ -206,14 +206,14 @@ def _claimed(key, said, holder, claims):
 
 
 def _record_matches(cond, r):
-    if r.get("issuer") != cond.issuer:
+    if r.get("issuer") not in cond.issuers:
         return False
     if cond.type != r.get("type") and cond.type != r.get("schema"):
         return False
-    if cond.to is not None and not (r.get("to_aid") and r.get("recipient") == cond.to):
+    if cond.to and not (r.get("to_aid") and r.get("recipient") in cond.to):
         return False
     public = r.get("fields") or {}
-    if not all(public.get(k) == v for k, v in cond.fields):
+    if not all(public.get(k) in vals for k, vals in cond.fields.items()):
         return False
     if cond.since is not None:
         when, since = _instant(r.get("dt")), _instant(cond.since)
@@ -230,9 +230,9 @@ def holder_meets(recipient, said, holder, claims, to_aid=False, shown=(), issuer
         return recipient == holder
     for cond in dq.parse(recipient) or []:
         if isinstance(cond, dq.Holder):
-            if cond.key == "aid" and cond.value == holder:
+            if cond.key == "aid" and holder in cond.values:
                 return True
-            if cond.key == "claim" and _claimed(cond.value, said, holder, claims):
+            if cond.key == "claim" and any(_claimed(k, said, holder, claims) for k in cond.values):
                 return True
         elif isinstance(cond, dq.Records):
             counted = set()

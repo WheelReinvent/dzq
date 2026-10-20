@@ -195,12 +195,12 @@ fn dzq_presentations() {
 fn dzq_conditions() {
     let Some(dir) = vectors_dir() else { return };
     for c in json(&dir, "conditions.json")["conditions"].as_array().unwrap() {
-        // dzq/1.3 §4: one URL-style condition; DzenQ needs a parser for it.
+        // dzq/1.4 §4: one form-encoded URL condition; compare decoded values.
         let text = c["condition"].as_str().unwrap();
         let parsed = Condition::parse(text);
         assert_eq!(parsed.is_some(), c["parses"].as_bool().unwrap(), "{text}");
         let Some(p) = parsed else { continue };
-        assert_eq!(p.to_string(), c["canonical"].as_str().unwrap(), "{text}");
+        assert_eq!(p.to_json(), c["parsed"], "{text}");
     }
 }
 

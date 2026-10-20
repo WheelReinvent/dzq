@@ -265,6 +265,11 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True, 
         asset = (name, body)
     when = when or datetime.datetime.now(datetime.timezone.utc)
     attrs = {"dt": when.isoformat(timespec="seconds") if hasattr(when, "isoformat") else when}
+    if _is_condition(to):
+        from . import conditions
+        for c in (to if isinstance(to, list) else [to]):
+            if conditions.parse_one(c) is None:
+                raise ValueError("not a valid condition (SPEC §4; values URL-encoded): %r" % c)
     attrs["req" if _is_condition(to) else "i"] = to
     attrs.update(content)
     if private:

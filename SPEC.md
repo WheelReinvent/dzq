@@ -1,4 +1,4 @@
-# dzq/1.3 — Signed statements between people
+# dzq/1.4 — Signed statements between people
 
 **dzq** (pronounced *dee-zik*) is a file format for signed statements from
 one person to another: a thank-you, an apology, a notice, an achievement —
@@ -6,12 +6,14 @@ whatever an app defines. The name comes from DzenQ, the first application
 that used it; DzenQ is the first implementation, not the owner of the
 format.
 
-**Status:** published 2026-10-20, git tag `v1.3.0`. Editors: the DzenQ team.
-**This version:** `dzq/1.3` — 1.3 gives the promise `ask` and `payload`
-(3.8), replaces the condition language with URL-style conditions in `a.req`
-— one or a list; a condition may ask for statements the holder shows
-(section 4) — and makes [promises](extensions/promises.md) (usable, closing
-early) an optional extension. Earlier:
+**Status:** published 2026-10-20, git tag `v1.4.0`. Editors: the DzenQ team.
+**This version:** `dzq/1.4` — 1.4 makes every condition a valid,
+form-encoded URL and lets a key repeat (any of its values), so counts can
+add up across issuers (section 4). 1.3 gave the promise `ask` and `payload`
+(3.8), replaced the condition language with URL-style conditions in
+`a.req` — one or a list; a condition may ask for statements the holder
+shows (section 4) — and made [promises](extensions/promises.md) (usable,
+closing early) an optional extension. Earlier:
 1.1 added private content (3.5); 1.2 opened
 types to everyone (3.6: type documents, unknown types still verify), adds
 two general fields, `look` and `re` (3.7), and a library of base types:
@@ -412,7 +414,11 @@ one AID or to a condition, and take `look` and `re` (3.7).
 A statement to a condition names no person. `a.req` says what it takes to
 hold it; whoever proves that holds it, and if ten people prove it, all ten
 hold it. `a.req` is **one condition** (a string) or a **list** of them, any
-one of which is enough. Each condition reads like a URL:
+one of which is enough.
+
+Each condition is a **URL**: a type, `?`, and a query string encoded as
+`application/x-www-form-urlencoded` — exactly what URLSearchParams (JS),
+`urllib.parse` (Python) or `url::form_urlencoded` (Rust) build and read.
 
 ```
 ?aid=<AID>                                     the holder is this AID
@@ -424,12 +430,15 @@ one of which is enough. Each condition reads like a URL:
 ```json
 "req": "?aid=<Marko>"
 "req": ["?aid=<Marko>", "?aid=<Sofia>"]
-"req": "dzq:gratitude?from=<Dad>&category=cleaned the room&count=3"
-"req": ["dzq:gratitude?from=<Dad>&category=cleaned the room&count=3",
-        "dzq:gratitude?from=<Mom>&count=5"]
+"req": "dzq:gratitude?from=<Dad>&category=cleaned+the+room&count=3"
+"req": "dzq:gratitude?from=<Mom>&from=<Dad>&count=5"
+"req": ["dzq:gratitude?from=<Dad>&count=3", "dzq:gratitude?from=<Mom>&count=5"]
 "req": "dzq:apology?from=<Olena>&count=2"
 "req": "dzq:gratitude?from=<Dad>&to=<Marko>&count=3"
+"req": "dzq:gratitude?from=<Dad>&category=%D0%BF%D1%80%D0%B8%D0%B1%D0%B8%D1%80%D0%B0%D0%BD%D0%BD%D1%8F"
 ```
+
+The last one is `category=прибирання`, as any URL library writes it.
 
 **Statement conditions** (`<type>?…`) describe the statements the holder
 must show, like a template; anything not given may be anything:
@@ -442,12 +451,16 @@ must show, like a template; anything not given may be anything:
 - `to` — their recipient (`a.i`). "Three thank-yous from Dad **to Marko**":
   only Marko can meet it.
 - any other key — a **public** field of the type, compared exactly as a
-  string. A category belongs to its issuer (8.3), so `category` together
-  with `from` names one issuer's category.
+  string. A category belongs to its issuer (8.3): `from` says whose.
 - `since` — RFC 3339; only statements with `a.dt` at or after it.
 - `count` — at least this many distinct statements (by SAID); default 1.
-  Each condition counts on its own; counts of different conditions do not
-  add up.
+
+**A key may repeat: any of its values**, as in any URL query.
+`from=<Mom>&from=<Dad>&count=5` is five thank-yous from Mom and Dad
+together, in any mix. Different keys combine with "and":
+`from=<Mom>&from=<Dad>&category=help` is "help" from either. `since` and
+`count` appear at most once. Conditions in a list are counted apart: their
+counts do not add up.
 
 In a presentation (extensions/presentation.md) a statement condition is met
 when, among the statements shown with it, at least `count` distinct ones
@@ -461,18 +474,20 @@ too.
 
 **Rules for all conditions:**
 
-- Pairs are `key=value` joined by `&`; each key at most once. Keys are
-  `[a-z][a-z0-9_]{0,31}`. In values only `%`, `&` and `=` are
-  percent-encoded (`%25`, `%26`, `%3D`); everything else, spaces and
-  non-ASCII included, is written as it is.
+- The text must be a valid URL: only RFC 3986 query characters and `%XX`
+  escapes. A space or an unencoded non-ASCII character makes the condition
+  invalid. Values are decoded as form data (`+` is a space, `%XX` are UTF-8
+  bytes); a value that is not UTF-8 is invalid.
+- Keys are `[a-z][a-z0-9_]{0,31}`; no empty values.
+- `?aid=` and `?claim=` hold exactly one key (repeated: any of them).
 - `from`, `to`, `since`, `count` are reserved: no type has fields with these
   names.
 - A condition that does not parse, or uses a key the verifier does not
   know in `?…` (`?txn=…`), is **never met**. Others in the list still can
   be. A statement whose conditions are all unmeetable still verifies (its
   signature is fine); it simply has no holder.
-- Canonical text (used in vectors): reserved keys in the order `from`,
-  `to`, the fields as written, `since`, `count`; `count=1` omitted.
+- Two encodings of one condition are the same condition: compare decoded
+  values, not text (`vectors/conditions.json` lists them decoded).
 
 How a condition is *proved* depends on the context: `?aid=` by the
 holder's signature (presentation extension), `?claim=` by a claim proof

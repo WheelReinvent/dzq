@@ -11,9 +11,9 @@ Checked by: `conformance/rust/dzq_vectors.rs`, which runs every vector
 through the core (copy it into `rustLib/tests/`). Draft 1 (commit
 `1cc6fd5`) passes completely in DzenQ's CI.
 
-## Adapting DzenQ to dzq/1.3 (tag `v1.3.0`)
+## Adapting DzenQ to dzq/1.4 (tag `v1.4.0`)
 
-Pin the conformance step to tag `v1.3.0` and copy the updated
+Pin the conformance step to tag `v1.4.0` and copy the updated
 `conformance/rust/dzq_vectors.rs`. It skips the vectors of optional
 extensions (promises) unless `DZQ_EXTENSIONS=1`; set it once
 step 6 is done. In order:
@@ -33,9 +33,13 @@ step 6 is done. In order:
    `payload` (the code, the invite; private but not encrypted: the holder
    sees it at once). Earning by stamps → the promise's `a.req` (SPEC §4):
    «3 from me for anything» = `"dzq:gratitude?from=<me>&count=3"`;
+   «5 from Mom and Dad, any mix» = `"dzq:gratitude?from=<Mom>&from=<Dad>&count=5"`;
    «3 from Dad for the room, or 5 from Mom» =
    `["dzq:gratitude?from=<Dad>&category=room&count=3", "dzq:gratitude?from=<Mom>&count=5"]`
-   (each condition counts on its own).
+   (conditions in a list count apart). Build and read conditions with a URL
+   library (form encoding: `category=%D0%BF…`), compare decoded values.
+   Per-person stamps summed across people (Mom's "help" + Dad's "success")
+   are not in dzq (proposal 0008).
    Conditions: `a.dq` becomes `a.req` (a string or a list); `any(…)`,
    `all(…)`, `claim:` become a list of `?aid=…` / `?claim=…`.
    Likes «👍 for a kept promise»: DzenQ's own type (e.g. `dzenq:like`), so

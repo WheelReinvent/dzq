@@ -11,6 +11,7 @@ Changes to dzq are discussed here first. All of the following are closed.
 | [0005](0005-gesture-family.md) | Sorry, please and links | `dzq:apology`, `dzq:promise` base types; `re`; *please* left to apps |
 | [0006](0006-open-types.md) | Open types | dzq/1.2, SPEC §0, §3.6–3.8 |
 | [0007](0007-promises-1.3.md) | Promises for DzenQ certificates | dzq/1.3: `ask`, `payload`; URL-style conditions in `a.req` that can ask for any statements; promises extension |
+| [0008](0008-sums.md) | Thank-yous that add up | dzq/1.4: a repeated key = any of; conditions are valid URLs. Owned categories declined |
 
 To propose something, open an issue or a pull request with a new
 `NNNN-name.md`. Ask SPEC §0's question first.

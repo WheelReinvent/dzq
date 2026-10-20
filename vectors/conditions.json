@@ -1,52 +1,178 @@
 {
-  "spec": "dzq/1.3",
-  "note": "one condition each; a.req is one of these or a list of them",
+  "spec": "dzq/1.4",
+  "note": "one condition each; a.req is one of these or a list of them. 'parsed' is the decoded condition; compare it, not the text",
   "conditions": [
     {
       "condition": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
       "parses": true,
-      "canonical": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+      "parsed": {
+        "aid": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ]
+      },
       "note": "the holder is this AID"
+    },
+    {
+      "condition": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&aid=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
+      "parses": true,
+      "parsed": {
+        "aid": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+          "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+        ]
+      },
+      "note": "a repeated key: any of its values"
     },
     {
       "condition": "?claim=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
       "parses": true,
-      "canonical": "?claim=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "parsed": {
+        "claim": [
+          "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        ]
+      },
       "note": "claim keys are hex, compared in lower case"
     },
     {
       "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
       "parses": true,
-      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "count": 1
+      },
       "note": "one thank-you from AID1"
     },
     {
       "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=help&count=3",
       "parses": true,
-      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=help&count=3"
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "help"
+          ]
+        },
+        "count": 3
+      }
     },
     {
       "condition": "dzq:gratitude?count=3&category=help&from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
       "parses": true,
-      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=help&count=3",
-      "note": "reserved keys in any order; canonical: from, to, fields, since, count"
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "help"
+          ]
+        },
+        "count": 3
+      },
+      "note": "keys in any order"
     },
     {
-      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&from=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj&count=5",
       "parses": true,
-      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
-      "note": "values are not URL-encoded except %, & and ="
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+          "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+        ],
+        "count": 5
+      },
+      "note": "five from either, together"
     },
     {
-      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a%26b",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned+the+room",
       "parses": true,
-      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a%26b",
-      "note": "& in a value"
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "cleaned the room"
+          ]
+        },
+        "count": 1
+      },
+      "note": "+ is a space"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned%20the%20room",
+      "parses": true,
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "cleaned the room"
+          ]
+        },
+        "count": 1
+      },
+      "note": "%20 is a space too"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=%D0%BF%D1%80%D0%B8%D0%B1%D0%B8%D1%80%D0%B0%D0%BD%D0%BD%D1%8F",
+      "parses": true,
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "прибирання"
+          ]
+        },
+        "count": 1
+      },
+      "note": "non-ASCII is percent-encoded UTF-8"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a%26b%2Bc%3Dd",
+      "parses": true,
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "a&b+c=d"
+          ]
+        },
+        "count": 1
+      },
+      "note": "&, + and = in a value"
     },
     {
       "condition": "myshop:visit?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&to=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj&since=2026-10-01&count=5",
       "parses": true,
-      "canonical": "myshop:visit?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&to=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj&since=2026-10-01&count=5"
+      "parsed": {
+        "type": "myshop:visit",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "to": [
+          "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+        ],
+        "since": "2026-10-01",
+        "count": 5
+      }
     },
     {
       "condition": "?txn=6H24-KE7X",
@@ -70,8 +196,9 @@
       "parses": false
     },
     {
-      "condition": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&aid=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
-      "parses": false
+      "condition": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&claim=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "parses": false,
+      "note": "two holder keys"
     },
     {
       "condition": "?claim=abcd",
@@ -79,11 +206,13 @@
     },
     {
       "condition": "dzq:gratitude",
-      "parses": false
+      "parses": false,
+      "note": "no query"
     },
     {
       "condition": "dzq:gratitude?category=help",
-      "parses": false
+      "parses": false,
+      "note": "no from"
     },
     {
       "condition": "dzq:gratitude?from=x",
@@ -98,11 +227,12 @@
       "parses": false
     },
     {
-      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&since=yesterday",
-      "parses": false
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&count=2&count=3",
+      "parses": false,
+      "note": "count at most once"
     },
     {
-      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&from=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&since=yesterday",
       "parses": false
     },
     {
@@ -111,11 +241,28 @@
     },
     {
       "condition": "any(ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex,EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj)",
-      "parses": false
+      "parses": false,
+      "note": "the pre-1.3 form"
     },
     {
       "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&Category=x",
-      "parses": false
+      "parses": false,
+      "note": "keys are lowercase"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
+      "parses": false,
+      "note": "a space is not valid in a URL"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=прибирання",
+      "parses": false,
+      "note": "non-ASCII must be percent-encoded"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=%FF",
+      "parses": false,
+      "note": "not UTF-8"
     }
   ]
 }
