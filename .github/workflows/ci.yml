@@ -32,12 +32,13 @@ jobs:
               assert blake3_said(text.replace(said, SAID_PLACEHOLDER, 1)) == said, name
               assert json.loads(text)["$id"] == said, name
           from dzq import types
-          assert open("schemas/gratitude.type.json", encoding="utf-8").read() == types.GRATITUDE.text
           import glob
           for f in glob.glob("examples/types/*.json"):
               types.load(f)
           print("schema SAIDs ok; type documents ok")
           EOF
+      - name: Base types match the reference
+        run: python3 tools/make_types.py --check
       - name: CLI walk-through (README)
         run: |
           pip install ./reference/python

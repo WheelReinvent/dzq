@@ -74,7 +74,7 @@ class Presentations(unittest.TestCase):
                 want = expect.pop("promise", None)
                 matches(self, r, expect)
                 if want is not None:
-                    cert = next(c for c in r["credentials"] if c.get("type") == "example:promise")
+                    cert = next(c for c in r["credentials"] if c.get("type") == "dzq:promise")
                     self.assertEqual("usable" if cert.get("usable") else cert.get("why"), want)
 
 

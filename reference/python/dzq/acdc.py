@@ -1,4 +1,4 @@
-"""Statements: canonical form, SAIDs, the envelope, built-in and open types (SPEC §3, §8)."""
+"""Statements: canonical form, SAIDs, the envelope, base and open types (SPEC §3, §8)."""
 
 import json
 
@@ -16,7 +16,7 @@ SCHEMA_GRATITUDE_PRIVATE = "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_"       
 SCHEMA_GRATITUDE_PRIVATE_CONDITION = "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc"  # 2.1.0, to a condition
 
 # dzq/1.2: open types. New statements use type documents (typedoc.py);
-# the built-in gratitude type is one of them.
+# the base types (types.py) are type documents too.
 SCHEMA_GRATITUDE_12 = "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG"   # dzq:gratitude 1.2.0
 SCHEMA_LOOK = "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv"          # look/1 document (optional extension)
 
@@ -400,7 +400,7 @@ class Integrity:
 
 def check_integrity(raw, known=None):
     """Checks that `raw` (str) is a canonical statement whose SAIDs recompute.
-    `known` maps type SAID → TypeDoc for types beyond the built-in ones."""
+    `known` maps type SAID → TypeDoc for types beyond the base types."""
     if len(raw.encode("utf-8")) > MAX_ACDC:
         raise AcdcError("format", "statement larger than 256 KB")
     if not raw.startswith('{"v":'):

@@ -82,7 +82,7 @@ def _fmt_fields(fs):
 
 def _print_type(t):
     to = " or ".join({"aid": "one AID", "condition": "a condition"}[x] for x in t.to)
-    print("%s %s%s" % (t.name, t.version, "   (built in)" if t.said in types.BUILTIN else ""))
+    print("%s %s%s" % (t.name, t.version, "   (base type)" if t.said in types.BUILTIN else ""))
     print("  id       %s" % t.said)
     print("  to       %s" % to)
     print("  public   %s" % _fmt_fields(t.public))

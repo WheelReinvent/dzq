@@ -1,7 +1,7 @@
 """Experimental: promises and `thanks:` conditions (extensions/promises.md).
 
-A promise is just a type (examples/types/promise.json, `example:promise`)
-with a public `until` and a private `what` / `note`. This module adds what
+A promise is just a type — the base type `dzq:promise` (public `until`,
+private `what` / `note`). This module adds what
 plain dzq deliberately does not have:
 
 - a condition leaf `thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]`:
@@ -13,7 +13,7 @@ It is NOT double-spend protection: showing a promise twice is showing it
 twice. A verifier that must refuse a second use keeps its own record.
 
     from dzq.experimental import promise
-    r = dzq.verify_presentation(vp, nonce, known={doc.said: doc}, extensions=[promise.Extension()])
+    r = dzq.verify_presentation(vp, nonce, extensions=[promise.Extension()])
 """
 
 import datetime
@@ -73,7 +73,7 @@ def _instant(text):
 class Extension:
     kinds = ("thanks",)
 
-    def __init__(self, promise_types=("example:promise",)):
+    def __init__(self, promise_types=("dzq:promise",)):
         self.promise_types = set(promise_types)
 
     def leaf(self, leaf, holder, statement, results, claims):

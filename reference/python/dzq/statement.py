@@ -28,7 +28,7 @@ class Statement:
         self.raw = verify.split_bundle(bundle)[0]
         self.credential = json.loads(self.raw)
         self._attachment = attachment
-        self.types = dict(types or {})   # {SAID: TypeDoc} beyond the built-in ones
+        self.types = dict(types or {})   # {SAID: TypeDoc} beyond the base types
 
     # --- what it says --------------------------------------------------
 
@@ -115,7 +115,7 @@ class Statement:
 
     def to_dzq(self, carry_type=None):
         """The .dzq file (bytes): ZIP with credential.acdc, the attachment, if
-        any, and — for a type that is not built in — its type document, so
+        any, and — for a type that is not a base type — its type document, so
         any reader can check the fields (carry_type=False to leave it out)."""
         doc = self.type_doc
         if carry_type is None:
@@ -222,7 +222,7 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True, 
     (an AID, or a condition like "any(<AID>,<AID>)").
 
     `type` is a TypeDoc, a type SAID, or a name ("gratitude",
-    "acme:board-post") among the built-in types and `types`. `content` holds
+    "acme:board-post") among the base types and `types`. `content` holds
     the type's fields; `look` ("<source>:<id>") and `re` (the SAID of the
     statement this one answers) may be among them. Private fields go into a
     salted block that can be hidden later.

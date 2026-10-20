@@ -456,14 +456,57 @@
       }
     },
     {
+      "name": "apology",
+      "description": "dzq:apology: nothing public but the envelope.",
+      "bundle": "credentials/apology.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EBOOKm90kob7MyjC-aJSKGBtxBh32cDfH0ZQNZHDoIoe",
+        "type": "dzq:apology",
+        "type_known": true,
+        "content": "shown"
+      }
+    },
+    {
+      "name": "apology-compact",
+      "description": "The same apology, compact: only who, to whom and when are visible.",
+      "bundle": "credentials/apology-compact.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EBOOKm90kob7MyjC-aJSKGBtxBh32cDfH0ZQNZHDoIoe",
+        "content": "hidden"
+      }
+    },
+    {
+      "name": "apology-extra-field",
+      "description": "An apology with a public category its type does not have (SAIDs recomputed).",
+      "bundle": "credentials/apology-extra-field.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "promise-to-one",
+      "description": "dzq:promise to one AID.",
+      "bundle": "credentials/promise-to-one.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type": "dzq:promise"
+      }
+    },
+    {
       "name": "custom-type-unknown",
       "description": "A statement of a type this reader does not know: envelope, SAIDs and signature are checked; the result says the type is unknown.",
       "bundle": "credentials/custom-type-unknown.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EFofIxA1afOAk6KtKy0xsj_UbpFCUG76q-CvVdAdDe8s",
-        "schema": "EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem",
+        "said": "ECP4bGW5E3lxugZOzi5sfjBdu9Qvy3NWZPM619W7sT0A",
+        "schema": "EHykbo2uFDt7fTuMDNanRfds73YLVDUO9vloKE8mrJX2",
         "type": null,
         "type_known": false,
         "content": "shown"
@@ -474,12 +517,12 @@
       "description": "The same statement, with the type document given to the reader.",
       "bundle": "credentials/custom-type-known.acdc",
       "types": [
-        "types/EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem.json"
+        "types/EHykbo2uFDt7fTuMDNanRfds73YLVDUO9vloKE8mrJX2.json"
       ],
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EFofIxA1afOAk6KtKy0xsj_UbpFCUG76q-CvVdAdDe8s",
+        "said": "ECP4bGW5E3lxugZOzi5sfjBdu9Qvy3NWZPM619W7sT0A",
         "type": "acme:board-post",
         "type_known": true
       }
@@ -489,12 +532,12 @@
       "description": "The same statement, compact: the text is hidden, the area stays public.",
       "bundle": "credentials/custom-type-compact.acdc",
       "types": [
-        "types/EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem.json"
+        "types/EHykbo2uFDt7fTuMDNanRfds73YLVDUO9vloKE8mrJX2.json"
       ],
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EFofIxA1afOAk6KtKy0xsj_UbpFCUG76q-CvVdAdDe8s",
+        "said": "ECP4bGW5E3lxugZOzi5sfjBdu9Qvy3NWZPM619W7sT0A",
         "content": "hidden",
         "type": "acme:board-post"
       }
@@ -514,7 +557,7 @@
       "description": "The same, read with the type document: refused.",
       "bundle": "credentials/custom-type-breaks-type-known.acdc",
       "types": [
-        "types/EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem.json"
+        "types/EHykbo2uFDt7fTuMDNanRfds73YLVDUO9vloKE8mrJX2.json"
       ],
       "expect": {
         "valid": false,
@@ -638,16 +681,13 @@
     },
     {
       "name": "promise",
-      "description": "An example:promise to a condition. Without the extension it is just a valid statement.",
+      "description": "A dzq:promise to a condition. Without the extension it is just a valid statement.",
       "bundle": "credentials/promise.acdc",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EDWgCSIDILrRsldXkKU6KU29S6y3lr4nUjx5_f6ysllQ",
-        "type": "example:promise",
+        "said": "EFQp6xJ0oZm3YQWKSiR3msg0zCVn4DiogtUZ0-RsJokl",
+        "type": "dzq:promise",
         "content": "shown"
       }
     }
@@ -1088,9 +1128,6 @@
       "file": "presentations/promise-earned.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": true,
@@ -1103,9 +1140,6 @@
       "file": "presentations/promise-too-few.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1118,9 +1152,6 @@
       "file": "presentations/promise-same-thanks-twice.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1133,9 +1164,6 @@
       "file": "presentations/promise-wrong-category.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1148,9 +1176,6 @@
       "file": "presentations/promise-wrong-issuer.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1163,9 +1188,6 @@
       "file": "presentations/promise-not-a-holder.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1178,9 +1200,6 @@
       "file": "presentations/promise-expired.json",
       "nonce": "door-7Q4M-2026",
       "now": "2027-07-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1193,9 +1212,6 @@
       "file": "presentations/promise-two-issuers-add-up.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": true,
@@ -1208,9 +1224,6 @@
       "file": "presentations/promise-before-since.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1223,9 +1236,6 @@
       "file": "presentations/promise-self-thanks-elsewhere.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1238,9 +1248,6 @@
       "file": "presentations/promise-self-promise.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": true,
@@ -1253,9 +1260,6 @@
       "file": "presentations/promise-is-not-a-thank-you.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,
@@ -1268,9 +1272,6 @@
       "file": "presentations/promise-closed.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "types": [
-        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
-      ],
       "experimental": "promise",
       "expect": {
         "valid": false,

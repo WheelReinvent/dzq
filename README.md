@@ -63,7 +63,7 @@ over.
 to an e-mail address, a phone number or a condition (`any(…)`, `all(…)`);
 whoever proves it holds it.
 
-**It's small and already specified.** A handful of rules, 120 test vectors
+**It's small and already specified.** A handful of rules, 124 test vectors
 with known answers, and a reference verifier in plain Python written from
 the spec alone. The vectors tell you when your implementation is done.
 
@@ -87,11 +87,15 @@ $ dzq init bob
 your AID: EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ
 
 $ dzq types
-dzq:gratitude 1.2.0   (built in)
+dzq:apology 1.0.0   (base type)
+  …
+dzq:gratitude 1.2.0   (base type)
   id       EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG
   to       one AID or a condition
   public   category
   private  title, message, [attachment@]
+dzq:promise 1.0.0   (base type)
+  …
 
 $ dzq sign --as alice.id --type gratitude --to EO52ejZkESuUUafe4YEl6rFN519dPBg-d4fhoR1JNsTJ \
       title="Thank you" message="For fixing my bike." category=help -o thanks.dzq
@@ -162,7 +166,11 @@ exists, sign a presentation over a code the verifier gives you:
 `dzq present --as bob.id --nonce CODE thanks.dzq`, checked with
 `dzq presentation presentation.json --nonce CODE`.
 
-### Your own type
+### Base types, or your own
+
+`dzq types` lists the base types every reader knows: `dzq:gratitude`,
+`dzq:apology`, `dzq:promise` ([types/](types/)). Use them as they are, or
+define your own — say `myapp:gratitude` with the fields your app needs.
 
 A notice board wants posts to whoever lives nearby, with the area public
 and the text private:
@@ -219,9 +227,8 @@ signature covers that compact form, so both copies are the same statement.
 
 Every statement uses the same **envelope** — issuer, recipient or
 condition, date, signature, key history, private block. The **type**, named
-by `s` (the SAID of its type document), defines the fields. Gratitude is
-the one built-in type; any app can define more, and verification does not
-change.
+by `s` (the SAID of its type document), defines the fields. Verification
+does not depend on the type.
 
 ## Status
 
@@ -229,9 +236,9 @@ change.
 |---|---|
 | Gratitude, to an AID or a condition | `dzq/1.0` draft; used by DzenQ |
 | Private content (`dzq hide`) | `dzq/1.1` draft |
-| Your own types; `look` and `re` in every type | `dzq/1.2` draft |
+| Base types (gratitude, apology, promise), your own types, `look` and `re` | `dzq/1.2` draft |
 | Statements to an e-mail or phone, sealing, presentations | [optional extensions](extensions/) |
-| An app's own rules on top: promises earned with thank-yous | [experimental example](extensions/promises.md) |
+| An app's own rules on top: promises earned with thank-yous | [experimental](extensions/promises.md) |
 
 ## In this repository
 
@@ -239,9 +246,10 @@ change.
 |---|---|
 | [SPEC.md](SPEC.md) | the format: envelope, types, signing, verification, the `.dzq` file |
 | [extensions/](extensions/) | letters, periods (sealing), redemption, presentation, looks; experimental promises |
-| [examples/](examples/) | a quickstart and example type documents |
-| [schemas/](schemas/) | the built-in type document and older schemas, byte for byte, with their fixed SAIDs |
-| [vectors/](vectors/) | 120 cases with expected results — pass them and you're compatible |
+| [examples/](examples/) | a quickstart and an example type of your own |
+| [types/](types/) | base types: gratitude, apology, promise |
+| [schemas/](schemas/) | older schemas, byte for byte, with their fixed SAIDs |
+| [vectors/](vectors/) | 124 cases with expected results — pass them and you're compatible |
 | [reference/python/](reference/python/) | the reference verifier |
 | [conformance/rust/](conformance/rust/) | runs the vectors through DzenQ's Rust core |
 | [docs/](docs/) | relation to KERI/ACDC; where DzenQ differs from the spec today |

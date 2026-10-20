@@ -23,8 +23,10 @@ by KERI.*
 - **Unknown types verify**: envelope, SAIDs and signature; the result says
   `type_known: false`. A reader with the type also checks the fields.
 - A `.dzq` may carry its type document as `types/<SAID>.json`.
-- The source `dzq` is reserved; gratitude is the one built-in type
-  (`dzq:gratitude` 1.2.0, one document for `a.i` and `a.dq`).
+- The source `dzq` is reserved for a small library of **base types**
+  (`types/`): `dzq:gratitude` 1.2.0, `dzq:apology`, `dzq:promise`. Every
+  reader knows them; none is special. Use one, or write `myapp:gratitude`
+  and carry it in the file.
 - Two general private fields: `look` (how to show it) and `re` (the SAID of
   the statement it answers). Both hints.
 - **Scope (SPEC §0).** The deciding question: *would anything break if the
@@ -35,8 +37,8 @@ by KERI.*
 
 ## What moved out
 
-- The promise type, `thanks:` conditions, closing early → an experimental
-  example (examples/types/promise.json, extensions/promises.md,
+- The promise keeps only its fields (`dzq:promise`). `thanks:` conditions,
+  "usable" and closing early → experimental (extensions/promises.md,
   `dzq.experimental.promise`), showing how an app layers rules on top.
 - The look/1 document stays an optional extension; the pointer is core.
 

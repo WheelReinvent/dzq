@@ -477,13 +477,24 @@ def generate(base):
     out.credential("gratitude-1.2-too-long", "A public field longer than the type's max (SAIDs recomputed).",
                    alice.bundle(resaid(long_cat)), invalid("schema"))
 
+    # The other base types: ordinary type documents every reader knows.
+    sorry = stmt(alice, types_.APOLOGY, "sorry", i=bob.prefix, title="Вибач", message="Що запізнилась")
+    out.credential("apology", "dzq:apology: nothing public but the envelope.",
+                   alice.bundle(sorry), valid(said=sorry["d"], type="dzq:apology", type_known=True, content="shown"))
+    out.credential("apology-compact", "The same apology, compact: only who, to whom and when are visible.",
+                   alice.bundle(acdc.compact(sorry)), valid(said=sorry["d"], content="hidden"))
+    with_cat = json.loads(json.dumps(sorry))
+    with_cat["a"] = {"d": sorry["a"]["d"], "i": sorry["a"]["i"], "dt": DT, "category": "late", "c": sorry["a"]["c"]}
+    out.credential("apology-extra-field", "An apology with a public category its type does not have (SAIDs recomputed).",
+                   alice.bundle(resaid(with_cat)), invalid("schema"))
+    vow = stmt(alice, types_.PROMISE, "vow", i=bob.prefix, until="2027-01-01T00:00:00+00:00", what="Полагодити велосипед")
+    out.credential("promise-to-one", "dzq:promise to one AID.", alice.bundle(vow), valid(type="dzq:promise"))
+
     # A type anyone can define: a notice-board post.
-    post_said, post_text = make_type("acme:board-post", "1.0.0",
-                                     public=[{"name": "area", "required": True, "max": 64}],
-                                     private=[{"name": "text", "required": True, "max": 2000},
-                                              {"name": "photo", "kind": "attachment"}],
-                                     title="Board post", description="An example type from another app.")
+    with open(os.path.join(ROOT, "examples", "types", "board-post.json"), encoding="utf-8") as f:
+        post_text = f.read()
     POST = TypeDoc(post_text)
+    post_said = POST.said
     post_file = type_file(POST)
     post = stmt(carol, POST, "post", dq="any(%s,%s)" % (bob.prefix, dave.prefix), area="Podil",
                 text="Віддам дитячий велосипед")
@@ -586,9 +597,7 @@ def generate(base):
     # --- experimental: promises and thanks: (extensions/promises.md) -------
     # Not part of dzq. A verifier that does not implement the extension skips
     # cases marked "experimental".
-    with open(os.path.join(ROOT, "examples", "types", "promise.json"), encoding="utf-8") as f:
-        PROMISE = TypeDoc(f.read())
-    prom_file = type_file(PROMISE)
+    PROMISE = types_.PROMISE
     dad = build.Controller("dad").incept()
     marko = build.Controller("marko").incept()
     sofia = build.Controller("sofia").incept()
@@ -605,8 +614,8 @@ def generate(base):
     cert = stmt(dad, PROMISE, "cert", dq=cert_cond, until="2027-06-01T00:00:00+00:00",
                 what="Поїздка в гори", note="Приберіть кімнату тричі")
     cert_b = dad.bundle(acdc.compact(cert))
-    out.credential("promise", "An example:promise to a condition. Without the extension it is just a valid statement.",
-                   dad.bundle(cert), valid(said=cert["d"], type="example:promise", content="shown"), types=[prom_file])
+    out.credential("promise", "A dzq:promise to a condition. Without the extension it is just a valid statement.",
+                   dad.bundle(cert), valid(said=cert["d"], type="dzq:promise", content="shown"))
     to_one = stmt(dad, PROMISE, "cert1", i=marko.prefix, what="Кава")
     t1, t2, t3 = (thanks(dad, marko, "room %d" % i) for i in (1, 2, 3))
     NOW = "2026-11-01T00:00:00+00:00"
@@ -614,7 +623,7 @@ def generate(base):
     def pv(name, description, holder, bundles, want, valid_=None, now=NOW):
         out.presentation(name, description, build.presentation(holder, bundles, NONCE, DT), NONCE,
                          {"valid": want == "usable" if valid_ is None else valid_, "promise": want},
-                         now=now, types=[prom_file], experimental="promise")
+                         now=now, experimental="promise")
 
     pv("promise-earned", "Marko shows the promise with three thank-yous from Dad (all compact).",
        marko, [cert_b, t1, t2, t3], "usable")

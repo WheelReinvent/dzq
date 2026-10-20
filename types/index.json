@@ -1,0 +1,20 @@
+{
+  "note": "The base types of dzq: ordinary type documents under the reserved dzq: source, known to every reader. Written by tools/make_types.py.",
+  "types": {
+    "dzq:gratitude": {
+      "file": "gratitude.json",
+      "version": "1.2.0",
+      "said": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG"
+    },
+    "dzq:apology": {
+      "file": "apology.json",
+      "version": "1.0.0",
+      "said": "EMA-8lnSqc0Z1oR0jazreAx3juTg5rXUdJSwHcJRIoSE"
+    },
+    "dzq:promise": {
+      "file": "promise.json",
+      "version": "1.0.0",
+      "said": "EMgBufsWw3LiesGLKu4PDRLz81XiXvan9MT7VrV4Q8sQ"
+    }
+  }
+}

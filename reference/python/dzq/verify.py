@@ -94,7 +94,7 @@ def check_credential(bundle, seal=None, kel_text=None, known=None):
     `seal` — the statement's period seal, if the holder has one.
     `kel_text` — a fresher copy of the issuer's KEL (from any KERI source),
     used before the KEL inside the bundle.
-    `known` — {type SAID: TypeDoc} beyond the built-in types.
+    `known` — {type SAID: TypeDoc} beyond the base types.
     """
     r = Result()
     try:

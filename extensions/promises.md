@@ -2,12 +2,11 @@
 
 **Status:** experimental, **not part of dzq**. It shows how an app can build
 richer rules on top of dzq without changing it. It may change or go away.
-Reference: `dzq.experimental.promise`; the type document:
-[examples/types/promise.json](../examples/types/promise.json)
-(`example:promise`: public `until`, private `what`, `note`).
+Reference: `dzq.experimental.promise`.
 
-A promise is an ordinary statement of an ordinary type: every dzq verifier
-checks it (SPEC §6) and, without this extension, simply shows it. This
+A promise is a statement of the base type `dzq:promise` (SPEC §3.8): every
+dzq verifier checks it and, without this extension, simply shows it — a
+promise is a statement of intent, nothing more. This
 extension answers the question a door asks: **can this holder use it now?**
 
 It is **not double-spend protection** (SPEC §0). Nothing here stops a

@@ -8,8 +8,9 @@ format.
 
 **Status:** draft 5 (2026-10-20). Editors: the DzenQ team.
 **This version:** `dzq/1.2` — 1.1 added private content (3.5); 1.2 opens
-types to everyone (3.6: type documents, unknown types still verify) and adds
-two general fields, `look` and `re` (3.7). Everything valid under an
+types to everyone (3.6: type documents, unknown types still verify), adds
+two general fields, `look` and `re` (3.7), and a library of base types:
+gratitude, apology, promise (3.8). Everything valid under an
 earlier 1.x stays valid. The text is under CC BY 4.0, the code and vectors
 under Apache-2.0.
 
@@ -28,8 +29,9 @@ Every dzq file has two layers:
   every kind of statement, and so is its verification;
 - the **type**: what is being said. The type is named by `s`, the SAID of a
   **type document**, which lists the fields and which of them are private.
-  Anyone can write a type document (3.6); dzq defines one built-in type,
-  **gratitude** (a thank-you). A verifier that does not know a type still
+  Anyone can write a type document (3.6); dzq publishes three **base
+  types** every reader knows — gratitude, apology, promise (3.8) — none of
+  them special. A verifier that does not know a type still
   checks the envelope, the SAIDs and the signature.
 
 The key words MUST, MUST NOT, SHOULD, SHOULD NOT and MAY are used as in
@@ -145,7 +147,8 @@ any server API, the meaning of categories and of types' fields, and
 application features built on top (stamps, doors). See also section 0.
 
 In the rest of this document, *statement* and *credential* mean the same
-thing; *gratitude* means a statement of the built-in gratitude type.
+thing; *gratitude* means a statement of the `dzq:gratitude` base type (or
+of its dzq/1.0–1.1 schemas).
 
 ### 1.1 Roles
 
@@ -215,19 +218,12 @@ are omitted). The whole ACDC is at most 256 KB.
 `dt` is what the issuer states; it is not a trusted timestamp. Order in
 time comes from the issuer's KEL (section 6 and the periods extension).
 
-**The built-in type: gratitude** (`dzq:gratitude` 1.2.0, a thank-you):
-
-| Where | Field | Required | Content |
-|---|---|---|---|
-| public | `category` | yes | at most 64 characters (8.3) |
-| private | `title` | yes | at most 200 characters |
-| private | `message` | yes | at most 5000 characters |
-| private | `attachment` | no | a file: `{"d", "filename", "mime_type", "size"}`, in this order — lowercase hex Blake3-256 of the file, file name, media type, size in bytes |
-
-Text limits are counted in Unicode characters and are part of validity
-when the verifier knows the type (vector `title-too-long`).
-Earlier gratitude layouts (1.0.0 / 2.0.0, all public; 1.1.0 / 2.1.0) stay
-valid: 3.4.
+Which public and private fields a statement has is up to its type: the
+base types (3.8) or your own (3.6). Text limits are counted in Unicode
+characters and are part of validity when the verifier knows the type
+(vector `title-too-long`). A field of kind `attachment` is
+`{"d", "filename", "mime_type", "size"}`, in this order: lowercase hex
+Blake3-256 of the file, file name, media type, size in bytes.
 
 ### 3.2 Canonical serialization
 
@@ -250,16 +246,18 @@ rules out two byte strings for one credential.
    (The placeholder has the same length, so the size is final.)
 3. `d` := Blake3-256 qb64 of the serialization with `d` still 44 `#`.
 
-### 3.4 Built-in SAIDs
+### 3.4 Fixed SAIDs
 
-Type documents and schemas are published byte for byte in
-[`schemas/`](schemas/), each with `$id` = its own SAID (Blake3-256 over the
+Base type documents are published byte for byte in [`types/`](types/),
+older schemas in [`schemas/`](schemas/), each with `$id` = its own SAID (Blake3-256 over the
 file with `$id` set to 44 `#`). A verifier recognises these by SAID; it
 never needs to fetch them.
 
 | Type | Document | Version | SAID |
 |---|---|---|---|
-| gratitude | [gratitude.type.json](schemas/gratitude.type.json) — type document, to one AID or a condition | 1.2.0 | `EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG` |
+| `dzq:gratitude` | [types/gratitude.json](types/gratitude.json) — base type (3.8) | 1.2.0 | `EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG` |
+| `dzq:apology` | [types/apology.json](types/apology.json) — base type (3.8) | 1.0.0 | `EMA-8lnSqc0Z1oR0jazreAx3juTg5rXUdJSwHcJRIoSE` |
+| `dzq:promise` | [types/promise.json](types/promise.json) — base type (3.8) | 1.0.0 | `EMgBufsWw3LiesGLKu4PDRLz81XiXvan9MT7VrV4Q8sQ` |
 | gratitude | [gratitude.schema.json](schemas/gratitude.schema.json) — dzq/1.0, all public, to one AID | 1.0.0 | `EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav` |
 | gratitude | [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — dzq/1.0, all public, to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
 | gratitude | [gratitude-private.schema.json](schemas/gratitude-private.schema.json) — dzq/1.1, to one AID | 1.1.0 | `EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_` |
@@ -272,7 +270,7 @@ The dzq/1.0–1.1 layouts are fixed: 1.0.0 / 2.0.0 have `title`, `message`,
 `a.i` (1.0.0) or `a.dq` (2.0.0); 1.1.0 / 2.1.0 have `category` in `a` and
 `title`, `message`, optional `attachment` in `c`. Their schema files carry
 DzenQ-era titles ("DzenQ Gratitude"); those are part of the signed SAIDs
-and stay. New statements SHOULD use the 1.2.0 type document.
+and stay. New thank-yous SHOULD use `dzq:gratitude` 1.2.0.
 
 ### 3.5 Private content
 
@@ -316,9 +314,9 @@ any language reads without a schema validator:
 ```
 
 - `type` is `<source>:<name>`, both `[a-z0-9-]`, lowercase. The source is
-  your app or organisation. **The source `dzq` is reserved** for types this
-  document defines; a reader MUST ignore a document that claims it unless
-  its SAID is listed in 3.4.
+  your app or organisation. **The source `dzq` is reserved** for the base
+  types; a reader MUST ignore a document that claims it unless its SAID is
+  listed in 3.4.
 - `version` is `MAJOR.MINOR.PATCH`. A changed document is a new SAID; old
   statements keep their SAID and stay valid.
 - `to`: `aid`, `condition`, or both — whether `a.i` and/or `a.dq` is used.
@@ -333,7 +331,7 @@ The **statement names its type by SAID** (`s`), never by name: a type
 cannot be swapped after signing, and two apps can both have a
 `board-post` without colliding.
 
-A verifier that **knows** the type (built in, configured, or carried in the
+A verifier that **knows** the type (a base type, configured, or carried in the
 `.dzq` as `types/<SAID>.json`: section 7) also checks the fields: every
 required field present, no field the type does not list, text within
 `max`, files well-formed, `a.i`/`a.dq` allowed by `to`. A verifier that does
@@ -361,6 +359,34 @@ for a statement to be valid or invalid beyond their own format.
   thank-you", "sorry for…", "done — as promised"). One SAID, no kind of
   link, nothing to resolve: a reader that has the other statement may show
   them together. Nothing is verified across statements (section 0).
+
+### 3.8 Base types
+
+dzq publishes a small library of types for the most common gestures, in
+[`types/`](types/). Every reader MUST know them, so a statement of a base
+type needs nothing else to be checked in full. They are ordinary type
+documents: verification treats them exactly like any other type, and none
+is preferred over yours. Use one as it is, or write `myapp:gratitude` with
+your own fields and carry it in your files (3.6, section 7).
+
+| Type | Public | Private |
+|---|---|---|
+| `dzq:gratitude` 1.2.0 — *thank you* | `category` (≤ 64, required; 8.3) | `title` (≤ 200), `message` (≤ 5000), optional `attachment` |
+| `dzq:apology` 1.0.0 — *sorry* | — | `title` (≤ 200), `message` (≤ 5000), optional `attachment` |
+| `dzq:promise` 1.0.0 — *I will* | optional `until` (RFC 3339, ≤ 64) | `what` (≤ 200), optional `note` (≤ 5000) |
+
+Fields are required unless marked optional. All three may be addressed to
+one AID or to a condition, and take `look` and `re` (3.7).
+
+- An **apology** shows nothing but the envelope: who, to whom, when. For
+  the recipient it proves the wrong was acknowledged; showing it to others
+  exposes someone else's admission, so apps SHOULD keep it compact when
+  showing it.
+- A **promise** is a statement of intent, nothing more: no use counter, no
+  "used" state (section 0). `until` is the issuer's word, not an expiry a
+  verifier must enforce. Rules such as "earned with three thank-yous" are
+  an app's business; the experimental [promises](extensions/promises.md)
+  extension shows one way.
 
 ## 4. Conditions (`a.dq`)
 
@@ -564,7 +590,7 @@ File extension `.dzq`. Media type `application/vnd.dzq+zip`
 ### 8.1 What cannot change within dzq/1.x
 
 The envelope (3.1, 3.5, 3.7), the canonical serialization, the SAID rules
-and the built-in SAIDs. A statement signed today stays verifiable forever;
+and the fixed SAIDs of 3.4. A statement signed today stays verifiable forever;
 a changed type is a new type document with a new SAID, while verifiers keep
 accepting statements of the old one.
 
@@ -612,10 +638,9 @@ fields, never rules: if your type needs a rule the envelope does not have
 ("only once", "only while the balance lasts"), dzq is the wrong tool for
 that part.
 
-A type becomes **built in** (source `dzq`) only when a version of this
-document lists its SAID. Gratitude is the only built-in type; apologies
-and requests are being discussed ([idea 0005](proposals/0005-gesture-family.md)).
-Applications MUST NOT reuse a built-in type for other meanings.
+A type becomes a **base type** (source `dzq`) only when a version of this
+document lists its SAID (3.4, 3.8). Applications MUST NOT use a base type
+for other meanings; write your own instead.
 
 ## 9. Security considerations
 

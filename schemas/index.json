@@ -29,13 +29,6 @@
     "version": "2.1.0",
     "credentialType": "DzqGratitude"
   },
-  "gratitude.type.json": {
-    "said": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
-    "title": "dzq Gratitude",
-    "version": "1.2.0",
-    "credentialType": "dzq:gratitude",
-    "note": "the built-in type document (dzq/1.2): one document for a.i and a.dq"
-  },
   "look.schema.json": {
     "said": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
     "title": "dzq look",
