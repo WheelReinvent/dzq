@@ -1,6 +1,6 @@
 # Idea 0005: the family of gestures — sorry, please, and links between them
 
-**Status:** TBD — an idea to work out, not a proposal yet · **Author:** DzenQ team, 2026-10-20
+**Status:** closed — resolved in dzq/1.2: `dzq:apology` and `dzq:promise` are base types (SPEC §3.8), links are the `re` field (§3.7); *please* is left to apps · **Author:** DzenQ team, 2026-10-20
 
 > **Update, same day.** dzq now has open types (SPEC §3.6) and a general `re` field (SPEC §3.7). So *sorry* and *please* no longer need the spec: any app can define them as type documents today, and `re` covers *in reply to*. Decided: *thank you*, *sorry* and *I promise* are base types (`dzq:gratitude`, `dzq:apology`, `dzq:promise`, SPEC §3.8), none special. *Please* is left to apps for now.
 

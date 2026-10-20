@@ -1,6 +1,6 @@
 # Proposal 0004: the look document (`look/1`)
 
-**Status:** implemented in dzq/1.2 as an **optional** extension (extensions/looks.md): dzq standardizes only the pointer; sources may use their own look formats · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
+**Status:** closed — implemented in dzq/1.2 as an **optional** extension (extensions/looks.md): dzq standardizes only the pointer; sources may use their own look formats · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
 
 ## Problem
 

@@ -2,7 +2,7 @@
 
 > **2026-10-20: renamed to `promise`, then moved out of the core.** dzq now has open types (SPEC §3.6): anyone defines a type with a type document, and dzq keeps only the envelope. The promise is now the base type `dzq:promise` (SPEC §3.8) — fields only; earning it with thank-yous and closing it early are the experimental [extensions/promises.md](../extensions/promises.md). What it taught the core stays: a type document with public/private fields, `look` and `re` as general fields, conditions with extension kinds, and SPEC §0 (dzq does not prevent double spending). The text below keeps its original wording.
 
-**Status:** implemented in dzq/1.2 (spec, reference verifier, CLI, vectors); DzenQ core pending · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
+**Status:** closed — reshaped in dzq/1.2: the base type `dzq:promise` (fields only, SPEC §3.8); `thanks:`, usable and closing are the experimental extensions/promises.md · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
 
 ## Problem
 

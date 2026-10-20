@@ -1,6 +1,6 @@
 # Proposal 0001: private content (show the proof, not the text)
 
-**Status:** implemented in the spec (dzq/1.1, SPEC §3.5) and the reference verifier; DzenQ core pending · **Target:** dzq/1.1 · **Author:** DzenQ team, 2026-10-19
+**Status:** closed — implemented in the spec (dzq/1.1, SPEC §3.5) and the reference verifier; DzenQ core pending · **Target:** dzq/1.1 · **Author:** DzenQ team, 2026-10-19
 
 ## Problem
 

@@ -1,6 +1,6 @@
 # Proposal 0006: open types — dzq keeps the envelope, apps bring the types
 
-**Status:** implemented in dzq/1.2 (SPEC §0, §3.6, §3.7; reference verifier, CLI `dzq type new`, vectors) · **Author:** DzenQ team, 2026-10-20
+**Status:** closed — implemented in dzq/1.2 (SPEC §0, §3.6, §3.7; reference verifier, CLI `dzq type new`, vectors) · **Author:** DzenQ team, 2026-10-20
 
 ## Why
 
