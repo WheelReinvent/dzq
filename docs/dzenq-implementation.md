@@ -1,4 +1,4 @@
-# The DzenQ implementation and dzq/1.0
+# The DzenQ implementation and dzq/1.2
 
 DzenQ's Rust core (`rustLib/`, also built for Android, desktop and the web as
 wasm) is the first implementation of this format. The spec was written from
@@ -9,10 +9,30 @@ should change to match the spec exactly.
 
 Checked by: `conformance/rust/dzq_vectors.rs`, which runs every vector
 through the core (copy it into `rustLib/tests/`). Draft 1 (commit
-`1cc6fd5`) passes completely in DzenQ's CI. Vectors added after it
-(`kel-forged-inception`, `forged-holder-kel`, `title-too-long`,
-`condition-in-a-i`, and every `private-*` vector) are expected to fail until
-rows 14, 15, 18 and the security finding are fixed.
+`1cc6fd5`) passes completely in DzenQ's CI.
+
+## Adapting DzenQ to dzq/1.2 (tag `v1.2.0`)
+
+Pin the conformance step to tag `v1.2.0` and copy the updated
+`conformance/rust/dzq_vectors.rs` (it skips vectors marked experimental).
+In order:
+
+1. **Security finding** below: recompute every KEL event SAID (vectors
+   `kel-forged-inception`, `forged-holder-kel`).
+2. **Rows 14, 15**: text limits; `a.i` is one AID.
+3. **Row 18**: private content — expand-check-compact, sign the compact
+   form (vectors `private-*`, `gratitude-1.2*`).
+4. **Row 19**: open types — accept any type generically, know the three
+   base types (`types/`), read `types/<SAID>.json` from archives, `look` and
+   `re` (vectors `schema-unknown`, `custom-type-*`, `envelope-*`,
+   `apology*`, `promise*`, `re*`, `look-*`).
+5. Issue new thank-yous as `dzq:gratitude` 1.2.0 (`EDM7gu9-…`); old ones
+   stay valid.
+6. Certificates and promises: `dzq:promise` (fields only). Stamps, earning
+   and closing are DzenQ's own rules on top (experimental
+   extensions/promises.md shows one way).
+
+Done when every non-experimental vector passes.
 
 ## Security finding: forged inception events (fix first)
 

@@ -6,7 +6,7 @@ whatever an app defines. The name comes from DzenQ, the first application
 that used it; DzenQ is the first implementation, not the owner of the
 format.
 
-**Status:** draft 5 (2026-10-20). Editors: the DzenQ team.
+**Status:** published 2026-10-20, git tag `v1.2.0`. Editors: the DzenQ team.
 **This version:** `dzq/1.2` — 1.1 added private content (3.5); 1.2 opens
 types to everyone (3.6: type documents, unknown types still verify), adds
 two general fields, `look` and `re` (3.7), and a library of base types:

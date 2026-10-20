@@ -67,7 +67,7 @@ reasoning: [SPEC.md](SPEC.md), starting with §0.
 
 | | |
 |---|---|
-| [SPEC.md](SPEC.md) | the format (`dzq/1.2`, draft) |
+| [SPEC.md](SPEC.md) | the format, `dzq/1.2` |
 | [types/](types/) | base types |
 | [extensions/](extensions/) | optional: letters to e-mail/phone, sealing, presentations, looks; experimental promises |
 | [vectors/](vectors/) | 124 test cases with expected results |
