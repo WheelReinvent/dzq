@@ -1,4 +1,4 @@
-"""Gratitude ACDCs: canonical form, SAIDs, schemas (dzq/1.0 §3)."""
+"""Statements: canonical form, SAIDs, the envelope, built-in and open types (SPEC §3, §8)."""
 
 import json
 
@@ -15,18 +15,16 @@ SCHEMA_BINDING = "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
 SCHEMA_GRATITUDE_PRIVATE = "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_"            # 1.1.0, to one AID
 SCHEMA_GRATITUDE_PRIVATE_CONDITION = "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc"  # 2.1.0, to a condition
 
-# dzq/1.2: gratitude with `look`; promises.
-SCHEMA_GRATITUDE_12 = "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81"            # 1.2.0, to one AID
-SCHEMA_GRATITUDE_12_CONDITION = "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V"  # 2.2.0, to a condition
-SCHEMA_PROMISE = "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6"                 # 1.0.0, to one AID
-SCHEMA_PROMISE_CONDITION = "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5"       # 2.0.0, to a condition
-SCHEMA_LOOK = "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv"                    # look/1 document
+# dzq/1.2: open types. New statements use type documents (typedoc.py);
+# the built-in gratitude type is one of them.
+SCHEMA_GRATITUDE_12 = "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG"   # dzq:gratitude 1.2.0
+SCHEMA_LOOK = "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv"          # look/1 document (optional extension)
+
+MAX_ACDC = 256 * 1024
 
 
 class Layout:
-    """A private-content schema: its type, recipient field, public fields
-    (after `dt`) and content-block fields (after `d`, `u`), in order.
-    Each field: (name, required, max length or None, kind)."""
+    """A dzq/1.1 private-content schema (before type documents)."""
 
     def __init__(self, type, to, public, content):
         self.type, self.to, self.public, self.content = type, to, public, content
@@ -34,35 +32,32 @@ class Layout:
 
 _GRAT_PUBLIC = [("category", True, 64, "text")]
 _GRAT_11 = [("title", True, 200, "text"), ("message", True, 5000, "text"), ("attachment", False, None, "attachment")]
-_GRAT_12 = _GRAT_11 + [("look", False, None, "look")]
-_PROMISE_PUBLIC = [("until", False, None, "text")]
-_PROMISE = [("what", True, 200, "text"), ("note", False, 5000, "text"), ("look", False, None, "look")]
 
 LAYOUTS = {
-    SCHEMA_GRATITUDE_PRIVATE: Layout("gratitude", "i", _GRAT_PUBLIC, _GRAT_11),
-    SCHEMA_GRATITUDE_PRIVATE_CONDITION: Layout("gratitude", "dq", _GRAT_PUBLIC, _GRAT_11),
-    SCHEMA_GRATITUDE_12: Layout("gratitude", "i", _GRAT_PUBLIC, _GRAT_12),
-    SCHEMA_GRATITUDE_12_CONDITION: Layout("gratitude", "dq", _GRAT_PUBLIC, _GRAT_12),
-    SCHEMA_PROMISE: Layout("promise", "i", _PROMISE_PUBLIC, _PROMISE),
-    SCHEMA_PROMISE_CONDITION: Layout("promise", "dq", _PROMISE_PUBLIC, _PROMISE),
+    SCHEMA_GRATITUDE_PRIVATE: Layout("dzq:gratitude", "i", _GRAT_PUBLIC, _GRAT_11),
+    SCHEMA_GRATITUDE_PRIVATE_CONDITION: Layout("dzq:gratitude", "dq", _GRAT_PUBLIC, _GRAT_11),
 }
-
-TO_AID = (SCHEMA_GRATITUDE,) + tuple(k for k, l in LAYOUTS.items() if l.to == "i")
-TO_CONDITION = (SCHEMA_GRATITUDE_CONDITION,) + tuple(k for k, l in LAYOUTS.items() if l.to == "dq")
-PRIVATE = tuple(LAYOUTS)
-GRATITUDE_SCHEMAS = (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_CONDITION) + tuple(
-    k for k, l in LAYOUTS.items() if l.type == "gratitude")
-PROMISE_SCHEMAS = tuple(k for k, l in LAYOUTS.items() if l.type == "promise")
+LEGACY_PUBLIC = (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_CONDITION)
 
 import re as _re  # noqa: E402
 LOOK_RE = _re.compile(r"[a-z0-9-]+:\S+")
+SAID_RE = _re.compile(r"E[A-Za-z0-9_-]{43}")
+NAME_RE = _re.compile(r"[a-z][a-z0-9_]{0,31}")
 
 
-def type_of(schema):
-    if schema in (SCHEMA_GRATITUDE, SCHEMA_GRATITUDE_CONDITION):
-        return "gratitude"
-    layout = LAYOUTS.get(schema)
-    return layout.type if layout else None
+def builtin_types():
+    from . import types as types_
+    return types_.BUILTIN
+
+
+def type_of(schema, known=None):
+    """The type name for a schema SAID, if this reader knows it."""
+    if schema in LEGACY_PUBLIC:
+        return "dzq:gratitude"
+    if schema in LAYOUTS:
+        return LAYOUTS[schema].type
+    doc = (known or {}).get(schema) or builtin_types().get(schema)
+    return doc.name if doc else None
 
 
 class AcdcError(ValueError):
@@ -121,9 +116,99 @@ def _field(where, name, value, max_len, kind):
         raise AcdcError("schema", "%s.%s must be a string" % (where, name))
     if max_len is not None and len(value) > max_len:
         raise AcdcError("schema", "a text field is too long")
-    if kind == "look" and not LOOK_RE.fullmatch(value):
-        raise AcdcError("schema", "%s.look must be <source>:<id>" % where)
     return value
+
+
+# --- open types (dzq/1.2) ----------------------------------------------------
+
+def _plain(value, where, depth=0):
+    """Generic values: strings, integers, booleans, lists and objects of
+    them. No floats (two spellings, one number) and no null."""
+    if depth > 8:
+        raise AcdcError("schema", "%s: nested too deep" % where)
+    if isinstance(value, bool) or isinstance(value, str):
+        return
+    if isinstance(value, int):
+        if abs(value) > 2 ** 53:
+            raise AcdcError("schema", "%s: integers beyond 2^53 are not allowed" % where)
+        return
+    if isinstance(value, list):
+        for v in value:
+            _plain(v, where, depth + 1)
+        return
+    if isinstance(value, dict):
+        for k, v in value.items():
+            _plain(v, where, depth + 1)
+        return
+    raise AcdcError("schema", "%s: only strings, integers, booleans, lists and objects" % where)
+
+
+def _generic_attributes(a):
+    """The envelope rules every type follows (SPEC §3.1, §8.5). Field order:
+    `a` starts with d, i or dq, dt; `c` starts with d, u."""
+    if not isinstance(a, dict):
+        raise AcdcError("schema", "a must be an object")
+    keys = list(a)
+    if len(keys) < 3 or keys[0] != "d" or keys[1] not in ("i", "dq") or keys[2] != "dt":
+        raise AcdcError("schema", "a starts with d, then i or dq, then dt")
+    if "i" in a and "dq" in a:
+        raise AcdcError("schema", "a statement has a.i or a.dq, not both")
+    for k in ("d", keys[1], "dt"):
+        if not isinstance(a[k], str):
+            raise AcdcError("schema", "a.%s must be a string" % k)
+    for k in keys[3:]:
+        if k == "c":
+            continue
+        if not NAME_RE.fullmatch(k) or k in ("d", "i", "dq", "dt", "u", "look", "re"):
+            raise AcdcError("schema", "a.%s is not an allowed field name" % k)
+        _plain(a[k], "a.%s" % k)
+    if "c" in a:
+        if keys[-1] != "c":
+            raise AcdcError("schema", "a.c comes last")
+        c = a["c"]
+        if isinstance(c, dict):
+            ck = list(c)
+            if len(ck) < 2 or ck[0] != "d" or ck[1] != "u":
+                raise AcdcError("schema", "a.c starts with d, then u")
+            if not isinstance(c["d"], str) or not _salt_ok(c["u"]):
+                raise AcdcError("schema", "a.c.u must be a 128-bit salt (CESR 0A…)")
+            for k in ck[2:]:
+                if not NAME_RE.fullmatch(k) or k in ("d", "i", "dq", "dt", "u", "c"):
+                    raise AcdcError("schema", "a.c.%s is not an allowed field name" % k)
+                _plain(c[k], "a.c.%s" % k)
+            if "look" in c and not (isinstance(c["look"], str) and LOOK_RE.fullmatch(c["look"])):
+                raise AcdcError("schema", "a.c.look must be <source>:<id>")
+            if "re" in c and not (isinstance(c["re"], str) and SAID_RE.fullmatch(c["re"])):
+                raise AcdcError("schema", "a.c.re must be a SAID")
+        elif not (isinstance(c, str) and SAID_RE.fullmatch(c)):
+            raise AcdcError("schema", "a.c must be the private block or its SAID")
+    return a
+
+
+def _check_against(a, doc):
+    """A statement of a known type: exactly its fields, with their limits."""
+    to = "aid" if "i" in a else "condition"
+    if to not in doc.to:
+        raise AcdcError("schema", "%s is not addressed to a%s %s" % (doc.name, "n" if to == "aid" else "", to))
+
+    def check(block, fields, where, extra_ok):
+        names = {f["name"] for f in fields}
+        unknown = [k for k in block if k not in names and k not in extra_ok]
+        if unknown:
+            raise AcdcError("schema", "unknown %s field(s) for %s: %s" % (where, doc.name, ", ".join(unknown)))
+        for f in fields:
+            if f["name"] not in block:
+                if f.get("required"):
+                    raise AcdcError("schema", "%s needs %s.%s" % (doc.name, where, f["name"]))
+                continue
+            _field(where, f["name"], block[f["name"]], f.get("max"), f.get("kind", "text"))
+
+    check(a, doc.public, "a", {"d", "i", "dq", "dt", "c"})
+    c = a.get("c")
+    if doc.private and c is None:
+        raise AcdcError("schema", "%s has private fields: a.c is required" % doc.name)
+    if isinstance(c, dict):
+        check(c, doc.private, "a.c", {"d", "u", "look", "re"})
 
 
 def _content(c, layout):
@@ -208,17 +293,26 @@ def _attributes(a, layout=None):
     return out
 
 
-def _top(acdc):
+def _top(acdc, known=None):
     if not isinstance(acdc, dict):
         raise AcdcError("schema", "not a JSON object")
     fields = ("v", "d", "i", "ri", "s", "a")
     if set(acdc) != set(fields):
-        raise AcdcError("schema", "a gratitude has exactly the fields v, d, i, ri, s, a")
+        raise AcdcError("schema", "a statement has exactly the fields v, d, i, ri, s, a")
     for k in fields[:-1]:
         if not isinstance(acdc[k], str):
             raise AcdcError("schema", "%s must be a string" % k)
-    return {"v": acdc["v"], "d": acdc["d"], "i": acdc["i"], "ri": acdc["ri"], "s": acdc["s"],
-            "a": _attributes(acdc["a"], LAYOUTS.get(acdc["s"]))}
+    s = acdc["s"]
+    if s in LEGACY_PUBLIC or s in LAYOUTS:
+        a = _attributes(acdc["a"], LAYOUTS.get(s))
+    else:
+        if not SAID_RE.fullmatch(s):
+            raise AcdcError("schema", "s must be the SAID of a type document")
+        a = _generic_attributes(acdc["a"])
+        doc = (known or {}).get(s) or builtin_types().get(s)
+        if doc is not None:
+            _check_against(a, doc)
+    return {"v": acdc["v"], "d": acdc["d"], "i": acdc["i"], "ri": acdc["ri"], "s": s, "a": a}
 
 
 def attribute_said(a):
@@ -227,10 +321,10 @@ def attribute_said(a):
     return blake3_said(dumps(tmp))
 
 
-def saidify(acdc):
-    """Fills c.d (private content), a.d, v and d of a gratitude. All over the
+def saidify(acdc, known=None):
+    """Fills c.d (private content), a.d, v and d of a statement. All over the
     compact form. Returns the full form (content expanded, if any)."""
-    acdc = _top(acdc)
+    acdc = _top(acdc, known)
     if isinstance(acdc["a"].get("c"), dict):
         acdc["a"]["c"]["d"] = content_said(acdc["a"]["c"])
     full_c = acdc["a"].get("c")
@@ -255,9 +349,29 @@ def new_gratitude(issuer, registry, attributes):
     return saidify({"v": "", "d": "", "i": issuer, "ri": registry, "s": schema, "a": a})
 
 
+def new_typed(issuer, registry, doc, attributes, salt):
+    """A statement of a type document `doc`: envelope (i or dq, dt), the
+    type's public fields, then its private fields plus look / re in a salted
+    block — each in the order the type lists them."""
+    to = "dq" if "dq" in attributes else "i"
+    a = {"d": "", to: attributes[to], "dt": attributes["dt"]}
+    for f in doc.public:
+        if f["name"] in attributes:
+            a[f["name"]] = attributes[f["name"]]
+    c = {"d": "", "u": salt}
+    for f in doc.private:
+        if f["name"] in attributes:
+            c[f["name"]] = attributes[f["name"]]
+    for k in ("look", "re"):
+        if k in attributes:
+            c[k] = attributes[k]
+    if len(c) > 2 or doc.private:
+        a["c"] = c
+    return saidify({"v": "", "d": "", "i": issuer, "ri": registry, "s": doc.said, "a": a}, {doc.said: doc})
+
+
 def new_statement(issuer, registry, schema, attributes, salt):
-    """A private-content statement of any layout: envelope (i or dq, dt),
-    the layout's public fields, and its content fields in a salted block."""
+    """A dzq/1.1 private-content gratitude (built-in layout)."""
     layout = LAYOUTS[schema]
     a = {"d": "", layout.to: attributes[layout.to], "dt": attributes["dt"]}
     for name, _, _, _ in layout.public:
@@ -284,28 +398,29 @@ class Integrity:
         self.content = content         # the disclosed private block, or None
 
 
-def check_integrity(raw):
-    """Checks that `raw` (str) is a canonical gratitude whose SAIDs recompute."""
+def check_integrity(raw, known=None):
+    """Checks that `raw` (str) is a canonical statement whose SAIDs recompute.
+    `known` maps type SAID → TypeDoc for types beyond the built-in ones."""
+    if len(raw.encode("utf-8")) > MAX_ACDC:
+        raise AcdcError("format", "statement larger than 256 KB")
     if not raw.startswith('{"v":'):
         raise AcdcError("canonical", "ACDC is not in canonical form (or is a pre-dzq/1.0 legacy credential)")
     try:
         parsed = json.loads(raw)
     except json.JSONDecodeError as e:
         raise AcdcError("format", "invalid JSON: %s" % e) from e
-    acdc = _top(parsed)
+    acdc = _top(parsed, known)
     if dumps(acdc) != raw:
         raise AcdcError("canonical", "ACDC is not in canonical form")
     a = acdc["a"]
-    if acdc["s"] in TO_AID:
+    s = acdc["s"]
+    if s == SCHEMA_GRATITUDE or (s in LAYOUTS and LAYOUTS[s].to == "i"):
         if "i" not in a or "dq" in a:
             raise AcdcError("schema", "a gratitude to one AID names its recipient in a.i")
-        recipient = a["i"]
-    elif acdc["s"] in TO_CONDITION:
+    elif s == SCHEMA_GRATITUDE_CONDITION or s in LAYOUTS:
         if "dq" not in a or "i" in a:
             raise AcdcError("schema", "a gratitude to a condition has a.dq and no a.i")
-        recipient = a["dq"]
-    else:
-        raise AcdcError("schema", "unknown schema %s" % acdc["s"])
+    recipient = a.get("i", a.get("dq"))
     content = None
     if isinstance(a.get("c"), dict):
         # Expanded: the block must be the one whose SAID the signed form holds.
@@ -325,9 +440,9 @@ def check_integrity(raw):
     return Integrity(acdc["d"], acdc["i"], recipient, acdc["s"], acdc, signed_raw, content)
 
 
-def close_said(statement_said):
-    """Digest an issuer anchors to close a promise early (promises)."""
-    return blake3_said(dumps({"d": SAID_PLACEHOLDER, "t": "close", "g": statement_said}))
+def to_aid(schema, a):
+    """Is the statement addressed to one AID (a.i), not to a condition?"""
+    return "i" in a
 
 
 def redemption_said(gratitude_said):

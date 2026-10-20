@@ -40,6 +40,15 @@ def look_entry(name):
     return said if SAID_RE.fullmatch(said) else None
 
 
+def type_entry(name):
+    """`types/<SAID>.json`: a type document carried with the statement."""
+    from .look import SAID_RE
+    if not (name.startswith("types/") and name.endswith(".json")):
+        return None
+    said = name[len("types/"):-5]
+    return said if SAID_RE.fullmatch(said) else None
+
+
 def _safe_name(name):
     return not (name.startswith("/") or "\\" in name or ".." in name.split("/") or ":" in name.split("/")[0])
 
@@ -60,8 +69,8 @@ def open_dzq(data):
         name = info.filename
         if not _safe_name(name):
             raise ArchiveError("unsafe entry name %r" % name)
-        allowed = (name in (CREDENTIAL, METADATA, SIGNATURES, "assets/", "looks/") or asset_basename(name)
-                   or look_entry(name))
+        allowed = (name in (CREDENTIAL, METADATA, SIGNATURES, "assets/", "looks/", "types/")
+                   or asset_basename(name) or look_entry(name) or type_entry(name))
         if not allowed:
             raise ArchiveError("unexpected entry %r" % name)
         if info.file_size > MAX_ENTRY:
@@ -89,46 +98,84 @@ def _read(z, name):
 
 def read_dzq(data):
     """What a .dzq says, WITHOUT checking it: issuer, recipient (or condition),
-    date, title, message, category, attachment name. Call check_dzq to know
-    whether to believe it."""
-    bundle, _ = open_dzq(data)
+    date, the type's fields, attachment names. Call check_dzq to know whether
+    to believe it."""
+    bundle, z = open_dzq(data)
     a = json.loads(verify.split_bundle(bundle)[0])
     attrs = a.get("a", {})
     c = attrs.get("c") if isinstance(attrs.get("c"), dict) else {}
+    fields = {k: v for k, v in attrs.items() if k not in ("d", "i", "dq", "dt", "c")}
+    fields.update({k: v for k, v in c.items() if k not in ("d", "u")})
     return {"issuer": a.get("i"), "recipient": attrs.get("i") or attrs.get("dq"), "date": attrs.get("dt"),
-            "title": attrs.get("title", c.get("title")), "message": attrs.get("message", c.get("message")),
-            "category": attrs.get("category"), "attachment": (attrs.get("attachment") or c.get("attachment") or {}).get("filename"),
+            "schema": a.get("s"), "fields": fields,
+            "title": fields.get("title"), "message": fields.get("message"), "category": fields.get("category"),
+            "attachment": (named_attachment(a) or {}).get("filename"),
             "hidden": isinstance(attrs.get("c"), str)}
 
 
-def named_attachment(credential):
-    """The attachment the credential names (public 1.0 field or private block)."""
+def _is_attachment(v):
+    return isinstance(v, dict) and set(v) == {"d", "filename", "mime_type", "size"}
+
+
+def named_attachments(credential):
+    """Every file the statement names: attachment-shaped values in its public
+    fields and its (disclosed) private block."""
     a = credential.get("a", {})
-    if "attachment" in a:
-        return a["attachment"]
-    c = a.get("c")
-    return c.get("attachment") if isinstance(c, dict) else None
+    c = a.get("c") if isinstance(a.get("c"), dict) else {}
+    return [v for block in (a, c) for k, v in block.items() if k != "c" and _is_attachment(v)]
 
 
-def check_dzq(data, seal=None, kel_text=None):
-    """Verifies a .dzq file. Adds `attachment`: None (none named), "ok",
-    "missing" or "mismatch" (the file is not the one the credential names)."""
+def named_attachment(credential):
+    """The first file the statement names, or None."""
+    found = named_attachments(credential)
+    return found[0] if found else None
+
+
+def carried_types(z):
+    """{SAID: TypeDoc} for the valid `types/<SAID>.json` entries of an archive.
+    Documents whose SAID does not match their name, or that claim the
+    reserved dzq: source, are ignored."""
+    from . import types as types_
+    from .typedoc import TypeDoc, TypeError_
+    out = {}
+    for name in z.namelist():
+        said = type_entry(name)
+        if said is None:
+            continue
+        try:
+            doc = TypeDoc(_read(z, name).decode("utf-8"), expect=said)
+        except (TypeError_, UnicodeDecodeError):
+            continue
+        if types_.accept(doc):
+            out[said] = doc
+    return out
+
+
+def check_dzq(data, seal=None, kel_text=None, known=None):
+    """Verifies a .dzq file. A type document carried as types/<SAID>.json is
+    used when the reader does not know the type. Adds `attachment`: None
+    (none named), "ok", "missing" or "mismatch" (a file is not the one the
+    statement names)."""
     bundle, z = open_dzq(data)
-    r = verify.check_credential(bundle, seal=seal, kel_text=kel_text)
+    pool = carried_types(z)
+    pool.update(known or {})
+    r = verify.check_credential(bundle, seal=seal, kel_text=kel_text, known=pool)
     att = None
     if r.valid:
-        a = verify.split_bundle(bundle)[0]
-        named = named_attachment(json.loads(a))
-        if named:
-            entry = "assets/" + named["filename"]
+        for named in named_attachments(json.loads(verify.split_bundle(bundle)[0])):
+            entry = "assets/" + str(named["filename"])
             if asset_basename(entry) is None:
                 att = "mismatch"
-            else:
-                try:
-                    body = _read(z, entry)
-                    att = "ok" if blake3(body).hex() == named["d"] and len(body) == named["size"] else "mismatch"
-                except KeyError:
-                    att = "missing"
+                break
+            try:
+                body = _read(z, entry)
+            except KeyError:
+                att = "missing"
+                break
+            if blake3(body).hex() != named["d"] or len(body) != named["size"]:
+                att = "mismatch"
+                break
+            att = "ok"
     r["attachment"] = att
     r["look"] = _check_look(z, bundle) if r.valid else None
     return r
@@ -155,14 +202,18 @@ def _check_look(z, bundle):
         return "invalid: %s" % e
 
 
-def make_dzq(bundle, metadata=None, attachment=None, look=None):
-    """Writes a dzq/1.0 archive: credential.acdc, optional metadata.json and
-    optional assets/<filename> (attachment = (filename, bytes))."""
+def make_dzq(bundle, metadata=None, attachment=None, look=None, type_doc=None, attachments=()):
+    """Writes a .dzq archive: credential.acdc, optional metadata.json,
+    assets/<filename> (attachment = (filename, bytes), or several in
+    `attachments`), the type document as types/<SAID>.json (`type_doc`, a
+    TypeDoc) and a look/1 document (extension: looks)."""
     entries = [(CREDENTIAL, bundle.encode("utf-8"))]
     if metadata is not None:
         entries.append((METADATA, json.dumps(metadata, ensure_ascii=False, indent=2).encode("utf-8")))
-    if attachment is not None:
-        entries.append(("assets/" + attachment[0], attachment[1]))
+    for name, body in ([attachment] if attachment is not None else []) + list(attachments):
+        entries.append(("assets/" + name, body))
+    if type_doc is not None:
+        entries.append(("types/%s.json" % type_doc.said, type_doc.text.encode("utf-8")))
     if look is not None:   # (said, document text, {file said: bytes})
         said, text, files = look
         entries.append(("looks/%s.json" % said, text.encode("utf-8")))

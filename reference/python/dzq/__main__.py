@@ -8,13 +8,14 @@
     dzq open thanks.dzq                   # what the file says (trusts nothing)
     dzq verify thanks.dzq                 # whether to believe it
     dzq hide thanks.dzq -o shown.dzq      # a copy without the private text, still valid
-    dzq sign --as bob.id --type promise --to "thanks:3/help/<AID>" what="Lunch" -o lunch.dzq
-    dzq present --as alice.id --nonce CODE lunch.dzq thanks*.dzq -o vp.json
-    dzq presentation vp.json --nonce CODE --kel bob.kel
-    dzq close --as bob.id lunch.dzq       # the issuer closes a promise early
-    dzq kel bob.id -o bob.kel             # export a key history
-    dzq look make gold.json -o looks/     # build a look/1 document and its files
+    dzq type new acme:board-post --public "area*:64" --private "text*:2000" "photo@"
+    dzq sign --as alice.id --type acme:board-post --to "any(<AID>,<AID>)" area=Podil text="…"
+    dzq present --as bob.id --nonce CODE thanks.dzq -o vp.json
     dzq presentation vp.json --nonce CODE
+    dzq kel alice.id -o alice.kel         # export a key history
+
+Type documents are read from ./types (or $DZQ_TYPES) and from the file
+being opened; --type also takes a path to a type document.
 """
 
 import argparse
@@ -63,12 +64,83 @@ def cmd_whoami(a):
     return EXIT_VALID
 
 
+def _types_dir():
+    return os.environ.get("DZQ_TYPES") or "types"
+
+
+def _known():
+    """Type documents found in ./types (or $DZQ_TYPES)."""
+    return types.load_dir(_types_dir())
+
+
+def _fmt_fields(fs):
+    def one(f):
+        n = f["name"] + ("@" if f.get("kind") == "attachment" else "")
+        return n if f.get("required") else "[%s]" % n
+    return ", ".join(one(f) for f in fs) or "-"
+
+
+def _print_type(t):
+    to = " or ".join({"aid": "one AID", "condition": "a condition"}[x] for x in t.to)
+    print("%s %s%s" % (t.name, t.version, "   (built in)" if t.said in types.BUILTIN else ""))
+    print("  id       %s" % t.said)
+    print("  to       %s" % to)
+    print("  public   %s" % _fmt_fields(t.public))
+    print("  private  %s" % _fmt_fields(t.private))
+
+
 def cmd_types(a):
-    for t in types.TYPES.values():
-        print("%s" % t.name)
-        print("  public:   %s" % (", ".join(t.public + tuple("[%s]" % f for f in t.optional_public)) or "-"))
-        print("  private:  %s" % ", ".join(t.private + tuple("[%s]" % f for f in t.optional_private)))
-    print("\n[optional]. attachment: use --attach FILE. look: look=<source>:<id>, or --look-doc FILE.")
+    pool = dict(types.BUILTIN)
+    pool.update(_known())
+    for t in sorted(pool.values(), key=lambda t: (t.said not in types.BUILTIN, t.name, t.version)):
+        _print_type(t)
+    print("\n[optional]; name@ is a file (--attach FILE). Every type also takes look=<source>:<id>"
+          "\nand re=<SAID of the statement it answers>. Your own types: dzq type new, kept in ./%s."
+          % _types_dir())
+    return EXIT_VALID
+
+
+def _parse_field(spec):
+    """name, name*, name:64, name*:64, name@ (a file), name@* → field item."""
+    m = __import__("re").fullmatch(r"([a-z][a-z0-9_]*)([@*]*)(?::(\d+))?", spec)
+    if not m:
+        raise CliError("a field is name, name* (required), name:MAX or name@ (a file); got %r" % spec)
+    f = {"name": m.group(1)}
+    if "*" in m.group(2):
+        f["required"] = True
+    if "@" in m.group(2):
+        f["kind"] = "attachment"
+    if m.group(3):
+        f["max"] = int(m.group(3))
+    return f
+
+
+def cmd_type(a):
+    from .typedoc import TypeError_, make_type
+    if a.action == "show":
+        try:
+            _print_type(types.load(a.name))
+        except (TypeError_, OSError) as e:
+            raise CliError(str(e)) from e
+        return EXIT_VALID
+    if a.name.split(":", 1)[0] == types.RESERVED_SOURCE:
+        raise CliError("the dzq: source is reserved; name it <your source>:<name>, e.g. acme:%s"
+                       % a.name.split(":", 1)[-1])
+    to = [x.strip() for x in a.to.split(",")]
+    try:
+        said, text = make_type(a.name, a.version, public=[_parse_field(f) for f in a.public or []],
+                               private=[_parse_field(f) for f in a.private or []],
+                               title=a.title, description=a.description or "", to=to)
+    except TypeError_ as e:
+        raise CliError(str(e)) from e
+    folder = a.output or _types_dir()
+    os.makedirs(folder, exist_ok=True)
+    path = os.path.join(folder, "%s-%s.json" % (a.name.replace(":", "-"), a.version))
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(text)
+    from .typedoc import TypeDoc
+    _print_type(TypeDoc(text))
+    print("\nwrote %s\nsign with: dzq sign --type %s …" % (path, a.name))
     return EXIT_VALID
 
 
@@ -106,14 +178,23 @@ def cmd_sign(a):
             raise CliError("look: %s" % e) from e
         content["look"] = "%s:%s" % (a.look_source, doc["d"])
         look_bundle = (doc["d"], text, files)
+    known = _known()
+    type_ = a.type
+    if type_.endswith(".json") and os.path.exists(type_):
+        try:
+            type_ = types.load(type_)
+        except (types.TypeError_, OSError) as e:
+            raise CliError(str(e)) from e
     try:
-        st = me.sign(type=a.type, to=a.to, content=content, attachment=attachment, private=not a.all_public)
+        st = me.sign(type=type_, to=a.to, content=content, attachment=attachment,
+                     private=not a.all_public, types=known)
     except ValueError as e:
         raise CliError(str(e)) from e
     out = a.output or "%s.dzq" % st.said[:12]
     from . import archive as archive_
-    data = st.to_dzq() if look_bundle is None else archive_.make_dzq(
-        st.bundle, attachment=st._attachment, look=look_bundle)
+    doc = st.type_doc
+    carry = doc if doc is not None and doc.said not in types.BUILTIN else None
+    data = archive_.make_dzq(st.bundle, attachment=st._attachment, look=look_bundle, type_doc=carry)
     with open(out, "wb") as f:
         f.write(data)
     print(st)
@@ -124,7 +205,7 @@ def cmd_sign(a):
 def cmd_open(a):
     data = open(a.file, "rb").read()
     try:
-        print(open_statement(data))
+        print(open_statement(data, types=_known()))
     except (archive.ArchiveError, ValueError) as e:
         raise CliError("not a readable dzq file: %s" % e) from e
     print("\n(not verified yet — run: dzq verify %s)" % a.file)
@@ -134,7 +215,7 @@ def cmd_open(a):
 def cmd_hide(a):
     data = open(a.file, "rb").read()
     try:
-        st = open_statement(data)
+        st = open_statement(data, types=_known())
     except (archive.ArchiveError, ValueError) as e:
         raise CliError("not a readable dzq file: %s" % e) from e
     if not st.private:
@@ -150,22 +231,9 @@ def cmd_hide(a):
 
 def _open(path):
     try:
-        return open_statement(open(path, "rb").read())
+        return open_statement(open(path, "rb").read(), types=_known())
     except (archive.ArchiveError, ValueError) as e:
         raise CliError("%s is not a readable dzq file: %s" % (path, e)) from e
-
-
-def cmd_close(a):
-    me = _load_identity(a.identity)
-    st = _open(a.file)
-    try:
-        sn = me.close(st)
-    except ValueError as e:
-        raise CliError(str(e)) from e
-    _save_identity(me, a.identity)
-    print("closed %s at event %d of your key history" % (st.said, sn))
-    print("verifiers see it once they have your current key history (dzq kel %s)" % a.identity)
-    return EXIT_VALID
 
 
 def cmd_kel(a):
@@ -242,18 +310,18 @@ def cmd_verify(a):
     data = open(a.file, "rb").read()
     if data[:2] == b"PK":
         try:
-            r = archive.check_dzq(data, seal=seal, kel_text=kel_text)
+            r = archive.check_dzq(data, seal=seal, kel_text=kel_text, known=_known())
         except archive.ArchiveError as e:
             r = verify.Result().fail("archive", str(e))
     else:
-        r = verify.check_credential(data.decode("utf-8"), seal=seal, kel_text=kel_text)
+        r = verify.check_credential(data.decode("utf-8"), seal=seal, kel_text=kel_text, known=_known())
     print(json.dumps(r, ensure_ascii=False, indent=2) if a.json else Verification(r))
     return EXIT_VALID if r["valid"] else EXIT_INVALID
 
 
 def cmd_presentation(a):
     kels = [open(k, encoding="utf-8").read() for k in (a.kel or [])]
-    r = verify.verify_presentation(open(a.file, encoding="utf-8").read(), a.nonce, kels=kels)
+    r = verify.verify_presentation(open(a.file, encoding="utf-8").read(), a.nonce, kels=kels, known=_known())
     if a.json:
         print(json.dumps(r, ensure_ascii=False, indent=2))
     else:
@@ -263,10 +331,10 @@ def cmd_presentation(a):
             print("  note: no verifier code was given, so this only shows; it does not prove freshness")
         for c in r["credentials"]:
             ok = c.get("usable", c.get("holder_is_recipient"))
-            label = c.get("type") or "?"
+            label = c.get("type") or "unknown type"
             why = ""
-            if c.get("type") == "promise":
-                why = "usable" if c.get("usable") else Verification.REASONS.get(c.get("why"), c.get("why"))
+            if "usable" in c:
+                why = "usable" if c.get("usable") else c.get("why")
             elif not c.get("valid"):
                 why = c.get("reason")
             elif not c.get("holder_is_recipient"):
@@ -276,7 +344,7 @@ def cmd_presentation(a):
 
 
 def main(argv=None):
-    p = argparse.ArgumentParser(prog="dzq", description="dzq/1.0: signed statements between people")
+    p = argparse.ArgumentParser(prog="dzq", description="dzq: signed statements between people")
     sub = p.add_subparsers(dest="cmd", required=True)
 
     s = sub.add_parser("init", help="create an identity file (NAME.id)")
@@ -291,9 +359,21 @@ def main(argv=None):
     s = sub.add_parser("types", help="list statement types and their fields")
     s.set_defaults(fn=cmd_types)
 
+    s = sub.add_parser("type", help="define your own statement type, or show one")
+    s.add_argument("action", choices=["new", "show"])
+    s.add_argument("name", help="new: <source>:<name>, e.g. acme:board-post; show: a type document file")
+    s.add_argument("--public", nargs="*", metavar="FIELD", help="name, name* (required), name:MAX, name@ (a file)")
+    s.add_argument("--private", nargs="*", metavar="FIELD", help="the same, for the salted private block")
+    s.add_argument("--to", default="aid,condition", help="aid, condition or both (default)")
+    s.add_argument("--version", default="1.0.0")
+    s.add_argument("--title")
+    s.add_argument("--description")
+    s.add_argument("-o", "--output", help="folder (default: ./types or $DZQ_TYPES)")
+    s.set_defaults(fn=cmd_type)
+
     s = sub.add_parser("sign", help="sign a statement into a .dzq file")
     s.add_argument("--as", dest="identity", required=True, help="your identity file")
-    s.add_argument("--type", required=True, help="statement type, see: dzq types")
+    s.add_argument("--type", required=True, help="a type name (see: dzq types) or a type document file")
     s.add_argument("--to", required=True, help="recipient AID, or a condition like any(AID,AID)")
     s.add_argument("fields", nargs="*", help="the type's fields as name=value")
     s.add_argument("--attach", help="a file to attach")
@@ -303,11 +383,6 @@ def main(argv=None):
     s.add_argument("--look-doc", help="a look/1 document to name and carry in the file")
     s.add_argument("--look-source", default="local", help="where others can ask for this look (default: local)")
     s.set_defaults(fn=cmd_sign)
-
-    s = sub.add_parser("close", help="close a promise you issued (no longer usable by anyone)")
-    s.add_argument("--as", dest="identity", required=True)
-    s.add_argument("file")
-    s.set_defaults(fn=cmd_close)
 
     s = sub.add_parser("kel", help="export the key history of an identity")
     s.add_argument("identity")

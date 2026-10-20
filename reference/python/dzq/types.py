@@ -1,65 +1,83 @@
-"""Statement types: what is said inside the common envelope (SPEC §3, §8.5).
+"""Statement types known to this reader.
 
-A type names its fields — which stay public when the statement is shown
-compact, which go into the salted private block — and its schemas.
+A type is a type document (typedoc.py). dzq ships one built-in type,
+`dzq:gratitude`. Anyone can define more: `dzq type new`, or
+`typedoc.make_type`. A reader that does not know a type still verifies its
+statements (envelope, SAIDs, signature); it just cannot check the fields.
 """
 
+import os
+
 from . import acdc
+from .typedoc import TypeDoc, TypeError_, make_type  # noqa: F401
+
+_said, _text = make_type(
+    "dzq:gratitude", "1.2.0",
+    public=[{"name": "category", "required": True, "max": 64}],
+    private=[{"name": "title", "required": True, "max": 200},
+             {"name": "message", "required": True, "max": 5000},
+             {"name": "attachment", "kind": "attachment"}],
+    title="dzq Gratitude",
+    description="A signed thank-you. Category is public; title, message and attachment are in a salted private block.")
+assert _said == acdc.SCHEMA_GRATITUDE_12, "built-in gratitude type changed"
+GRATITUDE = TypeDoc(_text)
+
+BUILTIN = {GRATITUDE.said: GRATITUDE}
+
+# Names reserved for the types this specification defines.
+RESERVED_SOURCE = "dzq"
 
 
-class Type:
-    def __init__(self, name, latest, schemas):
-        self.name = name
-        self.latest_to_aid, self.latest_to_condition = latest   # what new statements are issued under
-        self.schemas = tuple(schemas)                             # every schema of this type a verifier accepts
-        layout = acdc.LAYOUTS[self.latest_to_aid]
-        self.public = tuple(f[0] for f in layout.public if f[1])
-        self.optional_public = tuple(f[0] for f in layout.public if not f[1])
-        self.private = tuple(f[0] for f in layout.content if f[1])
-        self.optional_private = tuple(f[0] for f in layout.content if not f[1])
-
-    @property
-    def required(self):
-        return self.public + self.private
-
-    @property
-    def optional(self):
-        return self.optional_public + self.optional_private
-
-    @property
-    def fields(self):
-        return self.required + self.optional
-
-    @property
-    def all_schemas(self):
-        return self.schemas
-
-    def __repr__(self):
-        return "Type(%s: public %s; private %s)" % (
-            self.name,
-            ", ".join(self.public + tuple("[%s]" % f for f in self.optional_public)) or "-",
-            ", ".join(self.private + tuple("[%s]" % f for f in self.optional_private)))
+def accept(doc):
+    """May a reader use this (carried or loaded) type document? Documents
+    that claim the reserved `dzq:` source must be built-in ones."""
+    return doc.source != RESERVED_SOURCE or doc.said in BUILTIN
 
 
-GRATITUDE = Type("gratitude", (acdc.SCHEMA_GRATITUDE_12, acdc.SCHEMA_GRATITUDE_12_CONDITION),
-                 (acdc.SCHEMA_GRATITUDE, acdc.SCHEMA_GRATITUDE_CONDITION,
-                  acdc.SCHEMA_GRATITUDE_PRIVATE, acdc.SCHEMA_GRATITUDE_PRIVATE_CONDITION,
-                  acdc.SCHEMA_GRATITUDE_12, acdc.SCHEMA_GRATITUDE_12_CONDITION))
-PROMISE = Type("promise", (acdc.SCHEMA_PROMISE, acdc.SCHEMA_PROMISE_CONDITION),
-               (acdc.SCHEMA_PROMISE, acdc.SCHEMA_PROMISE_CONDITION))
+def load(path):
+    """A type document from a file."""
+    with open(path, encoding="utf-8") as f:
+        doc = TypeDoc(f.read())
+    if not accept(doc):
+        raise TypeError_("%s claims the reserved dzq: source" % path)
+    return doc
 
-TYPES = {t.name: t for t in (GRATITUDE, PROMISE)}
+
+def load_dir(path):
+    """Every *.json type document in a folder → {SAID: TypeDoc}."""
+    out = {}
+    if path and os.path.isdir(path):
+        for name in sorted(os.listdir(path)):
+            if name.endswith(".json"):
+                try:
+                    doc = load(os.path.join(path, name))
+                    out[doc.said] = doc
+                except (TypeError_, OSError):
+                    pass
+    return out
+
+
+def find(name_or_said, known=None):
+    """A type by SAID, by name (`acme:board-post`), or `gratitude` for the
+    built-in one. The newest version wins when several share a name."""
+    pool = dict(BUILTIN)
+    pool.update(known or {})
+    if name_or_said in pool:
+        return pool[name_or_said]
+    name = name_or_said if ":" in name_or_said else "%s:%s" % (RESERVED_SOURCE, name_or_said)
+    hits = [d for d in pool.values() if d.name == name]
+    if not hits:
+        raise ValueError("unknown type %r; known: %s" % (name_or_said, ", ".join(sorted({d.name for d in pool.values()}))))
+    return max(hits, key=lambda d: tuple(int(x) for x in d.version.split(".")))
+
+
+# Compatibility with earlier code paths.
+TYPES = {"gratitude": GRATITUDE}
 
 
 def by_name(name):
-    try:
-        return TYPES[name]
-    except KeyError:
-        raise ValueError("unknown type %r; known: %s" % (name, ", ".join(TYPES))) from None
+    return find(name)
 
 
-def by_schema(said):
-    for t in TYPES.values():
-        if said in t.schemas:
-            return t
-    return None
+def by_schema(said, known=None):
+    return (known or {}).get(said) or BUILTIN.get(said)

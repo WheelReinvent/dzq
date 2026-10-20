@@ -1,6 +1,6 @@
 # Proposal 0002: certificates (a promise, earned or given)
 
-> **Renamed on 2026-10-20: the type is `promise`.** A thank-you, an apology and a promise are one family of gestures; "certificate" is an attestation word. See SPEC §3.6 and extensions/promises.md. The text below keeps its original wording.
+> **2026-10-20: renamed to `promise`, then moved out of the core.** dzq now has open types (SPEC §3.6): anyone defines a type with a type document, and dzq keeps only the envelope. The promise lives on as an **experimental example** — [examples/types/promise.json](../examples/types/promise.json) and [extensions/promises.md](../extensions/promises.md). What it taught the core stays: a type document with public/private fields, `look` and `re` as general fields, conditions with extension kinds, and SPEC §0 (dzq does not prevent double spending). The text below keeps its original wording.
 
 **Status:** implemented in dzq/1.2 (spec, reference verifier, CLI, vectors); DzenQ core pending · **Target:** dzq/1.2 · **Author:** DzenQ team, 2026-10-20
 

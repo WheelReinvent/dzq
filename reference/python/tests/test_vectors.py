@@ -14,6 +14,8 @@ VECTORS = os.path.join(ROOT, "vectors")
 sys.path.insert(0, os.path.dirname(HERE))
 
 from dzq import archive, dq, kel, merkle, verify  # noqa: E402
+from dzq.experimental import promise as promise_ext  # noqa: E402
+from dzq.typedoc import TypeDoc  # noqa: E402
 from dzq.blake3 import blake3  # noqa: E402
 
 
@@ -23,6 +25,13 @@ def load(rel, binary=False):
 
 
 MANIFEST = json.loads(load("manifest.json"))
+
+
+def known(v):
+    return {d.said: d for d in (TypeDoc(load(t)) for t in v.get("types", []))}
+
+
+EXTENSIONS = {"promise": promise_ext.Extension}
 
 
 def matches(case, result, expect):
@@ -36,7 +45,7 @@ class Credentials(unittest.TestCase):
             with self.subTest(v["name"]):
                 seal = json.loads(load(v["seal"])) if "seal" in v else None
                 kel_text = load(v["kel"]) if "kel" in v else None
-                r = verify.check_credential(load(v["bundle"]), seal=seal, kel_text=kel_text)
+                r = verify.check_credential(load(v["bundle"]), seal=seal, kel_text=kel_text, known=known(v))
                 matches(self, r, v["expect"])
 
 
@@ -59,12 +68,13 @@ class Presentations(unittest.TestCase):
                 if "now" in v:
                     import datetime
                     now = datetime.datetime.fromisoformat(v["now"])
-                r = verify.verify_presentation(load(v["file"]), v["nonce"], now=now)
+                ext = [EXTENSIONS[v["experimental"]]()] if "experimental" in v else []
+                r = verify.verify_presentation(load(v["file"]), v["nonce"], now=now, known=known(v), extensions=ext)
                 expect = dict(v["expect"])
                 want = expect.pop("promise", None)
                 matches(self, r, expect)
                 if want is not None:
-                    cert = next(c for c in r["credentials"] if c.get("type") == "promise")
+                    cert = next(c for c in r["credentials"] if c.get("type") == "example:promise")
                     self.assertEqual("usable" if cert.get("usable") else cert.get("why"), want)
 
 

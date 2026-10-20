@@ -31,5 +31,20 @@ jobs:
               said = info["said"]
               assert blake3_said(text.replace(said, SAID_PLACEHOLDER, 1)) == said, name
               assert json.loads(text)["$id"] == said, name
-          print("schema SAIDs ok")
+          from dzq import types
+          assert open("schemas/gratitude.type.json", encoding="utf-8").read() == types.GRATITUDE.text
+          import glob
+          for f in glob.glob("examples/types/*.json"):
+              types.load(f)
+          print("schema SAIDs ok; type documents ok")
           EOF
+      - name: CLI walk-through (README)
+        run: |
+          pip install ./reference/python
+          cd "$(mktemp -d)"
+          dzq init alice && dzq init bob
+          dzq sign --as alice.id --type gratitude --to "$(dzq whoami bob.id)" title="Thank you" message="For fixing my bike." category=help -o thanks.dzq
+          dzq verify thanks.dzq
+          dzq type new acme:board-post --public "area*:64" --private "text*:2000" "photo@"
+          dzq sign --as alice.id --type acme:board-post --to "any($(dzq whoami bob.id))" area=Podil text="A bike for a kid" -o post.dzq
+          rm -r types && dzq verify post.dzq

@@ -68,17 +68,6 @@ class Identity(build.Controller):
 
     # --- acting ---------------------------------------------------------------
 
-    def close(self, statement):
-        """Closes a promise this identity issued: one interaction event
-        with the close digest. Returns the event's sequence number."""
-        from . import acdc as acdc_
-        if statement.issuer != self.aid:
-            raise ValueError("only the issuer can close a promise")
-        if statement.type != "promise":
-            raise ValueError("only promises can be closed")
-        self.interact([{"d": acdc_.close_said(statement.said)}])
-        return self.sn
-
     def present(self, statements, nonce, compact=True, claims=(), seals=None):
         """A holder-bound presentation (dzenq-vp/1) of `statements`, signed
         over `nonce`. Compact by default: private content stays hidden."""
@@ -93,11 +82,13 @@ class Identity(build.Controller):
     def registry(self):
         return blake3_said_registry(self.prefix)
 
-    def sign(self, type, to, content, when=None, attachment=None, private=True):
-        """A signed statement of `type` (e.g. "gratitude") to `to` (an AID or a
-        condition). `content` holds the type's fields. See dzq.types."""
+    def sign(self, type, to, content, when=None, attachment=None, private=True, types=None, re=None):
+        """A signed statement of `type` (a name like "gratitude", a TypeDoc or
+        a type SAID) to `to` (an AID or a condition). `content` holds the
+        type's fields. See dzq.types and dzq.typedoc."""
         from .statement import sign
-        return sign(self, type, to, content, when=when, attachment=attachment, private=private)
+        return sign(self, type, to, content, when=when, attachment=attachment, private=private,
+                    types=types, re=re)
 
     def __repr__(self):
         return "Identity(%s)" % self.aid

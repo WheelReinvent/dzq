@@ -17,7 +17,7 @@ bob = dzq.Identity.create()
 print("1. identities\n  ", alice, "\n  ", bob)
 
 # 2. What types exist, and which fields they take.
-print("\n2. types\n  ", dzq.types.TYPES)
+print("\n2. types\n  ", list(dzq.types.BUILTIN.values()))
 
 # 3. Alice signs a statement: a type, a recipient, the type's content.
 statement = alice.sign(
@@ -44,3 +44,14 @@ print("   signed by Alice:", check.signed_by == alice.aid, "| to Bob:", check.to
 # 7. A tampered copy: same file, one word changed inside.
 tampered = dzq.open(received.bundle.replace("bike", "car!"))
 print("\n7. tampered copy\n", tampered.verify())
+
+# 8. Your own type: describe the fields, sign, and carry the type in the file.
+from dzq.typedoc import TypeDoc, make_type  # noqa: E402
+
+_, text = make_type("acme:board-post", "1.0.0",
+                    public=[{"name": "area", "required": True, "max": 64}],
+                    private=[{"name": "text", "required": True, "max": 2000}])
+post_type = TypeDoc(text)
+post = alice.sign(type=post_type, to="any(%s)" % bob.aid, content={"area": "Podil", "text": "A kid's bike, free"})
+print("\n8. own type\n", dzq.open(post.to_dzq()).verify())
+print("   a reader without the type:", dzq.open(post.bundle).verify().result["type_known"])

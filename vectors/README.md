@@ -2,7 +2,7 @@
 
 Files with known answers. An implementation that reproduces every expected
 result in [`manifest.json`](manifest.json) and the JSON files next to it is
-compatible with dzq/1.0.
+compatible with dzq.
 
 | File | What |
 |---|---|
@@ -11,7 +11,8 @@ compatible with dzq/1.0.
 | `credentials/<name>.kel` | if present: a fresher issuer KEL to verify with (SPEC §6.1) |
 | `credentials/<name>.seal.json` | if present: the gratitude's period seal |
 | `archives/<name>.dzq` | `.dzq` files, good and hostile |
-| `presentations/<name>.json` | `dzenq-vp/1` presentations; check with the `nonce` from the manifest |
+| `presentations/<name>.json` | `dzenq-vp/1` presentations; check with the `nonce` (and `now`, if given) from the manifest |
+| `types/<SAID>.json` | type documents; a vector with `"types": [...]` is checked by a reader that knows them, one without by a reader that does not |
 | `conditions.json` | condition texts: does it parse, its canonical form, which leaves are proved, does it hold |
 | `merkle.json` | period trees: leaves, root, a proof for each leaf |
 | `digests.json` | schema SAIDs, Blake3 SAIDs, redemption digests, claim-key derivations |
@@ -23,6 +24,12 @@ compatible with dzq/1.0.
 always there; `code` is the failure code of SPEC §6.4 (or `archive` when the
 `.dzq` itself must be refused before verification). For archives,
 `attachment` is `ok`, `mismatch`, `missing` or `null` (none named).
+`type` is the type's name, or `null` when the reader does not know it
+(`type_known` false).
+
+Vectors marked `"experimental": "promise"` test the experimental
+[promises](../extensions/promises.md) extension, not dzq. Skip them unless
+you implement it.
 
 ## Keys
 

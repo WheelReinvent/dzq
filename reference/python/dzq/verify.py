@@ -88,29 +88,33 @@ def _period(view, issuer, said, seal):
     return close_sn, view.key_sets_between(since, close_sn)
 
 
-def check_credential(bundle, seal=None, kel_text=None):
-    """Verifies a credential bundle.
+def check_credential(bundle, seal=None, kel_text=None, known=None):
+    """Verifies a statement bundle — of any type, known or not.
 
-    `seal` — the gratitude's period seal, if the holder has one.
-    `kel_text` — a fresher copy of the issuer's KEL (from any KERI source);
-    when given it is used instead of the KEL inside the bundle.
+    `seal` — the statement's period seal, if the holder has one.
+    `kel_text` — a fresher copy of the issuer's KEL (from any KERI source),
+    used before the KEL inside the bundle.
+    `known` — {type SAID: TypeDoc} beyond the built-in types.
     """
     r = Result()
     try:
         raw, sigs, bundled_kel = split_bundle(bundle)
-        integ = acdc.check_integrity(raw)
+        integ = acdc.check_integrity(raw, known)
     except acdc.AcdcError as e:
         return r.fail(e.code, str(e))
     except cesr.CesrError as e:
         return r.fail("format", "bad signature group: %s" % e)
+    a = integ.acdc["a"]
     r.update(said=integ.said, issuer=integ.issuer, recipient=integ.recipient, schema=integ.schema,
-             type=acdc.type_of(integ.schema), dt=integ.acdc["a"].get("dt"))
-    if "category" in integ.acdc["a"]:
-        r["category"] = integ.acdc["a"]["category"]
-    if "until" in integ.acdc["a"]:
-        r["until"] = integ.acdc["a"]["until"]
-    if integ.schema in acdc.PRIVATE:
+             type=acdc.type_of(integ.schema, known), to_aid="i" in a, dt=a.get("dt"),
+             fields={k: v for k, v in a.items() if k not in ("d", "i", "dq", "dt", "c")})
+    r["type_known"] = r["type"] is not None
+    if "category" in a:
+        r["category"] = a["category"]
+    if "c" in a:
         r["content"] = "shown" if integ.content is not None else "hidden"
+        if integ.content is not None and "re" in integ.content:
+            r["re"] = integ.content["re"]
 
     try:
         # A fresher copy first, then the bundle's own: for each sequence number
@@ -145,48 +149,12 @@ def check_credential(bundle, seal=None, kel_text=None):
         if not keys or not _signed_by(integ.signed_raw, sigs, keys):
             return r.fail("not-current", "not sealed, and not signed by the issuer's current keys")
 
-    if r["type"] == "promise":
-        # No redemption for promises; the issuer may close one early.
-        r["closed_at_sn"] = view.digest_anchor_of(acdc.close_said(integ.said))
-    else:
-        r["redeemed_at_sn"] = view.digest_anchor_of(acdc.redemption_said(integ.said))
-        if r["redeemed_at_sn"] is None:
-            r["redeemed_at_sn"] = view.digest_anchor_of(integ.said)  # legacy redemption record
+    r["redeemed_at_sn"] = view.digest_anchor_of(acdc.redemption_said(integ.said))
+    if r["redeemed_at_sn"] is None:
+        r["redeemed_at_sn"] = view.digest_anchor_of(integ.said)  # legacy redemption record
+    r.kel_view = view       # for extensions (not part of the result)
     r["valid"] = True
     return r
-
-
-def _instant(text):
-    import datetime
-    try:
-        t = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
-    except (ValueError, AttributeError, TypeError):
-        return None
-    return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
-
-
-def thanks_met(leaf, holder, statement_issuer, pool):
-    """Does `holder` have enough gratitudes in `pool` (results of valid
-    gratitudes the holder holds) for a thanks: leaf of a statement issued by
-    `statement_issuer`? (extensions/promises.md)"""
-    t = leaf.thanks
-    if t is None:
-        return False
-    since = _instant(t.since) if t.since else None
-    if t.since and since is None:
-        return False
-    counted = set()
-    for g in pool:
-        if g.get("type") != "gratitude" or g.get("category") != t.category or g.get("issuer") not in t.issuers:
-            continue
-        if since is not None:
-            when = _instant(g.get("dt"))
-            if when is None or when < since:
-                continue
-        if g.get("issuer") == holder and statement_issuer != holder:
-            continue  # a thank-you to yourself counts only toward your own promises to yourself
-        counted.add(g["said"])
-    return len(counted) >= t.count
 
 
 # --- claims (extension: letters) -------------------------------------------
@@ -208,11 +176,11 @@ def claim_holds(proof):
         return False
 
 
-def holder_meets(recipient, said, holder, claims, schema=None, issuer=None, pool=None):
+def holder_meets(recipient, said, holder, claims, to_aid=False, hook=None, kinds=()):
     """Is `holder` the recipient: the AID in a.i, or a condition in a.dq the
-    holder meets with its claims (and, for thanks: leaves, the gratitudes in
-    `pool`)?"""
-    if schema in acdc.TO_AID:
+    holder meets with its claims? `hook(leaf)` decides leaves of extension
+    `kinds` (e.g. thanks:)."""
+    if to_aid:
         return recipient == holder
     cond = dq.parse(recipient)
     if cond is None:
@@ -224,18 +192,22 @@ def holder_meets(recipient, said, holder, claims, schema=None, issuer=None, pool
         if leaf.kind == "claim":
             return any(isinstance(p, dict) and p.get("said") == said and p.get("aid") == holder
                        and p.get("key") == leaf.value and claim_holds(p) for p in claims)
-        if leaf.kind == "thanks":
-            return pool is not None and thanks_met(leaf, holder, issuer, [g for g in pool if g["said"] != said])
-        return False  # commitment: not part of dzq/1.x verification
+        if leaf.kind in kinds and hook is not None:
+            return bool(hook(leaf))
+        return False  # commitment, unknown kinds: never met
 
-    return dq.holds(cond, leaf_ok)
+    return dq.holds(cond, leaf_ok, dq.KNOWN + tuple(kinds))
 
 
 # --- presentations (extension: presentation) -------------------------------
 
-def verify_presentation(vp_text, expected_nonce, now=None, kels=()):
+def verify_presentation(vp_text, expected_nonce, now=None, kels=(), known=None, extensions=()):
     """Holder-bound presentation `dzenq-vp/1`. An empty expected_nonce means
-    "display only": it proves nothing about freshness."""
+    "display only": it proves nothing about freshness.
+
+    `extensions` add condition kinds and "usable" rules (an object with
+    `kinds`, `leaf(leaf, holder, statement, results, claims)` and
+    `assess(statement, holder, now)`), e.g. dzq.experimental.promise."""
     out = {"valid": False, "holder": None, "code": None, "reason": None, "nonce": None, "credentials": []}
 
     def fail(code, reason):
@@ -282,34 +254,30 @@ def verify_presentation(vp_text, expected_nonce, now=None, kels=()):
     fresher = "".join(kels)
     results = []
     for bundle in credentials:
-        r = check_credential(bundle, kel_text=fresher or None)
+        r = check_credential(bundle, kel_text=fresher or None, known=known)
         if r.said and not r.sealed and isinstance(seals, dict) and r.said in seals:
-            r = check_credential(bundle, seal=seals[r.said], kel_text=fresher or None)
+            r = check_credential(bundle, seal=seals[r.said], kel_text=fresher or None, known=known)
         results.append(r)
-    # Gratitudes the holder holds without counting other gratitudes: the pool
-    # that thanks: leaves count from.
-    pool = [r for r in results if r.valid and r.get("type") == "gratitude"
-            and holder_meets(r.recipient, r.said, holder, claims, r.schema, r.issuer)]
+    kinds = tuple(k for e in extensions for k in e.kinds)
     all_ok = bool(results)
     for r in results:
-        mine = r.valid and holder_meets(r.recipient, r.said, holder, claims, r.schema, r.issuer, pool)
-        r["holder_is_recipient"] = mine
-        if r.valid and r.get("type") == "promise":
-            until = _instant(r.get("until")) if r.get("until") else None
-            if r.get("until") and (until is None or until <= now):
-                r["usable"], r["why"] = False, "expired"
-            elif r.get("closed_at_sn") is not None:
-                r["usable"], r["why"] = False, "closed"
-            elif not mine:
-                r["usable"], r["why"] = False, "not-earned"
-            else:
-                r["usable"] = True
+        def hook(leaf, r=r):
+            for e in extensions:
+                if leaf.kind in e.kinds:
+                    return e.leaf(leaf, holder, r, results, claims)
+            return False
+        r["holder_is_recipient"] = r.valid and holder_meets(
+            r.recipient, r.said, holder, claims, r.get("to_aid"), hook, kinds)
+        for e in extensions:
+            if r.valid:
+                e.assess(r, holder, now)
+        if "usable" in r:
             if not r["usable"]:
                 all_ok = False
-        elif not mine:
+        elif not r["holder_is_recipient"]:
             all_ok = False
         out["credentials"].append(r)
     if not all_ok:
-        return fail("credential", "a credential is invalid, not the holder's, or a promise is not usable")
+        return fail("credential", "a statement is invalid, not the holder's, or not usable")
     out["valid"] = True
     return out

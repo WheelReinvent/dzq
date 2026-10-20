@@ -5,11 +5,8 @@
     "gratitude-condition 2.0.0": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ",
     "gratitude-private 1.1.0": "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_",
     "gratitude-private-condition 2.1.0": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
-    "gratitude 1.2.0": "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81",
-    "gratitude-condition 2.2.0": "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V",
-    "promise 1.0.0": "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6",
-    "promise-condition 2.0.0": "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5",
-    "look/1": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
+    "dzq:gratitude 1.2.0 (type document)": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
+    "look/1 (extension)": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
     "binding 1.0.0": "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
   },
   "blake3_said": [
@@ -32,10 +29,10 @@
       "said": "ED0GqtGy5mHyXREQZXJ72KGBeoMQbpvD27NDaxh4bBB9"
     }
   ],
-  "close_said": [
+  "close_said (experimental)": [
     {
-      "promise": "EGxgtOVO8TQb9qmwDAa_L_sDfJixrRIC12xx_mQUVsKb",
-      "said": "ELQb2Kd5dFaF7hxJQ7XJA2GtBuIWtM1Fongp_jH310QD"
+      "promise": "EDWgCSIDILrRsldXkKU6KU29S6y3lr4nUjx5_f6ysllQ",
+      "said": "EMH4tN4x0x4MXAnvYDJPPiAhTyZiMoA76weHjmecrNii"
     }
   ],
   "claim_keys": [

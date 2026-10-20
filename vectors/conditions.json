@@ -93,9 +93,11 @@
       "dq": "thanks:3/help/EAID1",
       "parses": true,
       "canonical": "thanks:3/help/EAID1",
-      "proved": [],
+      "proved": [
+        "thanks:3/help/EAID1"
+      ],
       "holds": false,
-      "note": "thanks: is proved by gratitudes in a presentation, never by naming the leaf"
+      "note": "thanks: is an extension kind (experimental): unknown to core verifiers, never met"
     },
     {
       "dq": "any(EAID2,thanks:3/help/EAID1)",

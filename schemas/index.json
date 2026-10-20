@@ -29,34 +29,18 @@
     "version": "2.1.0",
     "credentialType": "DzqGratitude"
   },
-  "gratitude-1.2.schema.json": {
-    "said": "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81",
+  "gratitude.type.json": {
+    "said": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
     "title": "dzq Gratitude",
     "version": "1.2.0",
-    "credentialType": "DzqGratitude"
-  },
-  "gratitude-condition-1.2.schema.json": {
-    "said": "EJunsC_WSH8aI_5wu9tYHyETyiO-I8FcS-vOFeH50G1V",
-    "title": "dzq Gratitude (condition)",
-    "version": "2.2.0",
-    "credentialType": "DzqGratitude"
+    "credentialType": "dzq:gratitude",
+    "note": "the built-in type document (dzq/1.2): one document for a.i and a.dq"
   },
   "look.schema.json": {
     "said": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
     "title": "dzq look",
     "version": "1.0.0",
-    "credentialType": "look"
-  },
-  "promise.schema.json": {
-    "said": "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6",
-    "title": "dzq Promise",
-    "version": "1.0.0",
-    "credentialType": "DzqPromise"
-  },
-  "promise-condition.schema.json": {
-    "said": "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5",
-    "title": "dzq Promise (condition)",
-    "version": "2.0.0",
-    "credentialType": "DzqPromise"
+    "credentialType": "look",
+    "note": "optional extension (extensions/looks.md)"
   }
 }

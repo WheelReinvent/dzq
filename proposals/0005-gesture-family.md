@@ -2,6 +2,8 @@
 
 **Status:** TBD — an idea to work out, not a proposal yet · **Author:** DzenQ team, 2026-10-20
 
+> **Update, same day.** dzq now has open types (SPEC §3.6) and a general `re` field (SPEC §3.7). So *sorry* and *please* no longer need the spec: any app can define them as type documents today, and `re` covers *in reply to*. What remains open is whether some of them should become **built-in** `dzq:` types, and the promise is now only an experimental example (extensions/promises.md).
+
 ## The family
 
 The words children are taught first — *thank you, sorry, please* — plus
@@ -12,7 +14,7 @@ The words children are taught first — *thank you, sorry, please* — plus
 | **Past** | **sorry** — I did you wrong | **thank you** — you did me good |
 | **Future** | **I promise** — I will do for you | **please** — do for me |
 
-- *Thank you* (gratitude) and *I promise* (promise) exist in dzq/1.2.
+- *Thank you* (gratitude) is built in; *I promise* is an experimental example type.
 - *Sorry* (apology) mirrors *thank you* in the past.
 - *Please* (request) mirrors *I promise* in the future.
 

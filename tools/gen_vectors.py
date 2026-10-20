@@ -36,7 +36,7 @@ def attrs(recipient=None, condition=None, title="Дякую", message="За до
 class Out:
     def __init__(self, base):
         self.base = base
-        self.manifest = {"spec": "dzq/1.0", "credentials": [], "archives": [], "presentations": []}
+        self.manifest = {"spec": "dzq/1.2", "credentials": [], "archives": [], "presentations": []}
 
     def write(self, rel, data):
         path = os.path.join(self.base, rel)
@@ -49,9 +49,11 @@ class Out:
     def json(self, rel, value):
         return self.write(rel, json.dumps(value, ensure_ascii=False, indent=2) + "\n")
 
-    def credential(self, name, description, bundle, expect, seal=None, kel=None):
+    def credential(self, name, description, bundle, expect, seal=None, kel=None, types=None):
         entry = {"name": name, "description": description,
                  "bundle": self.write("credentials/%s.acdc" % name, bundle)}
+        if types:
+            entry["types"] = list(types)
         if seal is not None:
             entry["seal"] = self.json("credentials/%s.seal.json" % name, seal)
         if kel is not None:
@@ -64,11 +66,15 @@ class Out:
                                           "file": self.write("archives/%s.dzq" % name, data),
                                           "expect": expect})
 
-    def presentation(self, name, description, vp, nonce, expect, now=None):
+    def presentation(self, name, description, vp, nonce, expect, now=None, types=None, experimental=None):
         entry = {"name": name, "description": description,
                  "file": self.write("presentations/%s.json" % name, vp), "nonce": nonce}
         if now is not None:
             entry["now"] = now
+        if types:
+            entry["types"] = list(types)
+        if experimental:
+            entry["experimental"] = experimental
         entry["expect"] = expect
         self.manifest["presentations"].append(entry)
 
@@ -164,8 +170,8 @@ def generate(base):
     out.credential("schema-mismatch", "Recipient in a.i under the condition schema 2.0.0.",
                    alice.bundle(wrong), invalid("schema"))
     unknown = acdc.saidify(dict(g1, s=cesr.blake3_said("some other schema")))
-    out.credential("schema-unknown", "A schema SAID this version does not know.",
-                   alice.bundle(unknown), invalid("schema"))
+    out.credential("schema-unknown", "A type SAID this reader does not know: the envelope is checked, the type is reported unknown.",
+                   alice.bundle(unknown), valid(type=None, type_known=False))
     extra = dict(g1)
     extra["a"] = dict(g1["a"], mood="happy")
     try:
@@ -439,49 +445,150 @@ def generate(base):
                      vp(dave, [alice.bundle(acdc.compact(p2))], claims=[build.claim_proof(ck, p2["d"], dave.prefix)]),
                      NONCE, {"valid": True, "holder": dave.prefix})
 
-    # --- dzq/1.2: look, promises ---------------------------------------
-    def stmt(issuer, schema, name, **fields):
-        return acdc.new_statement(issuer.prefix, cesr.blake3_said("registry|" + issuer.prefix), schema,
-                                  dict({"dt": DT}, **fields), salt=salt(name))
+    # --- dzq/1.2: open types ---------------------------------------------
+    from dzq import types as types_
+    from dzq.typedoc import TypeDoc, make_type
+    from dzq.experimental import promise as promise_ext
+    GRAT = types_.GRATITUDE
 
+    def stmt(issuer, doc, name, **fields):
+        return acdc.new_typed(issuer.prefix, cesr.blake3_said("registry|" + issuer.prefix), doc,
+                              dict({"dt": DT}, **fields), salt=salt(name))
+
+    def type_file(doc):
+        return out.write("types/%s.json" % doc.said, doc.text)
+
+    g12 = stmt(alice, GRAT, "g12-plain", i=bob.prefix, category="help", title="Дякую", message="Тип 1.2")
+    out.credential("gratitude-1.2", "dzq:gratitude 1.2.0, the built-in type document: to one AID, private block.",
+                   alice.bundle(g12), valid(said=g12["d"], schema=acdc.SCHEMA_GRATITUDE_12, type="dzq:gratitude",
+                                            type_known=True, content="shown"))
+    g12c = stmt(alice, GRAT, "g12-cond", dq="any(%s,%s)" % (bob.prefix, carol.prefix), category="help",
+                title="Дякую", message="Будь-кому з двох")
+    out.credential("gratitude-1.2-condition", "The same type to a condition: one type document covers both (a.i or a.dq).",
+                   alice.bundle(g12c), valid(type="dzq:gratitude", content="shown"))
+    out.credential("gratitude-1.2-compact", "Compact form of gratitude-1.2: same SAID, same signature.",
+                   alice.bundle(acdc.compact(g12)), valid(said=g12["d"], content="hidden"))
+    no_msg = json.loads(json.dumps(g12))
+    del no_msg["a"]["c"]["message"]
+    out.credential("gratitude-1.2-missing-field", "A required private field is missing (SAIDs recomputed): the known type refuses it.",
+                   alice.bundle(resaid(no_msg)), invalid("schema"))
+    long_cat = json.loads(json.dumps(g12))
+    long_cat["a"]["category"] = "x" * 65
+    out.credential("gratitude-1.2-too-long", "A public field longer than the type's max (SAIDs recomputed).",
+                   alice.bundle(resaid(long_cat)), invalid("schema"))
+
+    # A type anyone can define: a notice-board post.
+    post_said, post_text = make_type("acme:board-post", "1.0.0",
+                                     public=[{"name": "area", "required": True, "max": 64}],
+                                     private=[{"name": "text", "required": True, "max": 2000},
+                                              {"name": "photo", "kind": "attachment"}],
+                                     title="Board post", description="An example type from another app.")
+    POST = TypeDoc(post_text)
+    post_file = type_file(POST)
+    post = stmt(carol, POST, "post", dq="any(%s,%s)" % (bob.prefix, dave.prefix), area="Podil",
+                text="Віддам дитячий велосипед")
+    out.credential("custom-type-unknown", "A statement of a type this reader does not know: envelope, SAIDs and signature "
+                   "are checked; the result says the type is unknown.",
+                   carol.bundle(post), valid(said=post["d"], schema=post_said, type=None, type_known=False, content="shown"))
+    out.credential("custom-type-known", "The same statement, with the type document given to the reader.",
+                   carol.bundle(post), valid(said=post["d"], type="acme:board-post", type_known=True), types=[post_file])
+    out.credential("custom-type-compact", "The same statement, compact: the text is hidden, the area stays public.",
+                   carol.bundle(acdc.compact(post)), valid(said=post["d"], content="hidden", type="acme:board-post"),
+                   types=[post_file])
+    no_area = json.loads(json.dumps(post))
+    del no_area["a"]["area"]
+    out.credential("custom-type-breaks-type-unknown", "Missing a required field of its type, read without the type: "
+                   "still a valid envelope (fields are not checked).",
+                   carol.bundle(resaid(no_area)), valid(type_known=False))
+    out.credential("custom-type-breaks-type-known", "The same, read with the type document: refused.",
+                   carol.bundle(resaid(no_area)), invalid("schema"), types=[post_file])
+    out.archive("custom-type-carried", "A .dzq that carries its type document as types/<SAID>.json: any reader can check the fields.",
+                archive.make_dzq(carol.bundle(post), type_doc=POST), valid(type="acme:board-post", type_known=True))
+    out.archive("custom-type-carried-tampered", "The carried type document was edited: it is ignored, the statement is valid, type unknown.",
+                archive.zip_entries([(archive.CREDENTIAL, carol.bundle(post).encode()),
+                                     ("types/%s.json" % post_said, post_text.replace("Board post", "Board p0st").encode())]),
+                valid(type_known=False))
+    fake_said, fake_text = make_type("dzq:gratitude", "9.0.0", public=[], private=[{"name": "text"}])
+    fake = TypeDoc(fake_text)
+    fake_st = stmt(carol, fake, "fake", i=bob.prefix, text="Я теж gratitude")
+    out.archive("reserved-source-carried", "A carried type document claims the reserved dzq: source: ignored, type unknown.",
+                archive.make_dzq(carol.bundle(fake_st), type_doc=fake), valid(type_known=False))
+    float_said = json.loads(json.dumps(post))
+    float_said["a"]["area"] = 1.5
+    out.credential("envelope-float", "A float in a field (SAIDs recomputed): not allowed in any type.",
+                   carol.bundle(resaid(float_said)), invalid("schema"))
+    reserved = json.loads(json.dumps(post))
+    reserved["a"] = {k: reserved["a"][k] for k in ("d", "dq", "dt")}
+    reserved["a"]["u"] = "x"
+    reserved["a"]["c"] = post["a"]["c"]
+    out.credential("envelope-reserved-name", "A public field named u (reserved).",
+                   carol.bundle(resaid(reserved)), invalid("schema"))
+    c_first = json.loads(json.dumps(post))
+    c_first["a"] = {"d": post["a"]["d"], "dq": post["a"]["dq"], "dt": DT, "c": post["a"]["c"], "area": "Podil"}
+    out.credential("envelope-c-not-last", "a.c before a public field.",
+                   carol.bundle(resaid(c_first)), invalid("schema"))
+    no_dt = json.loads(json.dumps(post))
+    no_dt["a"] = {k: v for k, v in post["a"].items() if k != "dt"}
+    out.credential("envelope-no-dt", "No a.dt.", carol.bundle(resaid(no_dt)), invalid("schema"))
+    big = stmt(carol, POST, "big", i=bob.prefix, area="Podil", text="x")
+    big["a"]["c"]["text"] = "я" * 140000
+    out.credential("envelope-too-large", "A statement over 256 KB.", carol.bundle(resaid(big)), invalid("format"))
+
+    # re: the statement this one answers (a hint, inside the private block).
+    reply = stmt(bob, GRAT, "reply", i=alice.prefix, category="thanks", title="Навзаєм",
+                 message="Дякую за подяку", re=g12["d"])
+    out.credential("re", "A gratitude that answers another statement (re = its SAID).",
+                   bob.bundle(reply), valid(re=g12["d"], content="shown"))
+    out.credential("re-compact", "Compact: the link is hidden with the text.",
+                   bob.bundle(acdc.compact(reply)), valid(content="hidden"))
+    bad_re = json.loads(json.dumps(reply))
+    bad_re["a"]["c"]["re"] = "not a said"
+    out.credential("re-not-a-said", "re is not a SAID (SAIDs recomputed).", bob.bundle(resaid(bad_re)), invalid("schema"))
+
+    # look: a pointer <source>:<id> (the look/1 document is an optional extension).
     from dzq import look as look_
     png = bytes.fromhex("89504e470d0a1a0a0000000d4948445200000001000000010802000000907753de"
-                        "0000000c4944415478da63f8f3d36a000003bb0207a0e2a0590000000049454e44ae426082")
+                        "0000000c4944415408d763f8cfc000000301010018dd8db00000000049454e44ae426082")
     png_said = cesr.blake3_said(png)
     look_said, look_text = look_.make_document({"name": "Gold", "layout": "card",
-                                                "background": {"color": "#F4E3B5", "image": png_said},
-                                                "text": {"color": "#3A2A00", "font": "serif"}, "accent": "#B8860B"})
-    g12 = stmt(alice, acdc.SCHEMA_GRATITUDE_12, "g12", i=bob.prefix, category="help", title="Дякую",
-               message="З бланком", look="dzenq:" + look_said)
-    out.credential("look-full", "dzq/1.2 gratitude naming a look (dzenq:<SAID>), full form.",
-                   alice.bundle(g12), valid(said=g12["d"], schema=acdc.SCHEMA_GRATITUDE_12, content="shown"))
+                                                "background": {"color": "#B8860B", "image": png_said}})
+    gl = stmt(alice, GRAT, "g12", i=bob.prefix, category="help", title="Дякую",
+              message="З бланком", look="dzenq:" + look_said)
+    out.credential("look-full", "A gratitude naming a look (dzenq:<SAID>), full form.",
+                   alice.bundle(gl), valid(said=gl["d"], schema=acdc.SCHEMA_GRATITUDE_12, content="shown"))
     out.credential("look-compact", "The same, compact: the look is hidden with the text.",
-                   alice.bundle(acdc.compact(g12)), valid(said=g12["d"], content="hidden"))
+                   alice.bundle(acdc.compact(gl)), valid(content="hidden"))
     out.credential("look-changed", "The look was swapped for another after signing.",
-                   tamper(alice.bundle(g12), "dzenq:" + look_said, "dzenq:" + cesr.blake3_said("other look")), invalid("said"))
-    bad_look = json.loads(json.dumps(g12))
+                   tamper(alice.bundle(gl), "dzenq:" + look_said, "dzenq:" + cesr.blake3_said("other look")), invalid("said"))
+    bad_look = json.loads(json.dumps(gl))
     bad_look["a"]["c"]["look"] = "gold"
     out.credential("look-without-source", "A look with no source (SAIDs recomputed): refused.",
                    alice.bundle(resaid(bad_look)), invalid("schema"))
-    named = stmt(alice, acdc.SCHEMA_GRATITUDE_12, "g12n", i=bob.prefix, category="help", title="Дякую",
+    named = stmt(alice, GRAT, "g12n", i=bob.prefix, category="help", title="Дякую",
                  message="Каталожний бланк", look="dzenq:gold")
-    out.archive("look-carried", "A gratitude with its look/1 document and picture inside the .dzq.",
-                archive.make_dzq(alice.bundle(g12), look=(look_said, look_text, {png_said: png})),
+    out.archive("look-carried", "A gratitude with its look/1 document and picture inside the .dzq (extension: looks).",
+                archive.make_dzq(alice.bundle(gl), look=(look_said, look_text, {png_said: png})),
                 valid(look="ok", content="shown"))
     out.archive("look-named-only", "A catalogue look, named but not carried.",
                 archive.make_dzq(alice.bundle(named)), valid(look="named"))
     out.archive("look-document-tampered", "The carried look document was edited: the statement is valid, the look is not used.",
-                archive.make_dzq(alice.bundle(g12), look=(look_said, look_text.replace("#B8860B", "#000000"), {png_said: png})),
+                archive.make_dzq(alice.bundle(gl), look=(look_said, look_text.replace("#B8860B", "#000000"), {png_said: png})),
                 {"valid": True, "look": "invalid: the look's SAID does not match its content"})
-    gif = b"GIF89a" + b"\x00" * 20
+    gif = b"GIF89a\x01\x00\x01\x00\x00\x00\x00;"
     gif_said = cesr.blake3_said(gif)
     gif_look_said, gif_look_text = look_.make_document({"name": "Gif", "background": {"image": gif_said}})
-    g12g = stmt(alice, acdc.SCHEMA_GRATITUDE_12, "g12g", i=bob.prefix, category="help", title="Дякую",
+    g12g = stmt(alice, GRAT, "g12g", i=bob.prefix, category="help", title="Дякую",
                 message="GIF", look="local:" + gif_look_said)
     out.archive("look-forbidden-file", "A carried look uses a GIF: not an allowed file type.",
                 archive.make_dzq(alice.bundle(g12g), look=(gif_look_said, gif_look_text, {gif_said: gif})),
                 {"valid": True, "look": "invalid: images must be PNG, JPEG or WebP"})
 
+    # --- experimental: promises and thanks: (extensions/promises.md) -------
+    # Not part of dzq. A verifier that does not implement the extension skips
+    # cases marked "experimental".
+    with open(os.path.join(ROOT, "examples", "types", "promise.json"), encoding="utf-8") as f:
+        PROMISE = TypeDoc(f.read())
+    prom_file = type_file(PROMISE)
     dad = build.Controller("dad").incept()
     marko = build.Controller("marko").incept()
     sofia = build.Controller("sofia").incept()
@@ -489,81 +596,65 @@ def generate(base):
     room = "cleaned%20the%20room"
 
     def thanks(frm, to, name, category="cleaned the room", dt=DT):
-        g = acdc.new_statement(frm.prefix, cesr.blake3_said("registry|" + frm.prefix), acdc.SCHEMA_GRATITUDE_12,
-                               {"i": to.prefix, "dt": dt, "category": category, "title": "Дякую", "message": name},
-                               salt=salt(name))
+        g = acdc.new_typed(frm.prefix, cesr.blake3_said("registry|" + frm.prefix), GRAT,
+                           {"i": to.prefix, "dt": dt, "category": category, "title": "Дякую", "message": name},
+                           salt=salt(name))
         return frm.bundle(acdc.compact(g))
 
     cert_cond = "all(any(%s,%s),thanks:3/%s/%s)" % (marko.prefix, sofia.prefix, room, dad.prefix)
-    cert = stmt(dad, acdc.SCHEMA_PROMISE_CONDITION, "cert", dq=cert_cond, until="2027-06-01T00:00:00+00:00",
+    cert = stmt(dad, PROMISE, "cert", dq=cert_cond, until="2027-06-01T00:00:00+00:00",
                 what="Поїздка в гори", note="Приберіть кімнату тричі")
     cert_b = dad.bundle(acdc.compact(cert))
-    out.credential("promise", "dzq/1.2 promise to a condition: Marko or Sofia, after 3 thank-yous 'cleaned the room' from Dad.",
-                   dad.bundle(cert), valid(said=cert["d"], schema=acdc.SCHEMA_PROMISE_CONDITION, content="shown"))
-    to_one = stmt(dad, acdc.SCHEMA_PROMISE, "cert1", i=marko.prefix, what="Кава")
-    out.credential("promise-to-one", "A promise to one AID, no condition, no until.",
-                   dad.bundle(to_one), valid(schema=acdc.SCHEMA_PROMISE))
-    no_what = json.loads(json.dumps(to_one))
-    del no_what["a"]["c"]["what"]
-    out.credential("promise-without-what", "A promise without 'what' (SAIDs recomputed).",
-                   dad.bundle(resaid(no_what)), invalid("schema"))
-
+    out.credential("promise", "An example:promise to a condition. Without the extension it is just a valid statement.",
+                   dad.bundle(cert), valid(said=cert["d"], type="example:promise", content="shown"), types=[prom_file])
+    to_one = stmt(dad, PROMISE, "cert1", i=marko.prefix, what="Кава")
     t1, t2, t3 = (thanks(dad, marko, "room %d" % i) for i in (1, 2, 3))
     NOW = "2026-11-01T00:00:00+00:00"
 
-    def cert_vp(holder, bundles):
-        return build.presentation(holder, bundles, NONCE, DT)
+    def pv(name, description, holder, bundles, want, valid_=None, now=NOW):
+        out.presentation(name, description, build.presentation(holder, bundles, NONCE, DT), NONCE,
+                         {"valid": want == "usable" if valid_ is None else valid_, "promise": want},
+                         now=now, types=[prom_file], experimental="promise")
 
-    out.presentation("promise-earned", "Marko shows the promise with three thank-yous from Dad (all compact).",
-                     cert_vp(marko, [cert_b, t1, t2, t3]), NONCE, {"valid": True, "promise": "usable"}, now=NOW)
-    out.presentation("promise-too-few", "Only two of the three thank-yous.",
-                     cert_vp(marko, [cert_b, t1, t2]), NONCE, {"valid": False, "promise": "not-earned"}, now=NOW)
-    out.presentation("promise-same-thanks-twice", "The same thank-you three times counts once.",
-                     cert_vp(marko, [cert_b, t1, t1, t1]), NONCE, {"valid": False, "promise": "not-earned"}, now=NOW)
+    pv("promise-earned", "Marko shows the promise with three thank-yous from Dad (all compact).",
+       marko, [cert_b, t1, t2, t3], "usable")
+    pv("promise-too-few", "Only two of the three thank-yous.", marko, [cert_b, t1, t2], "not-earned")
+    pv("promise-same-thanks-twice", "The same thank-you three times counts once.", marko, [cert_b, t1, t1, t1], "not-earned")
     wrong_cat = [thanks(dad, marko, "help %d" % i, category="help") for i in (1, 2)]
-    out.presentation("promise-wrong-category", "Three thank-yous, but two are in another category.",
-                     cert_vp(marko, [cert_b, t1] + wrong_cat), NONCE, {"valid": False, "promise": "not-earned"}, now=NOW)
+    pv("promise-wrong-category", "Three thank-yous, but two are in another category.", marko, [cert_b, t1] + wrong_cat, "not-earned")
     nb_thanks = [thanks(nb, marko, "nb %d" % i) for i in (1, 2)]
-    out.presentation("promise-wrong-issuer", "Two of the thank-yous come from a neighbour, not from Dad.",
-                     cert_vp(marko, [cert_b, t1] + nb_thanks), NONCE, {"valid": False, "promise": "not-earned"}, now=NOW)
-    out.presentation("promise-not-a-holder", "Sofia's friend Erin is not in any(Marko, Sofia), even with three thank-yous.",
-                     cert_vp(erin, [cert_b] + [thanks(dad, erin, "e%d" % i) for i in (1, 2, 3)]), NONCE,
-                     {"valid": False, "promise": "not-earned"}, now=NOW)
-    out.presentation("promise-expired", "Earned, but shown after 'until'.",
-                     cert_vp(marko, [cert_b, t1, t2, t3]), NONCE, {"valid": False, "promise": "expired"},
-                     now="2027-07-01T00:00:00+00:00")
+    pv("promise-wrong-issuer", "Two of the thank-yous come from a neighbour, not from Dad.", marko, [cert_b, t1] + nb_thanks, "not-earned")
+    pv("promise-not-a-holder", "Erin is not in any(Marko, Sofia), even with three thank-yous.",
+       erin, [cert_b] + [thanks(dad, erin, "e%d" % i) for i in (1, 2, 3)], "not-earned")
+    pv("promise-expired", "Earned, but shown after 'until'.", marko, [cert_b, t1, t2, t3], "expired",
+       now="2027-07-01T00:00:00+00:00")
     two = "thanks:3/%s/%s+%s" % (room, dad.prefix, nb.prefix)
-    sum_cert = stmt(dad, acdc.SCHEMA_PROMISE_CONDITION, "sum", dq=two, what="Пиріг")
-    out.presentation("promise-two-issuers-add-up", "thanks:3 from Dad+Neighbour: one from Dad and two from the neighbour.",
-                     cert_vp(marko, [dad.bundle(acdc.compact(sum_cert)), t1] + nb_thanks), NONCE,
-                     {"valid": True, "promise": "usable"}, now=NOW)
-    since_cert = stmt(dad, acdc.SCHEMA_PROMISE_CONDITION, "since",
-                      dq="thanks:1/%s/%s@2026-10-20T00:00:00Z" % (room, dad.prefix), what="Морозиво")
-    out.presentation("promise-before-since", "The only thank-you is dated before the condition's 'since'.",
-                     cert_vp(marko, [dad.bundle(acdc.compact(since_cert)), t1]), NONCE,
-                     {"valid": False, "promise": "not-earned"}, now=NOW)
+    sum_cert = stmt(dad, PROMISE, "sum", dq=two, what="Пиріг")
+    pv("promise-two-issuers-add-up", "thanks:3 from Dad+Neighbour: one from Dad and two from the neighbour.",
+       marko, [dad.bundle(acdc.compact(sum_cert)), t1] + nb_thanks, "usable")
+    since_cert = stmt(dad, PROMISE, "since", dq="thanks:1/%s/%s@2026-10-20T00:00:00Z" % (room, dad.prefix), what="Морозиво")
+    pv("promise-before-since", "The only thank-you is dated before the condition's 'since'.",
+       marko, [dad.bundle(acdc.compact(since_cert)), t1], "not-earned")
     self_cond = "thanks:2/no%%20smoking/%s" % marko.prefix
     self_thanks = [thanks(marko, marko, "day %d" % i, category="no smoking") for i in (1, 2)]
-    dads_cert = stmt(dad, acdc.SCHEMA_PROMISE_CONDITION, "dads", dq=self_cond, what="Велосипед")
-    out.presentation("promise-self-thanks-elsewhere", "Marko's thank-yous to himself do not count toward Dad's promise.",
-                     cert_vp(marko, [dad.bundle(acdc.compact(dads_cert))] + self_thanks), NONCE,
-                     {"valid": False, "promise": "not-earned"}, now=NOW)
-    own = stmt(marko, acdc.SCHEMA_PROMISE_CONDITION, "own", dq="all(%s,%s)" % (marko.prefix, self_cond), what="Новий светр")
-    out.presentation("promise-self-promise", "Marko's promise to himself, earned with his own thank-yous.",
-                     cert_vp(marko, [marko.bundle(acdc.compact(own))] + self_thanks), NONCE,
-                     {"valid": True, "promise": "usable"}, now=NOW)
-    only_certs = stmt(dad, acdc.SCHEMA_PROMISE_CONDITION, "oc", dq="thanks:1/%s/%s" % (room, dad.prefix), what="Чай")
-    out.presentation("promise-is-not-a-thank-you", "A promise never counts as a thank-you: two promises, no gratitude.",
-                     cert_vp(marko, [dad.bundle(acdc.compact(only_certs)), dad.bundle(acdc.compact(to_one))]), NONCE,
-                     {"valid": False, "promise": "not-earned"}, now=NOW)
+    dads_cert = stmt(dad, PROMISE, "dads", dq=self_cond, what="Велосипед")
+    pv("promise-self-thanks-elsewhere", "Marko's thank-yous to himself do not count toward Dad's promise.",
+       marko, [dad.bundle(acdc.compact(dads_cert))] + self_thanks, "not-earned")
+    own = stmt(marko, PROMISE, "own", dq="all(%s,%s)" % (marko.prefix, self_cond), what="Новий светр")
+    pv("promise-self-promise", "Marko's promise to himself, earned with his own thank-yous.",
+       marko, [marko.bundle(acdc.compact(own))] + self_thanks, "usable")
+    only_certs = stmt(dad, PROMISE, "oc", dq="thanks:1/%s/%s" % (room, dad.prefix), what="Чай")
+    pv("promise-is-not-a-thank-you", "A promise never counts as a thank-you: two promises, no gratitude.",
+       marko, [dad.bundle(acdc.compact(only_certs)), dad.bundle(acdc.compact(to_one))], "not-earned")
     closer = build.Controller("closer").incept()
-    closing = stmt(closer, acdc.SCHEMA_PROMISE, "closing", i=marko.prefix, what="Кіно")
-    closer.interact([{"d": acdc.close_said(closing["d"])}])
-    out.credential("promise-closed", "The issuer closed the promise early (a close digest in its KEL): still valid, reports closed_at_sn.",
-                   closer.bundle(closing), valid(closed_at_sn=1))
-    out.presentation("promise-closed", "Marko shows a promise the issuer has closed.",
-                     cert_vp(marko, [closer.bundle(acdc.compact(closing))]), NONCE,
-                     {"valid": False, "promise": "closed"}, now=NOW)
+    closing = stmt(closer, PROMISE, "closing", i=marko.prefix, what="Кіно")
+    closer.interact([{"d": promise_ext.close_said(closing["d"])}])
+    pv("promise-closed", "Marko shows a promise the issuer has closed (a close digest in its KEL).",
+       marko, [closer.bundle(acdc.compact(closing))], "closed")
+    out.presentation("thanks-without-extension", "The earned promise, checked by a verifier without the extension: "
+                     "thanks: is an unknown kind, never met.",
+                     build.presentation(marko, [cert_b, t1, t2, t3], NONCE, DT), NONCE,
+                     {"valid": False, "code": "credential"})
 
     # --- conditions (a.dq) ------------------------------------------------
     A, B = "a" * 64, "b" * 64
@@ -593,7 +684,8 @@ def generate(base):
     cond("all(claim:%s,txn:x)" % A, "all(claim:%s,txn:x)" % A, ["claim:" + A, "txn:x"], False,
          "an unknown leaf inside all() makes it unmeetable")
     cond(" any( %s , EAID2 ) " % aid, "any(%s,EAID2)" % aid, ["EAID2"], True, "whitespace around items is allowed")
-    cond("thanks:3/help/EAID1", "thanks:3/help/EAID1", [], False, "thanks: is proved by gratitudes in a presentation, never by naming the leaf")
+    cond("thanks:3/help/EAID1", "thanks:3/help/EAID1", ["thanks:3/help/EAID1"], False,
+         "thanks: is an extension kind (experimental): unknown to core verifiers, never met")
     cond("any(EAID2,thanks:3/help/EAID1)", "any(EAID2,thanks:3/help/EAID1)", ["EAID2"], True)
     cond("\x1c" + aid, None, note="U+001C is not white space")
     cond("any(x\n:y,EAID1)", None, note="a line break inside a leaf")
@@ -621,13 +713,12 @@ def generate(base):
         "schemas": {"gratitude 1.0.0": acdc.SCHEMA_GRATITUDE, "gratitude-condition 2.0.0": acdc.SCHEMA_GRATITUDE_CONDITION,
                     "gratitude-private 1.1.0": acdc.SCHEMA_GRATITUDE_PRIVATE,
                     "gratitude-private-condition 2.1.0": acdc.SCHEMA_GRATITUDE_PRIVATE_CONDITION,
-                    "gratitude 1.2.0": acdc.SCHEMA_GRATITUDE_12, "gratitude-condition 2.2.0": acdc.SCHEMA_GRATITUDE_12_CONDITION,
-                    "promise 1.0.0": acdc.SCHEMA_PROMISE, "promise-condition 2.0.0": acdc.SCHEMA_PROMISE_CONDITION,
-                    "look/1": acdc.SCHEMA_LOOK,
+                    "dzq:gratitude 1.2.0 (type document)": acdc.SCHEMA_GRATITUDE_12,
+                    "look/1 (extension)": acdc.SCHEMA_LOOK,
                     "binding 1.0.0": acdc.SCHEMA_BINDING},
         "blake3_said": [{"input": s, "said": cesr.blake3_said(s)} for s in ["", "dzq", "Дякую"]],
         "redemption_said": [{"gratitude": g1["d"], "said": acdc.redemption_said(g1["d"])}],
-        "close_said": [{"promise": cert["d"], "said": acdc.close_said(cert["d"])}],
+        "close_said (experimental)": [{"promise": cert["d"], "said": promise_ext.close_said(cert["d"])}],
         "claim_keys": [{"letter_key": letter_key, "scheme": s, "address": a, "public_key": build.claim_key(letter_key, s, a).pub.hex()}
                        for s, a in [("email", "dave@example.org"), ("phone", "+380501234567"), ("github", "octocat")]],
         "claim_message": {"said": g3["d"], "aid": dave.prefix, "message": "dzenq-claim/1|%s|%s" % (g3["d"], dave.prefix)},
@@ -666,7 +757,7 @@ def main():
             shutil.rmtree(tmp)
         return
     if os.path.isdir(target):
-        for d in ("credentials", "archives", "presentations"):
+        for d in ("credentials", "archives", "presentations", "types"):
             shutil.rmtree(os.path.join(target, d), ignore_errors=True)
     m = generate(target)
     print("wrote %d credentials, %d archives, %d presentations" %

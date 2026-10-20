@@ -1,5 +1,5 @@
 {
-  "spec": "dzq/1.0",
+  "spec": "dzq/1.2",
   "credentials": [
     {
       "name": "classic",
@@ -132,11 +132,13 @@
     },
     {
       "name": "schema-unknown",
-      "description": "A schema SAID this version does not know.",
+      "description": "A type SAID this reader does not know: the envelope is checked, the type is reported unknown.",
       "bundle": "credentials/schema-unknown.acdc",
       "expect": {
-        "valid": false,
-        "code": "schema"
+        "valid": true,
+        "sealed": false,
+        "type": null,
+        "type_known": false
       }
     },
     {
@@ -400,14 +402,209 @@
       }
     },
     {
+      "name": "gratitude-1.2",
+      "description": "dzq:gratitude 1.2.0, the built-in type document: to one AID, private block.",
+      "bundle": "credentials/gratitude-1.2.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EAb-LP3nFq8MK8fnRJnNt0k1vWTvUsuoii2VzW32rIS5",
+        "schema": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
+        "type": "dzq:gratitude",
+        "type_known": true,
+        "content": "shown"
+      }
+    },
+    {
+      "name": "gratitude-1.2-condition",
+      "description": "The same type to a condition: one type document covers both (a.i or a.dq).",
+      "bundle": "credentials/gratitude-1.2-condition.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type": "dzq:gratitude",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "gratitude-1.2-compact",
+      "description": "Compact form of gratitude-1.2: same SAID, same signature.",
+      "bundle": "credentials/gratitude-1.2-compact.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EAb-LP3nFq8MK8fnRJnNt0k1vWTvUsuoii2VzW32rIS5",
+        "content": "hidden"
+      }
+    },
+    {
+      "name": "gratitude-1.2-missing-field",
+      "description": "A required private field is missing (SAIDs recomputed): the known type refuses it.",
+      "bundle": "credentials/gratitude-1.2-missing-field.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "gratitude-1.2-too-long",
+      "description": "A public field longer than the type's max (SAIDs recomputed).",
+      "bundle": "credentials/gratitude-1.2-too-long.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "custom-type-unknown",
+      "description": "A statement of a type this reader does not know: envelope, SAIDs and signature are checked; the result says the type is unknown.",
+      "bundle": "credentials/custom-type-unknown.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EFofIxA1afOAk6KtKy0xsj_UbpFCUG76q-CvVdAdDe8s",
+        "schema": "EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem",
+        "type": null,
+        "type_known": false,
+        "content": "shown"
+      }
+    },
+    {
+      "name": "custom-type-known",
+      "description": "The same statement, with the type document given to the reader.",
+      "bundle": "credentials/custom-type-known.acdc",
+      "types": [
+        "types/EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem.json"
+      ],
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EFofIxA1afOAk6KtKy0xsj_UbpFCUG76q-CvVdAdDe8s",
+        "type": "acme:board-post",
+        "type_known": true
+      }
+    },
+    {
+      "name": "custom-type-compact",
+      "description": "The same statement, compact: the text is hidden, the area stays public.",
+      "bundle": "credentials/custom-type-compact.acdc",
+      "types": [
+        "types/EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem.json"
+      ],
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EFofIxA1afOAk6KtKy0xsj_UbpFCUG76q-CvVdAdDe8s",
+        "content": "hidden",
+        "type": "acme:board-post"
+      }
+    },
+    {
+      "name": "custom-type-breaks-type-unknown",
+      "description": "Missing a required field of its type, read without the type: still a valid envelope (fields are not checked).",
+      "bundle": "credentials/custom-type-breaks-type-unknown.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type_known": false
+      }
+    },
+    {
+      "name": "custom-type-breaks-type-known",
+      "description": "The same, read with the type document: refused.",
+      "bundle": "credentials/custom-type-breaks-type-known.acdc",
+      "types": [
+        "types/EMHLdYH-kJunKL8iHxJe3P4eebcCe8BY-9u9Jho1mTem.json"
+      ],
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "envelope-float",
+      "description": "A float in a field (SAIDs recomputed): not allowed in any type.",
+      "bundle": "credentials/envelope-float.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "envelope-reserved-name",
+      "description": "A public field named u (reserved).",
+      "bundle": "credentials/envelope-reserved-name.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "envelope-c-not-last",
+      "description": "a.c before a public field.",
+      "bundle": "credentials/envelope-c-not-last.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "envelope-no-dt",
+      "description": "No a.dt.",
+      "bundle": "credentials/envelope-no-dt.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "envelope-too-large",
+      "description": "A statement over 256 KB.",
+      "bundle": "credentials/envelope-too-large.acdc",
+      "expect": {
+        "valid": false,
+        "code": "format"
+      }
+    },
+    {
+      "name": "re",
+      "description": "A gratitude that answers another statement (re = its SAID).",
+      "bundle": "credentials/re.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "re": "EAb-LP3nFq8MK8fnRJnNt0k1vWTvUsuoii2VzW32rIS5",
+        "content": "shown"
+      }
+    },
+    {
+      "name": "re-compact",
+      "description": "Compact: the link is hidden with the text.",
+      "bundle": "credentials/re-compact.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "content": "hidden"
+      }
+    },
+    {
+      "name": "re-not-a-said",
+      "description": "re is not a SAID (SAIDs recomputed).",
+      "bundle": "credentials/re-not-a-said.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
       "name": "look-full",
-      "description": "dzq/1.2 gratitude naming a look (dzenq:<SAID>), full form.",
+      "description": "A gratitude naming a look (dzenq:<SAID>), full form.",
       "bundle": "credentials/look-full.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EA3LUeQipZYxF-gMHWqy-4Mh_or-pfNYo93xL0xYA41U",
-        "schema": "EAvj2DtbSBE_wWHrl2bv6kSmD6GaYOaStMcDraAjXK81",
+        "said": "EP6BNj-DiHWFCjBXPs0yjT9E3SPKA8_PQbk9KzHWkz2X",
+        "schema": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
         "content": "shown"
       }
     },
@@ -418,7 +615,6 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EA3LUeQipZYxF-gMHWqy-4Mh_or-pfNYo93xL0xYA41U",
         "content": "hidden"
       }
     },
@@ -442,43 +638,17 @@
     },
     {
       "name": "promise",
-      "description": "dzq/1.2 promise to a condition: Marko or Sofia, after 3 thank-yous 'cleaned the room' from Dad.",
+      "description": "An example:promise to a condition. Without the extension it is just a valid statement.",
       "bundle": "credentials/promise.acdc",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EGxgtOVO8TQb9qmwDAa_L_sDfJixrRIC12xx_mQUVsKb",
-        "schema": "EJZeYqzBW-NhpP8PaTyGcAhPiGt0wtwSQjRXA-eko1S5",
+        "said": "EDWgCSIDILrRsldXkKU6KU29S6y3lr4nUjx5_f6ysllQ",
+        "type": "example:promise",
         "content": "shown"
-      }
-    },
-    {
-      "name": "promise-to-one",
-      "description": "A promise to one AID, no condition, no until.",
-      "bundle": "credentials/promise-to-one.acdc",
-      "expect": {
-        "valid": true,
-        "sealed": false,
-        "schema": "EPn4-1fujcKli2_o5UEEqsZtge_CjspLByMZpLKK-kW6"
-      }
-    },
-    {
-      "name": "promise-without-what",
-      "description": "A promise without 'what' (SAIDs recomputed).",
-      "bundle": "credentials/promise-without-what.acdc",
-      "expect": {
-        "valid": false,
-        "code": "schema"
-      }
-    },
-    {
-      "name": "promise-closed",
-      "description": "The issuer closed the promise early (a close digest in its KEL): still valid, reports closed_at_sn.",
-      "bundle": "credentials/promise-closed.acdc",
-      "expect": {
-        "valid": true,
-        "sealed": false,
-        "closed_at_sn": 1
       }
     }
   ],
@@ -631,8 +801,39 @@
       }
     },
     {
+      "name": "custom-type-carried",
+      "description": "A .dzq that carries its type document as types/<SAID>.json: any reader can check the fields.",
+      "file": "archives/custom-type-carried.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type": "acme:board-post",
+        "type_known": true
+      }
+    },
+    {
+      "name": "custom-type-carried-tampered",
+      "description": "The carried type document was edited: it is ignored, the statement is valid, type unknown.",
+      "file": "archives/custom-type-carried-tampered.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type_known": false
+      }
+    },
+    {
+      "name": "reserved-source-carried",
+      "description": "A carried type document claims the reserved dzq: source: ignored, type unknown.",
+      "file": "archives/reserved-source-carried.dzq",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type_known": false
+      }
+    },
+    {
       "name": "look-carried",
-      "description": "A gratitude with its look/1 document and picture inside the .dzq.",
+      "description": "A gratitude with its look/1 document and picture inside the .dzq (extension: looks).",
       "file": "archives/look-carried.dzq",
       "expect": {
         "valid": true,
@@ -887,6 +1088,10 @@
       "file": "presentations/promise-earned.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": true,
         "promise": "usable"
@@ -898,6 +1103,10 @@
       "file": "presentations/promise-too-few.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -909,6 +1118,10 @@
       "file": "presentations/promise-same-thanks-twice.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -920,6 +1133,10 @@
       "file": "presentations/promise-wrong-category.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -931,6 +1148,10 @@
       "file": "presentations/promise-wrong-issuer.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -938,10 +1159,14 @@
     },
     {
       "name": "promise-not-a-holder",
-      "description": "Sofia's friend Erin is not in any(Marko, Sofia), even with three thank-yous.",
+      "description": "Erin is not in any(Marko, Sofia), even with three thank-yous.",
       "file": "presentations/promise-not-a-holder.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -953,6 +1178,10 @@
       "file": "presentations/promise-expired.json",
       "nonce": "door-7Q4M-2026",
       "now": "2027-07-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "expired"
@@ -964,6 +1193,10 @@
       "file": "presentations/promise-two-issuers-add-up.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": true,
         "promise": "usable"
@@ -975,6 +1208,10 @@
       "file": "presentations/promise-before-since.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -986,6 +1223,10 @@
       "file": "presentations/promise-self-thanks-elsewhere.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -997,6 +1238,10 @@
       "file": "presentations/promise-self-promise.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": true,
         "promise": "usable"
@@ -1008,6 +1253,10 @@
       "file": "presentations/promise-is-not-a-thank-you.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1015,13 +1264,27 @@
     },
     {
       "name": "promise-closed",
-      "description": "Marko shows a promise the issuer has closed.",
+      "description": "Marko shows a promise the issuer has closed (a close digest in its KEL).",
       "file": "presentations/promise-closed.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
+      "types": [
+        "types/EFoQ-toDAh5Nhy-nXVU6Mh5oQeHkMYOi_6TLAHPGch8Q.json"
+      ],
+      "experimental": "promise",
       "expect": {
         "valid": false,
         "promise": "closed"
+      }
+    },
+    {
+      "name": "thanks-without-extension",
+      "description": "The earned promise, checked by a verifier without the extension: thanks: is an unknown kind, never met.",
+      "file": "presentations/thanks-without-extension.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": false,
+        "code": "credential"
       }
     }
   ]

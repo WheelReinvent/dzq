@@ -1,7 +1,7 @@
 # Extension: looks (dzq/1.2)
 
 **Status:** optional, dzq/1.2. The `look` field itself (the pointer) is
-core: SPEC §3.7.
+core and available in every type: SPEC §3.7.
 
 A statement may point to how it wants to be shown — a blank, colours, a
 font — the way an XML document points to its stylesheet. The pointer is

@@ -1,5 +1,7 @@
 # Extension: redemption
 
+> A redemption is the issuer's own note in its key history: "I consider this used". It helps honest parties; it is **not** double-spend protection — a verifier only sees it with a fresh enough KEL, and nothing forces the issuer to record it. See SPEC §0.
+
 **Status:** part of dzq/1.0, optional.
 
 An issuer may mark one of its gratitudes as *redeemed* (used up, for

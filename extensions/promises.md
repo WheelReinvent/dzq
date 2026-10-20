@@ -1,10 +1,18 @@
-# Extension: promises — earning, using, closing (dzq/1.2)
+# Experimental: promises — earning, using, closing
 
-**Status:** part of dzq/1.2. The promise type itself: SPEC §3.6.
+**Status:** experimental, **not part of dzq**. It shows how an app can build
+richer rules on top of dzq without changing it. It may change or go away.
+Reference: `dzq.experimental.promise`; the type document:
+[examples/types/promise.json](../examples/types/promise.json)
+(`example:promise`: public `until`, private `what`, `note`).
 
-A promise verifies like any statement (SPEC §6): signed by its issuer,
-unchanged. This extension answers the other question a door asks: **can
-this holder use it now?**
+A promise is an ordinary statement of an ordinary type: every dzq verifier
+checks it (SPEC §6) and, without this extension, simply shows it. This
+extension answers the question a door asks: **can this holder use it now?**
+
+It is **not double-spend protection** (SPEC §0). Nothing here stops a
+holder from showing a promise twice; a door that must give something only
+once keeps its own record.
 
 ## The `thanks:` condition
 
@@ -25,8 +33,9 @@ thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]
 - `@<since>` (optional): RFC 3339; only gratitudes with `a.dt` at or after it
   count. `a.dt` is what each gratitude's issuer stated.
 
-A malformed `thanks:` leaf is never met. A verifier of an earlier version
-treats `thanks:` as an unknown kind, also never met.
+A malformed `thanks:` leaf is never met. A verifier without this
+extension treats `thanks:` as an unknown kind, also never met (vector
+`thanks-without-extension`).
 
 Examples:
 
@@ -49,10 +58,10 @@ the words.
 
 A verifier evaluates the presentation in two passes:
 
-1. **Pool.** Every credential verifies (SPEC §6). The pool is the
-   gratitudes (gratitude type only — never promises) that the holder
-   holds **without** counting other gratitudes: `a.i` = holder, or `a.dq`
-   met through AID and `claim:` leaves alone.
+1. **Pool.** Every statement verifies (SPEC §6). The pool is the
+   gratitudes (`dzq:gratitude` only — never promises) the holder holds
+   directly: `a.i` = holder, or an `a.dq` met through the holder's AID
+   alone.
 2. **Conditions.** Each credential's condition is evaluated again with
    `thanks:` leaves, counting from the pool (excluding the credential
    itself). A `thanks:` leaf holds when at least N **distinct** gratitudes
@@ -77,7 +86,7 @@ the first failing reason is reported:
 | the holder meets the condition (passes 1 and 2) | `not-earned` |
 
 The presentation is valid only if every promise in it is usable and
-every gratitude in it is the holder's.
+every other statement in it is the holder's.
 
 There is no use counter. Showing the same promise twice is between
 the holder and the issuer.
@@ -96,8 +105,9 @@ doors that give real things SHOULD load the issuer's KEL fresh.
 
 ## Vectors
 
-Credentials `promise*`; presentations `promise-*` (earned, too few,
+Marked `"experimental": "promise"` in `vectors/manifest.json`; a verifier
+without the extension skips them. Credential `promise`; presentations `promise-*` (earned, too few,
 the same thank-you three times, wrong category, wrong issuer, not a holder,
 expired, two issuers adding up, before `since`, self-thanks elsewhere, a
-self-promise, a promise is not a thank-you, closed); `close_said` in
-`vectors/digests.json`.
+self-promise, a promise is not a thank-you, closed); `close_said
+(experimental)` in `vectors/digests.json`.
