@@ -4,18 +4,24 @@
 
 Raised while moving DzenQ certificates to `dzq:promise`:
 
-1. **Thank-yous from different people for different things add up.**
-   `thanks:` now takes terms `<issuer>:<category>` joined with `+`, all
-   counting toward one N: `thanks:3/<Dad>:room+<Mom>:*`.
-2. **"For anything".** `*` matches any *general* category. App categories
-   (`dzenq:like`, SPEC §8.3) are not matched, so an app's reactions and
-   system thank-yous do not inflate "for anything"; they can still be named.
-3. **Something of value inside.** `dzq:promise` 1.1.0: `what`, optional
-   `ask` (how to earn it), optional `payload` (a code, an invite link).
-   `payload` is private, not encrypted: the holder sees it at once. What
-   must arrive only after earning is sent then, as its own statement.
-4. **Earning is something other apps can rely on.** The promises extension
-   is optional instead of experimental.
+1. **Statements from different people, for different things, add up.**
+2. **"For anything"** from a person.
+3. **Something of value inside** the promise.
+4. **Earning is something other apps can rely on**, not experimental.
 
-`dzq:promise` 1.0.0 stays valid. The old `thanks:<N>/<category>/<issuers>`
-form was never part of a published version and is not kept.
+Outcome:
+
+- `dzq:promise` 1.1.0: `what`, optional `ask` (how to earn it), optional
+  `payload` (a code, an invite link). `payload` is private, not encrypted:
+  the holder sees it at once. What must arrive only after earning is sent
+  then, as its own statement.
+- A general **`count:`** condition instead of a gratitude-only one: count
+  statements of **any type**, from given issuers, optionally with given
+  public field values; terms add up to one N:
+  `count:3/<Dad>~dzq:gratitude~category=room+<Mom>~dzq:gratitude`.
+  "For anything" = no field filter. An app's own kinds (likes) are their
+  own type, so they are not counted unless named.
+- Two optional extensions: [counting](../extensions/counting.md) and
+  [promises](../extensions/promises.md) (usable, closing early).
+
+No earlier promise version or `thanks:` form is kept: neither was issued.

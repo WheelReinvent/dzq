@@ -8,8 +8,9 @@ format.
 
 **Status:** published 2026-10-20, git tag `v1.3.0`. Editors: the DzenQ team.
 **This version:** `dzq/1.3` — 1.3 gives the promise `ask` and `payload`
-(3.8) and makes the [promises](extensions/promises.md) extension optional,
-with `thanks:` terms that add up across issuers and categories. Earlier:
+(3.8) and adds two optional extensions: [counting](extensions/counting.md)
+(`count:` conditions over any type) and [promises](extensions/promises.md)
+(usable, closing early). Earlier:
 1.1 added private content (3.5); 1.2 opened
 types to everyone (3.6: type documents, unknown types still verify), adds
 two general fields, `look` and `re` (3.7), and a library of base types:
@@ -59,7 +60,8 @@ statements sent to an e-mail or phone), [periods](extensions/periods.md)
 (sealing many statements with one key event), [redemption](extensions/redemption.md),
 [presentation](extensions/presentation.md) (proving to a door that you hold
 them), [looks](extensions/looks.md) (a shared look document),
-[promises](extensions/promises.md) (earning a promise with thank-yous).
+[counting](extensions/counting.md) (`count:` conditions),
+[promises](extensions/promises.md) (when a promise is usable).
 How this relates to standard KERI/ACDC:
 [docs/keri-acdc-alignment.md](docs/keri-acdc-alignment.md). Where DzenQ
 today differs from this text: [docs/dzenq-implementation.md](docs/dzenq-implementation.md).
@@ -261,7 +263,6 @@ never needs to fetch them.
 | `dzq:gratitude` | [types/gratitude.json](types/gratitude.json) — base type (3.8) | 1.2.0 | `EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG` |
 | `dzq:apology` | [types/apology.json](types/apology.json) — base type (3.8) | 1.0.0 | `EMA-8lnSqc0Z1oR0jazreAx3juTg5rXUdJSwHcJRIoSE` |
 | `dzq:promise` | [types/promise.json](types/promise.json) — base type (3.8) | 1.1.0 | `EJ-uSUjfgcWgiUDPwNIuqBgO_U-doYgKCFYvjL_Gn0By` |
-| `dzq:promise` | [types/promise-1.0.0.json](types/promise-1.0.0.json) — earlier version | 1.0.0 | `EMgBufsWw3LiesGLKu4PDRLz81XiXvan9MT7VrV4Q8sQ` |
 | gratitude | [gratitude.schema.json](schemas/gratitude.schema.json) — dzq/1.0, all public, to one AID | 1.0.0 | `EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav` |
 | gratitude | [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — dzq/1.0, all public, to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
 | gratitude | [gratitude-private.schema.json](schemas/gratitude-private.schema.json) — dzq/1.1, to one AID | 1.1.0 | `EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_` |
@@ -395,9 +396,9 @@ one AID or to a condition, and take `look` and `re` (3.7).
   everyone in it. Something that must reach a person only after they have
   earned it is sent then, as its own statement (`re` = the promise).
   `until` is the issuer's word; the optional
-  [promises](extensions/promises.md) extension enforces it, and adds
-  earning with thank-yous and closing early. `dzq:promise` 1.0.0 (`what`,
-  `note`) stays valid.
+  [promises](extensions/promises.md) extension enforces it and adds
+  closing early. Earning a promise ("after three thank-yous from me") is a
+  `count:` condition ([counting](extensions/counting.md)).
 
 ## 4. Conditions (`a.dq`)
 
@@ -424,7 +425,7 @@ leaf      := AID                         [A-Za-z0-9_-]+
   `any(txn:…, <AID>)` can still be met through the AID; `all(txn:…, …)`
   cannot be met at all. This is how new kinds are added without a new
   format (section 8). An extension may teach a verifier a kind — e.g.
-  `thanks:` in the optional [promises](extensions/promises.md); to every
+  `count:` in the optional [counting](extensions/counting.md); to every
   other verifier it stays unknown.
 - `commitment:` leaves are not met by dzq/1.x verifiers.
 - A condition that does not parse is met by nobody. The statement itself

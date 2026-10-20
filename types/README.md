@@ -18,11 +18,10 @@ can be addressed to one AID or to a condition.
   verification treats them exactly like any other type.
 - The `dzq:` source is reserved for the types in this folder. A changed
   base type is a new version with a new SAID; old statements stay valid.
-- Older versions stay known: [`promise-1.0.0.json`](promise-1.0.0.json)
-  (`what`, [`note`]).
 - Rules beyond fields — "earned with three thank-yous", "usable until
   closed" — are not part of any type: the optional
-  [promises](../extensions/promises.md) extension.
+  [counting](../extensions/counting.md) and
+  [promises](../extensions/promises.md) extensions.
 
 The files are written by `tools/make_types.py` from the reference
 implementation and checked in CI.

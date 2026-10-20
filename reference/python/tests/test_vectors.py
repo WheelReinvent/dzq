@@ -14,7 +14,7 @@ VECTORS = os.path.join(ROOT, "vectors")
 sys.path.insert(0, os.path.dirname(HERE))
 
 from dzq import archive, dq, kel, merkle, verify  # noqa: E402
-from dzq import promises  # noqa: E402
+from dzq import counting, promises  # noqa: E402
 from dzq.typedoc import TypeDoc  # noqa: E402
 from dzq.blake3 import blake3  # noqa: E402
 
@@ -31,7 +31,7 @@ def known(v):
     return {d.said: d for d in (TypeDoc(load(t)) for t in v.get("types", []))}
 
 
-EXTENSIONS = {"promises": promises.Extension}
+EXTENSIONS = {"counting": counting.Extension, "promises": promises.Extension}
 
 
 def matches(case, result, expect):
@@ -68,7 +68,7 @@ class Presentations(unittest.TestCase):
                 if "now" in v:
                     import datetime
                     now = datetime.datetime.fromisoformat(v["now"])
-                ext = [EXTENSIONS[v["extension"]]()] if "extension" in v else []
+                ext = [EXTENSIONS[e]() for e in v.get("extensions", [])]
                 r = verify.verify_presentation(load(v["file"]), v["nonce"], now=now, known=known(v), extensions=ext)
                 expect = dict(v["expect"])
                 want = expect.pop("promise", None)

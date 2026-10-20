@@ -27,9 +27,10 @@ always there; `code` is the failure code of SPEC §6.4 (or `archive` when the
 `type` is the type's name, or `null` when the reader does not know it
 (`type_known` false).
 
-Vectors marked `"extension": "promises"` test the optional
-[promises](../extensions/promises.md) extension; `"promise"` in `expect`
-is `usable` or the reason it is not. Skip them unless you implement it.
+Vectors with `"extensions": [...]` test optional extensions
+([counting](../extensions/counting.md), [promises](../extensions/promises.md));
+`"promise"` in `expect` is `usable` or the reason it is not. Skip them
+unless you implement those extensions.
 
 ## Keys
 

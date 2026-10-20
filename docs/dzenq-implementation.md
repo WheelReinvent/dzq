@@ -14,8 +14,9 @@ through the core (copy it into `rustLib/tests/`). Draft 1 (commit
 ## Adapting DzenQ to dzq/1.3 (tag `v1.3.0`)
 
 Pin the conformance step to tag `v1.3.0` and copy the updated
-`conformance/rust/dzq_vectors.rs`. It skips the optional promises vectors
-unless `DZQ_EXTENSIONS=1`; set it once step 6 is done. In order:
+`conformance/rust/dzq_vectors.rs`. It skips the vectors of optional
+extensions (counting, promises) unless `DZQ_EXTENSIONS=1`; set it once
+step 6 is done. In order:
 
 1. **Security finding** below: recompute every KEL event SAID (vectors
    `kel-forged-inception`, `forged-holder-kel`).
@@ -30,12 +31,13 @@ unless `DZQ_EXTENSIONS=1`; set it once step 6 is done. In order:
    stay valid.
 6. Certificates: `dzq:promise` 1.1.0 — `what` (name), `ask` (what to do),
    `payload` (the code, the invite; private but not encrypted: the holder
-   sees it at once). Earning by stamps → `thanks:` of the promises
-   extension (dzq/1.3): «3 from me for anything» = `thanks:3/<me>:*`;
-   «Dad for the room or Mom for anything» = `thanks:3/<Dad>:room+<Mom>:*`.
-   Likes «👍 for a kept promise»: a gratitude with an app category such as
-   `dzenq:like` — `*` does not count it. Closing early: the extension's
-   close digest.
+   sees it at once). Earning by stamps → `count:` (extensions/counting.md):
+   «3 from me for anything» = `count:3/<me>~dzq:gratitude`;
+   «Dad for the room or Mom for anything» =
+   `count:3/<Dad>~dzq:gratitude~category=room+<Mom>~dzq:gratitude`.
+   Likes «👍 for a kept promise»: DzenQ's own type (e.g. `dzenq:like`), so
+   they never count as gratitudes, but can be counted by name. Usable /
+   closing early: extensions/promises.md.
 
 Done when every vector passes (with `DZQ_EXTENSIONS=1`).
 

@@ -1,85 +1,18 @@
-# Extension: promises — earning, using, closing (dzq/1.3)
+# Extension: promises — usable, closing early (dzq/1.3)
 
 **Status:** optional, dzq/1.3. Reference: `dzq.promises`; CLI:
-`dzq presentation … --with promises`.
+`dzq presentation … --with counting --with promises`.
 
 A promise is a statement of the base type `dzq:promise` (SPEC §3.8): every
 dzq verifier checks it and, without this extension, simply shows it — a
 promise is a statement of intent, nothing more. This extension answers the
-question a door asks: **can this holder use it now?**
+question a door asks: **can this holder use it now?** Earning a promise
+with other statements ("after three thank-yous from me") is a `count:`
+condition: [counting](counting.md).
 
 It is **not double-spend protection** (SPEC §0). Nothing here stops a
 holder from showing a promise twice; a door that must give something only
 once keeps its own record.
-
-## The `thanks:` condition
-
-```
-thanks:<N>/<issuer>:<category>[+<issuer>:<category>…][@<since>]
-```
-
-*The holder has at least N gratitudes, each from one of these issuers in
-the category given for that issuer (since this date).* All terms add up to
-one count.
-
-- `<N>`: 1 to 99999.
-- `<issuer>`: an AID — the issuer of the **gratitudes**. The promise
-  always has exactly one issuer of its own.
-- `<category>`: compared with the gratitude's public `category` after
-  percent-decoding (UTF-8). Encode white space, `%`, `,`, `/`, `+`, `@`,
-  `:`, `*`, `(` and `)`; other characters may appear as they are.
-- `*` instead of a category: **any general category** — one without an app
-  prefix (SPEC §8.3). App categories such as `dzenq:like` are not matched
-  by `*`; name them to count them (`<Dad>:dzenq%3Alike`). So an app can
-  keep its own kinds of thank-you (reactions, system thanks) out of "for
-  anything".
-- `@<since>` (optional): RFC 3339; only gratitudes with `a.dt` at or after
-  it count. `a.dt` is what each gratitude's issuer stated.
-- Only statements of type `dzq:gratitude` count (including its dzq/1.0–1.1
-  schemas) — never promises, apologies or other types.
-
-A malformed `thanks:` leaf is never met. A verifier without this
-extension treats `thanks:` as an unknown kind, also never met (vector
-`thanks-without-extension`).
-
-Examples:
-
-| Promise | Condition |
-|---|---|
-| lunch for anyone with a "help" thank-you from me | `thanks:1/<me>:help` |
-| for Marko or Sofia, after 3 × "cleaned the room" from Dad | `all(any(<Marko>,<Sofia>),thanks:3/<Dad>:cleaned%20the%20room)` |
-| 3 thank-yous: from Dad for the room, or from Mom for anything | `thanks:3/<Dad>:cleaned%20the%20room+<Mom>:*` |
-| 3 thank-yous from me, for anything | `thanks:3/<me>:*` |
-| to myself, for 100 days without smoking | `all(<me>,thanks:100/<me>:no%20smoking)` |
-| 3 from either neighbour, since October | `thanks:3/<A>:neighbour+<B>:neighbour@2026-10-01T00:00:00Z` |
-
-`thanks:` may also appear in a gratitude's condition ("a thank-you to
-whoever already has three from me"); the same rules apply.
-
-## Proving it: in a presentation
-
-The holder shows the promise together with the gratitudes that earn
-it, in one presentation (extensions/presentation.md). Compact forms are
-enough: the door sees who thanked whom, when and in which category, not
-the words.
-
-A verifier evaluates the presentation in two passes:
-
-1. **Pool.** Every statement verifies (SPEC §6). The pool is the
-   gratitudes (`dzq:gratitude` only — never promises) the holder holds
-   directly: `a.i` = holder, or an `a.dq` met through the holder's AID
-   alone.
-2. **Conditions.** Each credential's condition is evaluated again with
-   `thanks:` leaves, counting from the pool (excluding the credential
-   itself). A `thanks:` leaf holds when at least N **distinct** gratitudes
-   (by SAID) in the pool each
-   - match at least one term: the term's issuer, and its category (or,
-     for `*`, any category without `:`);
-   - have `a.dt` ≥ `<since>`, if given;
-   - are **not issued by the holder to themself**, unless the statement
-     whose condition is being evaluated is issued by the holder too. A
-     thank-you to yourself counts only toward your own promises to
-     yourself.
 
 ## Usable
 
@@ -90,7 +23,7 @@ the first failing reason is reported:
 |---|---|
 | `until` is absent, or later than the verifier's clock | `expired` |
 | no close digest (below) in the issuer's KEL | `closed` |
-| the holder meets the condition (passes 1 and 2) | `not-earned` |
+| the holder meets the condition (with `count:` leaves, if the verifier implements counting) | `not-earned` |
 
 The presentation is valid only if every promise in it is usable and
 every other statement in it is the holder's.
@@ -112,10 +45,5 @@ doors that give real things SHOULD load the issuer's KEL fresh.
 
 ## Vectors
 
-Marked `"extension": "promises"` in `vectors/manifest.json`; a verifier
-without the extension skips them. Presentations `promise-*`: earned, too
-few, the same thank-you three times, wrong category, wrong issuer, not a
-holder, expired, two issuers adding up, mixed terms, `*`, `*` skipping app
-categories and other types, an app category named, before `since`,
-self-thanks elsewhere, a self-promise, a promise is not a thank-you,
-closed; `close_said` in `vectors/digests.json`.
+Presentations `promise-*`, marked `"extensions": ["counting", "promises"]`
+in `vectors/manifest.json`; `close_said` in `vectors/digests.json`.

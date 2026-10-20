@@ -90,19 +90,19 @@
       "note": "whitespace around items is allowed"
     },
     {
-      "dq": "thanks:3/EAID1:help",
+      "dq": "count:3/EAID1~dzq:gratitude",
       "parses": true,
-      "canonical": "thanks:3/EAID1:help",
+      "canonical": "count:3/EAID1~dzq:gratitude",
       "proved": [
-        "thanks:3/EAID1:help"
+        "count:3/EAID1~dzq:gratitude"
       ],
       "holds": false,
-      "note": "thanks: is an extension kind (promises): core holds() never meets it; the extension proves it from gratitudes"
+      "note": "count: is an extension kind (counting): core holds() never meets it; the extension proves it from statements"
     },
     {
-      "dq": "any(EAID2,thanks:3/EAID1:help)",
+      "dq": "any(EAID2,count:3/EAID1~dzq:gratitude)",
       "parses": true,
-      "canonical": "any(EAID2,thanks:3/EAID1:help)",
+      "canonical": "any(EAID2,count:3/EAID1~dzq:gratitude)",
       "proved": [
         "EAID2"
       ],

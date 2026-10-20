@@ -69,7 +69,7 @@ reasoning: [SPEC.md](SPEC.md), starting with §0.
 |---|---|
 | [SPEC.md](SPEC.md) | the format, `dzq/1.3` |
 | [types/](types/) | base types |
-| [extensions/](extensions/) | optional: letters to e-mail/phone, sealing, presentations, looks, earning promises with thank-yous |
+| [extensions/](extensions/) | optional: letters to e-mail/phone, sealing, presentations, looks, counting (`count:`), promises |
 | [vectors/](vectors/) | 132 test cases with expected results |
 | [reference/python/](reference/python/) | reference verifier and the `dzq` CLI |
 | [examples/](examples/) | a Python quickstart and a custom type |

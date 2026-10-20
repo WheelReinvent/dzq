@@ -179,7 +179,7 @@ def claim_holds(proof):
 def holder_meets(recipient, said, holder, claims, to_aid=False, hook=None, kinds=()):
     """Is `holder` the recipient: the AID in a.i, or a condition in a.dq the
     holder meets with its claims? `hook(leaf)` decides leaves of extension
-    `kinds` (e.g. thanks:)."""
+    `kinds` (e.g. count:)."""
     if to_aid:
         return recipient == holder
     cond = dq.parse(recipient)

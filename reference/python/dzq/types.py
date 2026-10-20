@@ -41,14 +41,6 @@ APOLOGY = _base(
     title="dzq Apology",
     description="A signed apology. Nothing is public but the envelope: who, to whom, when.")
 
-PROMISE_1_0 = _base(
-    "promise", "1.0.0",
-    public=[{"name": "until", "max": 64, "description": "RFC 3339: the promise is not meant to hold after this"}],
-    private=[{"name": "what", "required": True, "max": 200},
-             {"name": "note", "max": 5000}],
-    title="dzq Promise",
-    description="A signed promise: what the issuer will do for the recipient, or for whoever meets the condition.")
-
 PROMISE = _base(
     "promise", "1.1.0",
     public=[{"name": "until", "max": 64, "description": "RFC 3339: the promise is not meant to hold after this"}],
@@ -60,8 +52,8 @@ PROMISE = _base(
     title="dzq Promise",
     description="A signed promise: what the issuer will do for the recipient, or for whoever meets the condition.")
 
-BASE = {t.name: t for t in (GRATITUDE, APOLOGY, PROMISE)}        # newest version of each
-BUILTIN = {t.said: t for t in list(BASE.values()) + [PROMISE_1_0]}  # every version a reader knows
+BASE = {t.name: t for t in (GRATITUDE, APOLOGY, PROMISE)}
+BUILTIN = {t.said: t for t in BASE.values()}
 
 # Names reserved for the types this specification defines.
 RESERVED_SOURCE = "dzq"
