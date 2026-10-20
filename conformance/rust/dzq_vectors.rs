@@ -161,8 +161,8 @@ fn dzq_presentations() {
     let mut failures = Vec::new();
     for v in manifest["presentations"].as_array().unwrap() {
         let name = v["name"].as_str().unwrap();
-        if v.get("experimental").is_some() {
-            continue; // experimental extensions are not part of dzq
+        if v.get("extension").is_some() && std::env::var("DZQ_EXTENSIONS").is_err() {
+            continue; // optional extension (e.g. promises): set DZQ_EXTENSIONS=1 to run them
         }
         let tmp = tempfile::tempdir().unwrap();
         let core = DzenqManager::new(tmp.path().to_str().unwrap().to_string()).unwrap();

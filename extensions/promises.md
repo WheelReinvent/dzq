@@ -1,13 +1,12 @@
-# Experimental: promises — earning, using, closing
+# Extension: promises — earning, using, closing (dzq/1.3)
 
-**Status:** experimental, **not part of dzq**. It shows how an app can build
-richer rules on top of dzq without changing it. It may change or go away.
-Reference: `dzq.experimental.promise`.
+**Status:** optional, dzq/1.3. Reference: `dzq.promises`; CLI:
+`dzq presentation … --with promises`.
 
 A promise is a statement of the base type `dzq:promise` (SPEC §3.8): every
 dzq verifier checks it and, without this extension, simply shows it — a
-promise is a statement of intent, nothing more. This
-extension answers the question a door asks: **can this holder use it now?**
+promise is a statement of intent, nothing more. This extension answers the
+question a door asks: **can this holder use it now?**
 
 It is **not double-spend protection** (SPEC §0). Nothing here stops a
 holder from showing a promise twice; a door that must give something only
@@ -16,21 +15,28 @@ once keeps its own record.
 ## The `thanks:` condition
 
 ```
-thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]
+thanks:<N>/<issuer>:<category>[+<issuer>:<category>…][@<since>]
 ```
 
-*The holder has at least N gratitudes in this category from these issuers
-(since this date).*
+*The holder has at least N gratitudes, each from one of these issuers in
+the category given for that issuer (since this date).* All terms add up to
+one count.
 
 - `<N>`: 1 to 99999.
-- `<category>`: compared with the gratitudes' public `category`, after
+- `<issuer>`: an AID — the issuer of the **gratitudes**. The promise
+  always has exactly one issuer of its own.
+- `<category>`: compared with the gratitude's public `category` after
   percent-decoding (UTF-8). Encode white space, `%`, `,`, `/`, `+`, `@`,
-  `(` and `)`; other characters may appear as they are.
-- `<issuer>`: an AID. Several are joined with `+`; their gratitudes add up.
-  These are the issuers of the **gratitudes** — the promise always has
-  exactly one issuer of its own.
-- `@<since>` (optional): RFC 3339; only gratitudes with `a.dt` at or after it
-  count. `a.dt` is what each gratitude's issuer stated.
+  `:`, `*`, `(` and `)`; other characters may appear as they are.
+- `*` instead of a category: **any general category** — one without an app
+  prefix (SPEC §8.3). App categories such as `dzenq:like` are not matched
+  by `*`; name them to count them (`<Dad>:dzenq%3Alike`). So an app can
+  keep its own kinds of thank-you (reactions, system thanks) out of "for
+  anything".
+- `@<since>` (optional): RFC 3339; only gratitudes with `a.dt` at or after
+  it count. `a.dt` is what each gratitude's issuer stated.
+- Only statements of type `dzq:gratitude` count (including its dzq/1.0–1.1
+  schemas) — never promises, apologies or other types.
 
 A malformed `thanks:` leaf is never met. A verifier without this
 extension treats `thanks:` as an unknown kind, also never met (vector
@@ -40,10 +46,12 @@ Examples:
 
 | Promise | Condition |
 |---|---|
-| lunch for anyone with a "help" thank-you from me | `thanks:1/help/<me>` |
-| for Marko or Sofia, after 3 × "cleaned the room" from Dad | `all(any(<Marko>,<Sofia>),thanks:3/cleaned%20the%20room/<Dad>)` |
-| to myself, for 100 days without smoking | `all(<me>,thanks:100/no%20smoking/<me>)` |
-| 3 thank-yous from either neighbour, since October | `thanks:3/neighbour/<A>+<B>@2026-10-01T00:00:00Z` |
+| lunch for anyone with a "help" thank-you from me | `thanks:1/<me>:help` |
+| for Marko or Sofia, after 3 × "cleaned the room" from Dad | `all(any(<Marko>,<Sofia>),thanks:3/<Dad>:cleaned%20the%20room)` |
+| 3 thank-yous: from Dad for the room, or from Mom for anything | `thanks:3/<Dad>:cleaned%20the%20room+<Mom>:*` |
+| 3 thank-yous from me, for anything | `thanks:3/<me>:*` |
+| to myself, for 100 days without smoking | `all(<me>,thanks:100/<me>:no%20smoking)` |
+| 3 from either neighbour, since October | `thanks:3/<A>:neighbour+<B>:neighbour@2026-10-01T00:00:00Z` |
 
 `thanks:` may also appear in a gratitude's condition ("a thank-you to
 whoever already has three from me"); the same rules apply.
@@ -65,8 +73,8 @@ A verifier evaluates the presentation in two passes:
    `thanks:` leaves, counting from the pool (excluding the credential
    itself). A `thanks:` leaf holds when at least N **distinct** gratitudes
    (by SAID) in the pool each
-   - have `category` equal to the decoded `<category>`;
-   - have an issuer in the leaf's list;
+   - match at least one term: the term's issuer, and its category (or,
+     for `*`, any category without `:`);
    - have `a.dt` ≥ `<since>`, if given;
    - are **not issued by the holder to themself**, unless the statement
      whose condition is being evaluated is issued by the holder too. A
@@ -104,9 +112,10 @@ doors that give real things SHOULD load the issuer's KEL fresh.
 
 ## Vectors
 
-Marked `"experimental": "promise"` in `vectors/manifest.json`; a verifier
-without the extension skips them. Credential `promise`; presentations `promise-*` (earned, too few,
-the same thank-you three times, wrong category, wrong issuer, not a holder,
-expired, two issuers adding up, before `since`, self-thanks elsewhere, a
-self-promise, a promise is not a thank-you, closed); `close_said
-(experimental)` in `vectors/digests.json`.
+Marked `"extension": "promises"` in `vectors/manifest.json`; a verifier
+without the extension skips them. Presentations `promise-*`: earned, too
+few, the same thank-you three times, wrong category, wrong issuer, not a
+holder, expired, two issuers adding up, mixed terms, `*`, `*` skipping app
+categories and other types, an app category named, before `since`,
+self-thanks elsewhere, a self-promise, a promise is not a thank-you,
+closed; `close_said` in `vectors/digests.json`.

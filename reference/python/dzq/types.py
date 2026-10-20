@@ -41,7 +41,7 @@ APOLOGY = _base(
     title="dzq Apology",
     description="A signed apology. Nothing is public but the envelope: who, to whom, when.")
 
-PROMISE = _base(
+PROMISE_1_0 = _base(
     "promise", "1.0.0",
     public=[{"name": "until", "max": 64, "description": "RFC 3339: the promise is not meant to hold after this"}],
     private=[{"name": "what", "required": True, "max": 200},
@@ -49,8 +49,19 @@ PROMISE = _base(
     title="dzq Promise",
     description="A signed promise: what the issuer will do for the recipient, or for whoever meets the condition.")
 
-BASE = {t.name: t for t in (GRATITUDE, APOLOGY, PROMISE)}
-BUILTIN = {t.said: t for t in BASE.values()}
+PROMISE = _base(
+    "promise", "1.1.0",
+    public=[{"name": "until", "max": 64, "description": "RFC 3339: the promise is not meant to hold after this"}],
+    private=[{"name": "what", "required": True, "max": 200, "description": "What is promised"},
+             {"name": "ask", "max": 5000, "description": "What to do to earn it, in words"},
+             {"name": "payload", "max": 5000,
+              "description": "Something of value for the holder: a code, an invite link. Private, not encrypted: "
+                             "whoever has the full file sees it at once."}],
+    title="dzq Promise",
+    description="A signed promise: what the issuer will do for the recipient, or for whoever meets the condition.")
+
+BASE = {t.name: t for t in (GRATITUDE, APOLOGY, PROMISE)}        # newest version of each
+BUILTIN = {t.said: t for t in list(BASE.values()) + [PROMISE_1_0]}  # every version a reader knows
 
 # Names reserved for the types this specification defines.
 RESERVED_SOURCE = "dzq"

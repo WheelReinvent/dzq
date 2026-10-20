@@ -1,27 +1,29 @@
-"""Experimental: promises and `thanks:` conditions (extensions/promises.md).
+"""Extension: promises — earning with thank-yous, usable, closing early
+(extensions/promises.md, optional since dzq/1.3).
 
-A promise is just a type — the base type `dzq:promise` (public `until`,
-private `what` / `note`). This module adds what
-plain dzq deliberately does not have:
+A promise is a statement of the base type `dzq:promise`. This module adds:
 
-- a condition leaf `thanks:<N>/<category>/<issuer>[+<issuer>…][@<since>]`:
-  met when the holder presents N gratitudes of that category from those
-  issuers (since that date) in the same presentation;
+- a condition leaf
+  `thanks:<N>/<issuer>:<category>[+<issuer>:<category>…][@<since>]`:
+  met when the holder shows at least N distinct gratitudes, each matching
+  one of the terms (that issuer, that category; `*` = any general category,
+  i.e. one without an app prefix like `dzenq:like`), since
+  that date, in the same presentation;
 - "usable": not past `until`, not closed by its issuer, holder meets it.
 
 It is NOT double-spend protection: showing a promise twice is showing it
 twice. A verifier that must refuse a second use keeps its own record.
 
-    from dzq.experimental import promise
-    r = dzq.verify_presentation(vp, nonce, extensions=[promise.Extension()])
+    from dzq import promises
+    r = dzq.verify_presentation(vp, nonce, extensions=[promises.Extension()])
 """
 
 import datetime
 import re
 from urllib.parse import unquote
 
-from .. import acdc
-from ..cesr import SAID_PLACEHOLDER, blake3_said
+from . import acdc
+from .cesr import SAID_PLACEHOLDER, blake3_said
 
 _AID = re.compile(r"[A-Za-z0-9_-]{44}")
 GRATITUDE = "dzq:gratitude"
@@ -40,26 +42,33 @@ def close(identity, statement_said):
 
 
 class Thanks:
-    def __init__(self, count, category, issuers, since):
-        self.count, self.category, self.issuers, self.since = count, category, issuers, since
+    def __init__(self, count, terms, since):
+        self.count, self.terms, self.since = count, terms, since   # terms: [(issuer, category or None)]
 
 
 def parse_thanks(value):
-    """`<N>/<category>/<issuer>[+…][@<since>]` → Thanks, or None."""
+    """`<N>/<issuer>:<category>[+…][@<since>]` → Thanks, or None.
+    The category is percent-encoded; `*` means any category."""
     body, at, since = value.rpartition("@")
     if not at:
         body, since = value, None
-    parts = body.split("/")
-    if len(parts) != 3 or not re.fullmatch(r"[1-9][0-9]{0,4}", parts[0]):
+    n, slash, rest = body.partition("/")
+    if not slash or not re.fullmatch(r"[1-9][0-9]{0,4}", n) or (since is not None and not since):
         return None
-    try:
-        category = unquote(parts[1], errors="strict")
-    except UnicodeDecodeError:
-        return None
-    ids = parts[2].split("+")
-    if not category or not all(_AID.fullmatch(i) for i in ids) or (since is not None and not since):
-        return None
-    return Thanks(int(parts[0]), category, ids, since)
+    terms = []
+    for term in rest.split("+"):
+        issuer, colon, cat = term.partition(":")
+        if not colon or not _AID.fullmatch(issuer) or not cat:
+            return None
+        if cat == "*":
+            terms.append((issuer, None))
+            continue
+        try:
+            category = unquote(cat, errors="strict")
+        except UnicodeDecodeError:
+            return None
+        terms.append((issuer, category))
+    return Thanks(int(n), terms, since)
 
 
 def _instant(text):
@@ -91,7 +100,10 @@ class Extension:
             if not (g.get("to_aid") and g.get("recipient") == holder):
                 if g.get("to_aid") or not _holds_plain(g, holder):
                     continue
-            if g.get("category") != t.category or g.get("issuer") not in t.issuers:
+            cat_g = g.get("category")
+            if not isinstance(cat_g, str) or not any(
+                    g.get("issuer") == who and (cat_g == cat if cat is not None else ":" not in cat_g)
+                    for who, cat in t.terms):
                 continue
             if since is not None:
                 when = _instant(g.get("dt"))
@@ -122,6 +134,6 @@ class Extension:
 def _holds_plain(g, holder):
     """A gratitude to a condition counts when the condition names the holder
     directly (any(…<holder>…)); claims and nested thanks: are not followed."""
-    from .. import dq
+    from . import dq
     cond = dq.parse(g.get("recipient") or "")
     return cond is not None and dq.holds(cond, lambda leaf: leaf.kind == "aid" and leaf.value == holder)

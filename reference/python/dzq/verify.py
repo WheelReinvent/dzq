@@ -207,7 +207,7 @@ def verify_presentation(vp_text, expected_nonce, now=None, kels=(), known=None, 
 
     `extensions` add condition kinds and "usable" rules (an object with
     `kinds`, `leaf(leaf, holder, statement, results, claims)` and
-    `assess(statement, holder, now)`), e.g. dzq.experimental.promise."""
+    `assess(statement, holder, now)`), e.g. dzq.promises."""
     out = {"valid": False, "holder": None, "code": None, "reason": None, "nonce": None, "credentials": []}
 
     def fail(code, reason):

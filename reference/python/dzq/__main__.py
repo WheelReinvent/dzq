@@ -321,7 +321,12 @@ def cmd_verify(a):
 
 def cmd_presentation(a):
     kels = [open(k, encoding="utf-8").read() for k in (a.kel or [])]
-    r = verify.verify_presentation(open(a.file, encoding="utf-8").read(), a.nonce, kels=kels, known=_known())
+    ext = []
+    if "promises" in (a.extension or []):
+        from . import promises
+        ext.append(promises.Extension())
+    r = verify.verify_presentation(open(a.file, encoding="utf-8").read(), a.nonce, kels=kels, known=_known(),
+                                   extensions=ext)
     if a.json:
         print(json.dumps(r, ensure_ascii=False, indent=2))
     else:
@@ -423,6 +428,8 @@ def main(argv=None):
     s.add_argument("file")
     s.add_argument("--nonce", default="", help="the code you gave the holder (empty: display only)")
     s.add_argument("--kel", action="append", help="a fresher key history of an issuer (repeatable)")
+    s.add_argument("--with", dest="extension", action="append", choices=["promises"],
+                   help="an optional extension: promises (thanks: conditions, usable, closed)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_presentation)
 

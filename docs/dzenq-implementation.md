@@ -11,11 +11,11 @@ Checked by: `conformance/rust/dzq_vectors.rs`, which runs every vector
 through the core (copy it into `rustLib/tests/`). Draft 1 (commit
 `1cc6fd5`) passes completely in DzenQ's CI.
 
-## Adapting DzenQ to dzq/1.2 (tag `v1.2.0`)
+## Adapting DzenQ to dzq/1.3 (tag `v1.3.0`)
 
-Pin the conformance step to tag `v1.2.0` and copy the updated
-`conformance/rust/dzq_vectors.rs` (it skips vectors marked experimental).
-In order:
+Pin the conformance step to tag `v1.3.0` and copy the updated
+`conformance/rust/dzq_vectors.rs`. It skips the optional promises vectors
+unless `DZQ_EXTENSIONS=1`; set it once step 6 is done. In order:
 
 1. **Security finding** below: recompute every KEL event SAID (vectors
    `kel-forged-inception`, `forged-holder-kel`).
@@ -28,11 +28,16 @@ In order:
    `apology*`, `promise*`, `re*`, `look-*`).
 5. Issue new thank-yous as `dzq:gratitude` 1.2.0 (`EDM7gu9-…`); old ones
    stay valid.
-6. Certificates and promises: `dzq:promise` (fields only). Stamps, earning
-   and closing are DzenQ's own rules on top (experimental
-   extensions/promises.md shows one way).
+6. Certificates: `dzq:promise` 1.1.0 — `what` (name), `ask` (what to do),
+   `payload` (the code, the invite; private but not encrypted: the holder
+   sees it at once). Earning by stamps → `thanks:` of the promises
+   extension (dzq/1.3): «3 from me for anything» = `thanks:3/<me>:*`;
+   «Dad for the room or Mom for anything» = `thanks:3/<Dad>:room+<Mom>:*`.
+   Likes «👍 for a kept promise»: a gratitude with an app category such as
+   `dzenq:like` — `*` does not count it. Closing early: the extension's
+   close digest.
 
-Done when every non-experimental vector passes.
+Done when every vector passes (with `DZQ_EXTENSIONS=1`).
 
 ## Security finding: forged inception events (fix first)
 

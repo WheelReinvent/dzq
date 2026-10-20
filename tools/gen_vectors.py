@@ -36,7 +36,7 @@ def attrs(recipient=None, condition=None, title="Дякую", message="За до
 class Out:
     def __init__(self, base):
         self.base = base
-        self.manifest = {"spec": "dzq/1.2", "credentials": [], "archives": [], "presentations": []}
+        self.manifest = {"spec": "dzq/1.3", "credentials": [], "archives": [], "presentations": []}
 
     def write(self, rel, data):
         path = os.path.join(self.base, rel)
@@ -66,15 +66,15 @@ class Out:
                                           "file": self.write("archives/%s.dzq" % name, data),
                                           "expect": expect})
 
-    def presentation(self, name, description, vp, nonce, expect, now=None, types=None, experimental=None):
+    def presentation(self, name, description, vp, nonce, expect, now=None, types=None, extension=None):
         entry = {"name": name, "description": description,
                  "file": self.write("presentations/%s.json" % name, vp), "nonce": nonce}
         if now is not None:
             entry["now"] = now
         if types:
             entry["types"] = list(types)
-        if experimental:
-            entry["experimental"] = experimental
+        if extension:
+            entry["extension"] = extension
         entry["expect"] = expect
         self.manifest["presentations"].append(entry)
 
@@ -448,7 +448,7 @@ def generate(base):
     # --- dzq/1.2: open types ---------------------------------------------
     from dzq import types as types_
     from dzq.typedoc import TypeDoc, make_type
-    from dzq.experimental import promise as promise_ext
+    from dzq import promises as promise_ext
     GRAT = types_.GRATITUDE
 
     def stmt(issuer, doc, name, **fields):
@@ -594,15 +594,19 @@ def generate(base):
                 archive.make_dzq(alice.bundle(g12g), look=(gif_look_said, gif_look_text, {gif_said: gif})),
                 {"valid": True, "look": "invalid: images must be PNG, JPEG or WebP"})
 
-    # --- experimental: promises and thanks: (extensions/promises.md) -------
-    # Not part of dzq. A verifier that does not implement the extension skips
-    # cases marked "experimental".
+    # --- extension: promises (thanks:, usable, closing) ------------------------
+    # Optional. A verifier that does not implement the extension skips cases
+    # marked "extension": "promises".
     PROMISE = types_.PROMISE
     dad = build.Controller("dad").incept()
     marko = build.Controller("marko").incept()
     sofia = build.Controller("sofia").incept()
     nb = build.Controller("neighbour").incept()
+    mom = build.Controller("mom").incept()
     room = "cleaned%20the%20room"
+
+    def term(who, cat=room):
+        return "%s:%s" % (who.prefix, cat)
 
     def thanks(frm, to, name, category="cleaned the room", dt=DT):
         g = acdc.new_typed(frm.prefix, cesr.blake3_said("registry|" + frm.prefix), GRAT,
@@ -610,12 +614,17 @@ def generate(base):
                            salt=salt(name))
         return frm.bundle(acdc.compact(g))
 
-    cert_cond = "all(any(%s,%s),thanks:3/%s/%s)" % (marko.prefix, sofia.prefix, room, dad.prefix)
+    cert_cond = "all(any(%s,%s),thanks:3/%s)" % (marko.prefix, sofia.prefix, term(dad))
     cert = stmt(dad, PROMISE, "cert", dq=cert_cond, until="2027-06-01T00:00:00+00:00",
-                what="Поїздка в гори", note="Приберіть кімнату тричі")
+                what="Поїздка в гори", ask="Приберіть кімнату тричі", payload="Квитки: код 7Q4M")
     cert_b = dad.bundle(acdc.compact(cert))
-    out.credential("promise", "A dzq:promise to a condition. Without the extension it is just a valid statement.",
+    out.credential("promise", "A dzq:promise 1.1.0 to a condition, with ask and payload. Without the extension it is just a valid statement.",
                    dad.bundle(cert), valid(said=cert["d"], type="dzq:promise", content="shown"))
+    out.credential("promise-compact", "The same promise, compact: what, ask and payload are hidden; until stays public.",
+                   dad.bundle(acdc.compact(cert)), valid(said=cert["d"], content="hidden"))
+    old_promise = stmt(dad, types_.PROMISE_1_0, "old-promise", i=marko.prefix, what="Кава", note="Колись")
+    out.credential("promise-1.0", "A dzq:promise 1.0.0 (what, note) stays valid and known.",
+                   dad.bundle(old_promise), valid(type="dzq:promise", type_known=True))
     to_one = stmt(dad, PROMISE, "cert1", i=marko.prefix, what="Кава")
     t1, t2, t3 = (thanks(dad, marko, "room %d" % i) for i in (1, 2, 3))
     NOW = "2026-11-01T00:00:00+00:00"
@@ -623,7 +632,7 @@ def generate(base):
     def pv(name, description, holder, bundles, want, valid_=None, now=NOW):
         out.presentation(name, description, build.presentation(holder, bundles, NONCE, DT), NONCE,
                          {"valid": want == "usable" if valid_ is None else valid_, "promise": want},
-                         now=now, experimental="promise")
+                         now=now, extension="promises")
 
     pv("promise-earned", "Marko shows the promise with three thank-yous from Dad (all compact).",
        marko, [cert_b, t1, t2, t3], "usable")
@@ -637,14 +646,35 @@ def generate(base):
        erin, [cert_b] + [thanks(dad, erin, "e%d" % i) for i in (1, 2, 3)], "not-earned")
     pv("promise-expired", "Earned, but shown after 'until'.", marko, [cert_b, t1, t2, t3], "expired",
        now="2027-07-01T00:00:00+00:00")
-    two = "thanks:3/%s/%s+%s" % (room, dad.prefix, nb.prefix)
+    two = "thanks:3/%s+%s" % (term(dad), term(nb))
     sum_cert = stmt(dad, PROMISE, "sum", dq=two, what="Пиріг")
     pv("promise-two-issuers-add-up", "thanks:3 from Dad+Neighbour: one from Dad and two from the neighbour.",
        marko, [dad.bundle(acdc.compact(sum_cert)), t1] + nb_thanks, "usable")
-    since_cert = stmt(dad, PROMISE, "since", dq="thanks:1/%s/%s@2026-10-20T00:00:00Z" % (room, dad.prefix), what="Морозиво")
+    mixed = stmt(dad, PROMISE, "mixed", dq="thanks:3/%s+%s" % (term(dad), term(mom, "*")), what="Піца")
+    mixed_b = dad.bundle(acdc.compact(mixed))
+    mom_any = thanks(mom, marko, "mom 1", category="helped with dinner")
+    pv("promise-mixed-terms", "thanks:3/<Dad>:cleaned the room+<Mom>:*: two from Dad for the room and one from Mom for anything.",
+       marko, [mixed_b, t1, t2, mom_any], "usable")
+    pv("promise-mixed-terms-wrong-category", "Two from Dad for the room and one from Dad for something else: Dad's term needs the room.",
+       marko, [mixed_b, t1, t2] + wrong_cat[:1], "not-earned")
+    any_cert = stmt(dad, PROMISE, "any", dq="thanks:2/%s" % term(dad, "*"), what="Морозиво")
+    any_b = dad.bundle(acdc.compact(any_cert))
+    pv("promise-any-category", "thanks:2/<Dad>:*: two thank-yous from Dad in any categories.",
+       marko, [any_b, t1] + wrong_cat[:1], "usable")
+    sorry_from_dad = dad.bundle(acdc.compact(stmt(dad, types_.APOLOGY, "dad-sorry", i=marko.prefix,
+                                                  title="Вибач", message="Що накричав")))
+    like = thanks(dad, marko, "like 1", category="dzenq:like")
+    pv("promise-any-category-skips-app-categories", "* matches general categories only: Dad's dzenq:like does not count.",
+       marko, [any_b, t1, like], "not-earned")
+    likes_cert = stmt(dad, PROMISE, "likes", dq="thanks:1/%s" % term(dad, "dzenq%3Alike"), what="Наліпка")
+    pv("promise-app-category-named", "An app category counts when named: thanks:1/<Dad>:dzenq%3Alike.",
+       marko, [dad.bundle(acdc.compact(likes_cert)), like], "usable")
+    pv("promise-any-category-only-gratitudes", "Only dzq:gratitude counts for * : an apology from Dad does not.",
+       marko, [any_b, t1, sorry_from_dad], "not-earned")
+    since_cert = stmt(dad, PROMISE, "since", dq="thanks:1/%s@2026-10-20T00:00:00Z" % term(dad), what="Морозиво")
     pv("promise-before-since", "The only thank-you is dated before the condition's 'since'.",
        marko, [dad.bundle(acdc.compact(since_cert)), t1], "not-earned")
-    self_cond = "thanks:2/no%%20smoking/%s" % marko.prefix
+    self_cond = "thanks:2/%s" % term(marko, "no%20smoking")
     self_thanks = [thanks(marko, marko, "day %d" % i, category="no smoking") for i in (1, 2)]
     dads_cert = stmt(dad, PROMISE, "dads", dq=self_cond, what="Велосипед")
     pv("promise-self-thanks-elsewhere", "Marko's thank-yous to himself do not count toward Dad's promise.",
@@ -652,7 +682,7 @@ def generate(base):
     own = stmt(marko, PROMISE, "own", dq="all(%s,%s)" % (marko.prefix, self_cond), what="Новий светр")
     pv("promise-self-promise", "Marko's promise to himself, earned with his own thank-yous.",
        marko, [marko.bundle(acdc.compact(own))] + self_thanks, "usable")
-    only_certs = stmt(dad, PROMISE, "oc", dq="thanks:1/%s/%s" % (room, dad.prefix), what="Чай")
+    only_certs = stmt(dad, PROMISE, "oc", dq="thanks:1/%s" % term(dad), what="Чай")
     pv("promise-is-not-a-thank-you", "A promise never counts as a thank-you: two promises, no gratitude.",
        marko, [dad.bundle(acdc.compact(only_certs)), dad.bundle(acdc.compact(to_one))], "not-earned")
     closer = build.Controller("closer").incept()
@@ -693,9 +723,9 @@ def generate(base):
     cond("all(claim:%s,txn:x)" % A, "all(claim:%s,txn:x)" % A, ["claim:" + A, "txn:x"], False,
          "an unknown leaf inside all() makes it unmeetable")
     cond(" any( %s , EAID2 ) " % aid, "any(%s,EAID2)" % aid, ["EAID2"], True, "whitespace around items is allowed")
-    cond("thanks:3/help/EAID1", "thanks:3/help/EAID1", ["thanks:3/help/EAID1"], False,
-         "thanks: is an extension kind (experimental): unknown to core verifiers, never met")
-    cond("any(EAID2,thanks:3/help/EAID1)", "any(EAID2,thanks:3/help/EAID1)", ["EAID2"], True)
+    cond("thanks:3/EAID1:help", "thanks:3/EAID1:help", ["thanks:3/EAID1:help"], False,
+         "thanks: is an extension kind (promises): core holds() never meets it; the extension proves it from gratitudes")
+    cond("any(EAID2,thanks:3/EAID1:help)", "any(EAID2,thanks:3/EAID1:help)", ["EAID2"], True)
     cond("\x1c" + aid, None, note="U+001C is not white space")
     cond("any(x\n:y,EAID1)", None, note="a line break inside a leaf")
     for bad in ["", "any(", "any()", "all(a,", "any(a))", "claim:zz", "claim:abcd", "a b", "any(a)(b)", "Bad:x", "k:",
@@ -727,7 +757,7 @@ def generate(base):
                     "binding 1.0.0": acdc.SCHEMA_BINDING},
         "blake3_said": [{"input": s, "said": cesr.blake3_said(s)} for s in ["", "dzq", "Дякую"]],
         "redemption_said": [{"gratitude": g1["d"], "said": acdc.redemption_said(g1["d"])}],
-        "close_said (experimental)": [{"promise": cert["d"], "said": promise_ext.close_said(cert["d"])}],
+        "close_said (extension: promises)": [{"promise": cert["d"], "said": promise_ext.close_said(cert["d"])}],
         "claim_keys": [{"letter_key": letter_key, "scheme": s, "address": a, "public_key": build.claim_key(letter_key, s, a).pub.hex()}
                        for s, a in [("email", "dave@example.org"), ("phone", "+380501234567"), ("github", "octocat")]],
         "claim_message": {"said": g3["d"], "aid": dave.prefix, "message": "dzenq-claim/1|%s|%s" % (g3["d"], dave.prefix)},
@@ -735,7 +765,7 @@ def generate(base):
     out.json("identities.json", {
         "note": "TEST KEYS ONLY. Seeds are BLAKE3('dzq test vector key|<name>/<n>'). Never use them for anything real.",
         "identities": {c.name: c.prefix for c in (alice, bob, carol, dave, mallory, issuer, old, red, gone, erin,
-                                                    dad, marko, sofia, nb, closer)},
+                                                    dad, marko, sofia, nb, mom, closer)},
     })
     out.json("manifest.json", out.manifest)
     return out.manifest

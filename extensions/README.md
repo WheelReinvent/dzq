@@ -10,12 +10,7 @@ valid; an extension adds a way to prove or report something more.
 | [redemption](redemption.md) | the issuer *hints* that it considers a statement used (not double-spend protection: SPEC §0) | dzq/1.0 |
 | [presentation](presentation.md) | prove to a verifier that you hold statements, now | dzq/1.0 |
 | [looks](looks.md) | a common look document (look/1), carried in a `.dzq` | optional, dzq/1.2 |
-
-## Experimental — not part of dzq
-
-| | | |
-|---|---|---|
-| [promises](promises.md) | `thanks:` conditions, when a promise is usable, closing early — an example of rules an app builds on top | experimental |
+| [promises](promises.md) | earning a promise with thank-yous (`thanks:`), when it is usable, closing early | optional, dzq/1.3 |
 
 ## Not yet specified
 

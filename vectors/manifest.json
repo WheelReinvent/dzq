@@ -1,5 +1,5 @@
 {
-  "spec": "dzq/1.2",
+  "spec": "dzq/1.3",
   "credentials": [
     {
       "name": "classic",
@@ -681,14 +681,36 @@
     },
     {
       "name": "promise",
-      "description": "A dzq:promise to a condition. Without the extension it is just a valid statement.",
+      "description": "A dzq:promise 1.1.0 to a condition, with ask and payload. Without the extension it is just a valid statement.",
       "bundle": "credentials/promise.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EFQp6xJ0oZm3YQWKSiR3msg0zCVn4DiogtUZ0-RsJokl",
+        "said": "EEvyzjFMrOR8UjfQOovCAz58mgn82GxV-ePxbYRXbklm",
         "type": "dzq:promise",
         "content": "shown"
+      }
+    },
+    {
+      "name": "promise-compact",
+      "description": "The same promise, compact: what, ask and payload are hidden; until stays public.",
+      "bundle": "credentials/promise-compact.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "said": "EEvyzjFMrOR8UjfQOovCAz58mgn82GxV-ePxbYRXbklm",
+        "content": "hidden"
+      }
+    },
+    {
+      "name": "promise-1.0",
+      "description": "A dzq:promise 1.0.0 (what, note) stays valid and known.",
+      "bundle": "credentials/promise-1.0.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "type": "dzq:promise",
+        "type_known": true
       }
     }
   ],
@@ -1128,7 +1150,7 @@
       "file": "presentations/promise-earned.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": true,
         "promise": "usable"
@@ -1140,7 +1162,7 @@
       "file": "presentations/promise-too-few.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1152,7 +1174,7 @@
       "file": "presentations/promise-same-thanks-twice.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1164,7 +1186,7 @@
       "file": "presentations/promise-wrong-category.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1176,7 +1198,7 @@
       "file": "presentations/promise-wrong-issuer.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1188,7 +1210,7 @@
       "file": "presentations/promise-not-a-holder.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1200,7 +1222,7 @@
       "file": "presentations/promise-expired.json",
       "nonce": "door-7Q4M-2026",
       "now": "2027-07-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "expired"
@@ -1212,10 +1234,82 @@
       "file": "presentations/promise-two-issuers-add-up.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": true,
         "promise": "usable"
+      }
+    },
+    {
+      "name": "promise-mixed-terms",
+      "description": "thanks:3/<Dad>:cleaned the room+<Mom>:*: two from Dad for the room and one from Mom for anything.",
+      "file": "presentations/promise-mixed-terms.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extension": "promises",
+      "expect": {
+        "valid": true,
+        "promise": "usable"
+      }
+    },
+    {
+      "name": "promise-mixed-terms-wrong-category",
+      "description": "Two from Dad for the room and one from Dad for something else: Dad's term needs the room.",
+      "file": "presentations/promise-mixed-terms-wrong-category.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extension": "promises",
+      "expect": {
+        "valid": false,
+        "promise": "not-earned"
+      }
+    },
+    {
+      "name": "promise-any-category",
+      "description": "thanks:2/<Dad>:*: two thank-yous from Dad in any categories.",
+      "file": "presentations/promise-any-category.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extension": "promises",
+      "expect": {
+        "valid": true,
+        "promise": "usable"
+      }
+    },
+    {
+      "name": "promise-any-category-skips-app-categories",
+      "description": "* matches general categories only: Dad's dzenq:like does not count.",
+      "file": "presentations/promise-any-category-skips-app-categories.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extension": "promises",
+      "expect": {
+        "valid": false,
+        "promise": "not-earned"
+      }
+    },
+    {
+      "name": "promise-app-category-named",
+      "description": "An app category counts when named: thanks:1/<Dad>:dzenq%3Alike.",
+      "file": "presentations/promise-app-category-named.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extension": "promises",
+      "expect": {
+        "valid": true,
+        "promise": "usable"
+      }
+    },
+    {
+      "name": "promise-any-category-only-gratitudes",
+      "description": "Only dzq:gratitude counts for * : an apology from Dad does not.",
+      "file": "presentations/promise-any-category-only-gratitudes.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extension": "promises",
+      "expect": {
+        "valid": false,
+        "promise": "not-earned"
       }
     },
     {
@@ -1224,7 +1318,7 @@
       "file": "presentations/promise-before-since.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1236,7 +1330,7 @@
       "file": "presentations/promise-self-thanks-elsewhere.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1248,7 +1342,7 @@
       "file": "presentations/promise-self-promise.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": true,
         "promise": "usable"
@@ -1260,7 +1354,7 @@
       "file": "presentations/promise-is-not-a-thank-you.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "not-earned"
@@ -1272,7 +1366,7 @@
       "file": "presentations/promise-closed.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
-      "experimental": "promise",
+      "extension": "promises",
       "expect": {
         "valid": false,
         "promise": "closed"
