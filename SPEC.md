@@ -7,9 +7,10 @@ that used it; DzenQ is the first implementation, not the owner of the
 format.
 
 **Status:** published 2026-10-20, git tag `v1.4.0`. Editors: the DzenQ team.
-**This version:** `dzq/1.4` — 1.4 makes every condition a valid,
-form-encoded URL and lets a key repeat (any of its values), so counts can
-add up across issuers (section 4). 1.3 gave the promise `ask` and `payload`
+**This version:** `dzq/1.4` — 1.4 reads every condition as a URL query
+(form-encoded, as URL libraries write it; spaces and non-ASCII also accepted
+as they are) and lets a key repeat (any of its values), so counts can add
+up across issuers (section 4). 1.3 gave the promise `ask` and `payload`
 (3.8), replaced the condition language with URL-style conditions in
 `a.req` — one or a list; a condition may ask for statements the holder
 shows (section 4) — and made [promises](extensions/promises.md) (usable,
@@ -416,8 +417,8 @@ hold it; whoever proves that holds it, and if ten people prove it, all ten
 hold it. `a.req` is **one condition** (a string) or a **list** of them, any
 one of which is enough.
 
-Each condition is a **URL**: a type, `?`, and a query string encoded as
-`application/x-www-form-urlencoded` — exactly what URLSearchParams (JS),
+Each condition is a **URL**: a type, `?`, and a query string read as
+`application/x-www-form-urlencoded` — what URLSearchParams (JS),
 `urllib.parse` (Python) or `url::form_urlencoded` (Rust) build and read.
 
 ```
@@ -438,7 +439,8 @@ Each condition is a **URL**: a type, `?`, and a query string encoded as
 "req": "dzq:gratitude?from=<Dad>&category=%D0%BF%D1%80%D0%B8%D0%B1%D0%B8%D1%80%D0%B0%D0%BD%D0%BD%D1%8F"
 ```
 
-The last one is `category=прибирання`, as any URL library writes it.
+The last one is `category=прибирання` as a URL library writes it;
+`category=прибирання` written as it is means the same.
 
 **Statement conditions** (`<type>?…`) describe the statements the holder
 must show, like a template; anything not given may be anything:
@@ -474,10 +476,14 @@ too.
 
 **Rules for all conditions:**
 
-- The text must be a valid URL: only RFC 3986 query characters and `%XX`
-  escapes. A space or an unencoded non-ASCII character makes the condition
-  invalid. Values are decoded as form data (`+` is a space, `%XX` are UTF-8
-  bytes); a value that is not UTF-8 is invalid.
+- Writers SHOULD encode as URL libraries do. Readers decode the query as
+  form data (`+` is a space, `%XX` are UTF-8 bytes) and also accept spaces
+  and non-ASCII characters as they are, so
+  `category=прибирання` and `category=%D0%BF…` are the same condition.
+- `%`, `&`, `=` and `+` inside a value MUST be encoded (`%25`, `%26`, `%3D`,
+  `%2B`): unencoded they change the meaning (`C++` reads as `C` and two
+  spaces). A `%` that is not an escape, a control character or a value that
+  is not UTF-8 makes the condition invalid.
 - Keys are `[a-z][a-z0-9_]{0,31}`; no empty values.
 - `?aid=` and `?claim=` hold exactly one key (repeated: any of them).
 - `from`, `to`, `since`, `count` are reserved: no type has fields with these

@@ -770,6 +770,15 @@ def generate(base):
          {"type": G, "from": [AID1], "fields": {"category": ["cleaned the room"]}, "count": 1}, "%20 is a space too")
     cond(conditions.encode(G, [("from", AID1), ("category", "прибирання")]),
          {"type": G, "from": [AID1], "fields": {"category": ["прибирання"]}, "count": 1}, "non-ASCII is percent-encoded UTF-8")
+    cond(G + "?from=%s&category=cleaned the room" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["cleaned the room"]}, "count": 1},
+         "readers accept a space as it is")
+    cond(G + "?from=%s&category=прибирання" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["прибирання"]}, "count": 1},
+         "readers accept non-ASCII as it is; the same condition as the encoded one")
+    cond(G + "?from=%s&category=C++" % AID1,
+         {"type": G, "from": [AID1], "fields": {"category": ["C  "]}, "count": 1},
+         "+ is a space: C++ must be written C%2B%2B")
     cond(G + "?from=%s&category=a%%26b%%2Bc%%3Dd" % AID1,
          {"type": G, "from": [AID1], "fields": {"category": ["a&b+c=d"]}, "count": 1}, "&, + and = in a value")
     cond("myshop:visit?from=%s&to=%s&since=2026-10-01&count=5" % (AID1, AID2),
@@ -782,9 +791,9 @@ def generate(base):
                       (G + "?from=%s&since=yesterday" % AID1, ""), ("Bad Type?from=" + AID1, ""),
                       ("any(%s,%s)" % (AID1, AID2), "the pre-1.3 form"),
                       (G + "?from=%s&Category=x" % AID1, "keys are lowercase"),
-                      (G + "?from=%s&category=cleaned the room" % AID1, "a space is not valid in a URL"),
-                      (G + "?from=%s&category=прибирання" % AID1, "non-ASCII must be percent-encoded"),
-                      (G + "?from=%s&category=%%FF" % AID1, "not UTF-8")]:
+                      (G + "?from=%s&category=%%FF" % AID1, "not UTF-8"),
+                      (G + "?from=%s&category=100%%" % AID1, "% that is not an escape must be written %25"),
+                      (G + "?from=%s&category=a\nb" % AID1, "control characters")]:
         cond(bad, None, note)
     for c in conds:  # self-check against the reference parser
         p = conditions.parse_one(c["condition"])

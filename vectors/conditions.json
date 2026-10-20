@@ -143,6 +143,57 @@
       "note": "non-ASCII is percent-encoded UTF-8"
     },
     {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
+      "parses": true,
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "cleaned the room"
+          ]
+        },
+        "count": 1
+      },
+      "note": "readers accept a space as it is"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=прибирання",
+      "parses": true,
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "прибирання"
+          ]
+        },
+        "count": 1
+      },
+      "note": "readers accept non-ASCII as it is; the same condition as the encoded one"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=C++",
+      "parses": true,
+      "parsed": {
+        "type": "dzq:gratitude",
+        "from": [
+          "ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex"
+        ],
+        "fields": {
+          "category": [
+            "C  "
+          ]
+        },
+        "count": 1
+      },
+      "note": "+ is a space: C++ must be written C%2B%2B"
+    },
+    {
       "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a%26b%2Bc%3Dd",
       "parses": true,
       "parsed": {
@@ -250,19 +301,19 @@
       "note": "keys are lowercase"
     },
     {
-      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
-      "parses": false,
-      "note": "a space is not valid in a URL"
-    },
-    {
-      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=прибирання",
-      "parses": false,
-      "note": "non-ASCII must be percent-encoded"
-    },
-    {
       "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=%FF",
       "parses": false,
       "note": "not UTF-8"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=100%",
+      "parses": false,
+      "note": "% that is not an escape must be written %25"
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a\nb",
+      "parses": false,
+      "note": "control characters"
     }
   ]
 }

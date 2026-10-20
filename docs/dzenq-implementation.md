@@ -37,7 +37,8 @@ step 6 is done. In order:
    «3 from Dad for the room, or 5 from Mom» =
    `["dzq:gratitude?from=<Dad>&category=room&count=3", "dzq:gratitude?from=<Mom>&count=5"]`
    (conditions in a list count apart). Build and read conditions with a URL
-   library (form encoding: `category=%D0%BF…`), compare decoded values.
+   library (form encoding); accept unencoded spaces and non-ASCII too;
+   compare decoded values.
    Per-person stamps summed across people (Mom's "help" + Dad's "success")
    are not in dzq (proposal 0008).
    Conditions: `a.dq` becomes `a.req` (a string or a list); `any(…)`,

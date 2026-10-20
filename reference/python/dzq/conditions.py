@@ -1,9 +1,11 @@
 """Conditions (`a.req`): who may hold a statement (SPEC §4).
 
 `a.req` is one condition (a string) or a list of conditions, any of which
-is enough. A condition is a URL: a type, `?`, and a query string encoded as
+is enough. A condition is a URL: a type, `?`, and a query string read as
 `application/x-www-form-urlencoded` — what URLSearchParams (JS),
-urllib.parse (Python) and url::form_urlencoded (Rust) produce and read:
+urllib.parse (Python) and url::form_urlencoded (Rust) produce and read.
+Writers should encode as those libraries do; readers also accept spaces
+and non-ASCII as they are. `%`, `&`, `=` and `+` in a value must be encoded:
 
     ?aid=<AID>                                    the holder is this AID
     ?claim=<64 hex>                               the holder has this claim key (letters)
@@ -26,8 +28,8 @@ AID_RE = re.compile(r"[A-Za-z0-9_-]{44}")
 SAID_RE = re.compile(r"E[A-Za-z0-9_-]{43}")
 _HEX64 = re.compile(r"[0-9a-fA-F]{64}")
 _COUNT = re.compile(r"[1-9][0-9]{0,4}")
-# RFC 3986 query characters, with %XX escapes: a condition must be a valid URL.
-_URL = re.compile(r"(?:[A-Za-z0-9\-._~!$&'()*+,;=:@/?]|%[0-9A-Fa-f]{2})*")
+# What must not appear as is: control characters, and % that is not an escape.
+_BAD = re.compile(r"[\x00-\x1f\x7f]|%(?![0-9A-Fa-f]{2})")
 RESERVED = ("from", "to", "since", "count")
 ONCE = ("since", "count")
 
@@ -77,7 +79,7 @@ def encode(type_, pairs):
 
 def parse_one(text):
     """One condition → Holder or Records, or None if malformed (never met)."""
-    if not isinstance(text, str) or "?" not in text or not _URL.fullmatch(text):
+    if not isinstance(text, str) or "?" not in text or _BAD.search(text):
         return None
     head, _, query = text.partition("?")
     values = {}
