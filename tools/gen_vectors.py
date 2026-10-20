@@ -119,28 +119,23 @@ def generate(base):
     out.credential("classic", "A thank-you to one AID (schema 1.0.0), not yet sealed: valid by the issuer's current key.",
                    b1, valid(said=g1["d"], issuer=alice.prefix, recipient=bob.prefix, schema=acdc.SCHEMA_GRATITUDE))
 
-    group = "any(%s,%s)" % (bob.prefix, carol.prefix)
+    group = "?aid=" + carol.prefix
     g2 = alice.gratitude(attrs(condition=group, title="Дякую команді", message="За вечір", category="team"))
     b2 = alice.bundle(g2)
-    out.credential("condition-group", "A thank-you to a condition (schema 2.0.0): any of two AIDs.",
+    out.credential("condition-aid", "A thank-you to a condition (schema 2.0.0): ?aid=<Carol>.",
                    b2, valid(said=g2["d"], recipient=group, schema=acdc.SCHEMA_GRATITUDE_CONDITION))
 
     letter_key = blake3(b"dzq vector letter key")[:16].hex()
     ck = build.claim_key(letter_key, "email", "dave@example.org")
-    letter = "claim:" + ck.pub.hex()
+    letter = "?claim=" + ck.pub.hex()
     g3 = alice.gratitude(attrs(condition=letter, title="Дякую", message="За лист", category="letter"))
     b3 = alice.bundle(g3)
     out.credential("condition-claim", "A letter to an e-mail address: the condition is one claim key.",
                    b3, valid(said=g3["d"], recipient=letter))
 
-    g4 = alice.gratitude(attrs(condition="any(txn:6H24-KE7X,%s)" % bob.prefix, category="pay"))
-    b4 = alice.bundle(g4)
-    out.credential("condition-unknown-kind", "A condition with a leaf of a kind this version does not know; the credential is still valid.",
-                   b4, valid(recipient="any(txn:6H24-KE7X,%s)" % bob.prefix))
-
-    g5 = alice.gratitude(attrs(condition="any(%s," % bob.prefix, category="oops"))
-    out.credential("condition-malformed", "A condition that does not parse: the credential verifies, but nobody can ever hold it (see presentations).",
-                   alice.bundle(g5), valid(recipient="any(%s," % bob.prefix))
+    g5 = alice.gratitude(attrs(condition="any(%s,%s)" % (bob.prefix, carol.prefix), category="oops"))
+    out.credential("condition-malformed", "A condition that does not parse (the old any(…) form): the statement verifies, but nobody can ever hold it.",
+                   alice.bundle(g5), valid(recipient="any(%s,%s)" % (bob.prefix, carol.prefix)))
 
     att_body = "Фото з переїзду (тест)\n".encode("utf-8")
     g6 = alice.gratitude(attrs(recipient=bob.prefix, attachment={
@@ -379,7 +374,7 @@ def generate(base):
                      vp(bob, [b1], nonce="door-OTHER-0000"), "", {"valid": True, "holder": bob.prefix})
     out.presentation("not-the-recipient", "Carol presents Bob's thank-you as hers.",
                      vp(carol, [b1]), NONCE, {"valid": False, "code": "credential"})
-    out.presentation("group-member", "Carol holds the group thank-you (any of Bob, Carol).",
+    out.presentation("condition-aid-holder", "Carol holds the thank-you to ?aid=<Carol>.",
                      vp(carol, [b2]), NONCE, {"valid": True, "holder": carol.prefix})
     proof = build.claim_proof(ck, g3["d"], dave.prefix)
     out.presentation("letter-claimed", "Dave got the letter key through his e-mail and claims the letter.",
@@ -392,21 +387,7 @@ def generate(base):
     bad_proof = dict(proof, signature=proof["signature"][:-2] + ("00" if proof["signature"][-2:] != "00" else "11"))
     out.presentation("letter-claim-bad-signature", "The claim signature does not verify.",
                      vp(dave, [b3], claims=[bad_proof]), NONCE, {"valid": False, "code": "credential"})
-    k_a = build.claim_key(letter_key, "email", "erin@example.org")
-    k_b = build.claim_key(letter_key, "phone", "+380501234567")
     erin = build.Controller("erin").incept()
-    both = "all(claim:%s,claim:%s)" % (k_a.pub.hex(), k_b.pub.hex())
-    g8 = alice.gratitude(attrs(condition=both, message="Обидві адреси"))
-    b8 = alice.bundle(g8)
-    out.presentation("all-of-two-claims", "all(…) of two claim keys, both claimed.",
-                     vp(erin, [b8], claims=[build.claim_proof(k_a, g8["d"], erin.prefix),
-                                           build.claim_proof(k_b, g8["d"], erin.prefix)]),
-                     NONCE, {"valid": True, "holder": erin.prefix})
-    out.presentation("all-of-two-claims-one-missing", "all(…) with only one of the two claims.",
-                     vp(erin, [b8], claims=[build.claim_proof(k_a, g8["d"], erin.prefix)]),
-                     NONCE, {"valid": False, "code": "credential"})
-    out.presentation("unknown-kind-other-leaf", "Bob meets any(txn:…, Bob) through his AID; the unknown leaf is never met.",
-                     vp(bob, [b4]), NONCE, {"valid": True, "holder": bob.prefix})
     out.presentation("malformed-condition", "Nobody holds a thank-you whose condition does not parse.",
                      vp(bob, [alice.bundle(g5)]), NONCE, {"valid": False, "code": "credential"})
     signed = json.loads(vp(bob, [b1]))
@@ -445,6 +426,32 @@ def generate(base):
                      vp(dave, [alice.bundle(acdc.compact(p2))], claims=[build.claim_proof(ck, p2["d"], dave.prefix)]),
                      NONCE, {"valid": True, "holder": dave.prefix})
 
+    # --- conditions: lists, record conditions ----------------------------
+    def typed(issuer, name, **fields):
+        return acdc.new_typed(issuer.prefix, cesr.blake3_said("registry|" + issuer.prefix), types_.GRATITUDE,
+                              dict({"dt": DT, "category": "help", "title": "Дякую", "message": name}, **fields),
+                              salt=salt(name))
+    from dzq import types as types_
+    k_a = build.claim_key(letter_key, "email", "erin@example.org")
+    k_b = build.claim_key(letter_key, "phone", "+380501234567")
+    two_claims = typed(alice, "two-claims", dq=["?claim=" + k_a.pub.hex(), "?claim=" + k_b.pub.hex()])
+    out.presentation("list-of-two-claims", "a.dq is a list: either claim is enough. Erin claims one of them.",
+                     vp(erin, [alice.bundle(two_claims)], claims=[build.claim_proof(k_b, two_claims["d"], erin.prefix)]),
+                     NONCE, {"valid": True, "holder": erin.prefix})
+    group_list = typed(alice, "group-list", dq=["?aid=" + bob.prefix, "?aid=" + carol.prefix])
+    out.credential("condition-list", "a.dq as a list of conditions: Bob or Carol.",
+                   alice.bundle(group_list), valid(recipient=["?aid=" + bob.prefix, "?aid=" + carol.prefix]))
+    out.presentation("condition-list-member", "Carol holds the thank-you to [?aid=<Bob>, ?aid=<Carol>].",
+                     vp(carol, [alice.bundle(group_list)]), NONCE, {"valid": True, "holder": carol.prefix})
+    unknown_key = typed(alice, "unknown-key", dq=["?txn=6H24-KE7X", "?aid=" + bob.prefix])
+    out.presentation("condition-unknown-key", "Bob meets [?txn=…, ?aid=<Bob>] through his AID; the unknown condition is never met.",
+                     vp(bob, [alice.bundle(unknown_key)]), NONCE, {"valid": True, "holder": bob.prefix})
+    for name, bad in [("condition-empty-list", []), ("condition-not-strings", [1, 2])]:
+        g = typed(alice, name, dq=["?aid=" + bob.prefix])
+        g["a"]["dq"] = bad
+        out.credential(name, "a.dq must be a string or a non-empty list of strings (SAIDs recomputed).",
+                       alice.bundle(resaid(g)), invalid("schema"))
+
     # --- dzq/1.2: open types ---------------------------------------------
     from dzq import types as types_
     from dzq.typedoc import TypeDoc, make_type
@@ -462,7 +469,7 @@ def generate(base):
     out.credential("gratitude-1.2", "dzq:gratitude 1.2.0, the built-in type document: to one AID, private block.",
                    alice.bundle(g12), valid(said=g12["d"], schema=acdc.SCHEMA_GRATITUDE_12, type="dzq:gratitude",
                                             type_known=True, content="shown"))
-    g12c = stmt(alice, GRAT, "g12-cond", dq="any(%s,%s)" % (bob.prefix, carol.prefix), category="help",
+    g12c = stmt(alice, GRAT, "g12-cond", dq=["?aid=" + bob.prefix, "?aid=" + carol.prefix], category="help",
                 title="Дякую", message="Будь-кому з двох")
     out.credential("gratitude-1.2-condition", "The same type to a condition: one type document covers both (a.i or a.dq).",
                    alice.bundle(g12c), valid(type="dzq:gratitude", content="shown"))
@@ -496,7 +503,7 @@ def generate(base):
     POST = TypeDoc(post_text)
     post_said = POST.said
     post_file = type_file(POST)
-    post = stmt(carol, POST, "post", dq="any(%s,%s)" % (bob.prefix, dave.prefix), area="Podil",
+    post = stmt(carol, POST, "post", dq=["?aid=" + bob.prefix, "?aid=" + dave.prefix], area="Podil",
                 text="Віддам дитячий велосипед")
     out.credential("custom-type-unknown", "A statement of a type this reader does not know: envelope, SAIDs and signature "
                    "are checked; the result says the type is unknown.",

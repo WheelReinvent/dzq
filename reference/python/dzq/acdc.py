@@ -43,6 +43,7 @@ import re as _re  # noqa: E402
 LOOK_RE = _re.compile(r"[a-z0-9-]+:\S+")
 SAID_RE = _re.compile(r"E[A-Za-z0-9_-]{43}")
 NAME_RE = _re.compile(r"[a-z][a-z0-9_]{0,31}")
+RESERVED_NAMES = ("d", "i", "dq", "dt", "c", "u", "look", "re", "from", "to", "since", "count")
 
 
 def builtin_types():
@@ -153,13 +154,17 @@ def _generic_attributes(a):
         raise AcdcError("schema", "a starts with d, then i or dq, then dt")
     if "i" in a and "dq" in a:
         raise AcdcError("schema", "a statement has a.i or a.dq, not both")
-    for k in ("d", keys[1], "dt"):
-        if not isinstance(a[k], str):
+    for k in ("d", "i", "dt"):
+        if k in a and not isinstance(a[k], str):
             raise AcdcError("schema", "a.%s must be a string" % k)
+    if "dq" in a:
+        from . import dq as dq_
+        if not dq_.well_formed(a["dq"]):
+            raise AcdcError("schema", "a.dq must be a condition or a non-empty list of conditions (strings)")
     for k in keys[3:]:
         if k == "c":
             continue
-        if not NAME_RE.fullmatch(k) or k in ("d", "i", "dq", "dt", "u", "look", "re"):
+        if not NAME_RE.fullmatch(k) or k in RESERVED_NAMES:
             raise AcdcError("schema", "a.%s is not an allowed field name" % k)
         _plain(a[k], "a.%s" % k)
     if "c" in a:
@@ -173,7 +178,7 @@ def _generic_attributes(a):
             if not isinstance(c["d"], str) or not _salt_ok(c["u"]):
                 raise AcdcError("schema", "a.c.u must be a 128-bit salt (CESR 0A…)")
             for k in ck[2:]:
-                if not NAME_RE.fullmatch(k) or k in ("d", "i", "dq", "dt", "u", "c"):
+                if not NAME_RE.fullmatch(k) or (k in RESERVED_NAMES and k not in ("look", "re")):
                     raise AcdcError("schema", "a.c.%s is not an allowed field name" % k)
                 _plain(c[k], "a.c.%s" % k)
             if "look" in c and not (isinstance(c["look"], str) and LOOK_RE.fullmatch(c["look"])):

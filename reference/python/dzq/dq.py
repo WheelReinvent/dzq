@@ -1,120 +1,135 @@
-"""Conditions (`a.dq`): who may hold a gratitude (dzq/1.0 §4).
+"""Conditions (`a.dq`): who may hold a statement (SPEC §4).
 
-    condition := any(condition, …) | all(condition, …) | leaf
-    leaf      := <AID> | claim:<64 hex> | commitment:<hex> | <kind>:<value>
+`a.dq` is one condition (a string) or a list of conditions, any of which
+is enough. A condition reads like a URL:
+
+    <type>?from=<AID>&<field>=<value>&…&count=3  the holder shows at least 3 such records
+    ?aid=<AID>                                   the holder is this AID
+    ?claim=<64 hex>                              the holder has the claim key (letters)
+
+`<type>` is a type name (`dzq:gratitude`) or a type SAID. In values only
+`%`, `&` and `=` are percent-encoded. `from`, `to`, `since` and `count` are
+reserved: they say who issued the records, to whom, since when and how many
+(at least).
+Every other key is a public field of the type.
 """
 
 import re
+from urllib.parse import unquote
 
-# Unicode White_Space, as Rust's str::trim and char::is_whitespace use it.
-WHITE_SPACE = "\t\n\x0b\x0c\r \x85\xa0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000"
+from .typedoc import FIELD_RE, NAME_RE
 
-MAX_LEN = 64 * 1024
-MAX_DEPTH = 8
+MAX_LEN = 64 * 1024     # all of a.dq, UTF-8
+MAX_ITEMS = 64
 
-_AID = re.compile(r"[A-Za-z0-9_-]+")
-_KIND = re.compile(r"[a-z0-9-]+")
+AID_RE = re.compile(r"[A-Za-z0-9_-]{44}")
+SAID_RE = re.compile(r"E[A-Za-z0-9_-]{43}")
 _HEX64 = re.compile(r"[0-9a-fA-F]{64}")
+_COUNT = re.compile(r"[1-9][0-9]{0,4}")
+RESERVED = ("from", "to", "since", "count")
 
 
-class Leaf:
-    def __init__(self, kind, value):
-        self.kind, self.value = kind, value   # kind: "aid", "claim", "commitment" or an extension's kind
+class Holder:
+    """`?aid=…` or `?claim=…`: a condition on the holder itself."""
 
-    def __eq__(self, other):
-        return isinstance(other, Leaf) and (self.kind, self.value) == (other.kind, other.value)
-
-    def __str__(self):
-        return self.value if self.kind == "aid" else "%s:%s" % (self.kind, self.value)
-
-    def __repr__(self):
-        return "Leaf(%s)" % self
-
-
-KNOWN = ("aid", "claim", "commitment")
-
-
-class Node:
-    def __init__(self, op, items):
-        self.op, self.items = op, items   # op: "any" or "all"
+    def __init__(self, key, value):
+        self.key, self.value = key, value
 
     def __str__(self):
-        return "%s(%s)" % (self.op, ",".join(str(i) for i in self.items))
+        return "?%s=%s" % (self.key, self.value)
 
 
-def _leaf(s):
-    if not s or "(" in s:
+class Records:
+    """`<type>?from=…`: the holder shows at least `count` such records."""
+
+    def __init__(self, type_, issuer, to, since, n, fields):
+        self.type, self.issuer, self.to, self.since, self.count, self.fields = type_, issuer, to, since, n, fields
+
+    def __str__(self):
+        q = ["from=" + self.issuer]
+        if self.to:
+            q.append("to=" + self.to)
+        q += ["%s=%s" % (k, _enc(v)) for k, v in self.fields]
+        if self.since:
+            q.append("since=" + _enc(self.since))
+        if self.count != 1:
+            q.append("count=%d" % self.count)
+        return "%s?%s" % (self.type, "&".join(q))
+
+
+def _enc(v):
+    return v.replace("%", "%25").replace("&", "%26").replace("=", "%3D")
+
+
+def _instant(text):
+    import datetime
+    try:
+        t = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except (ValueError, AttributeError, TypeError):
         return None
-    if s.startswith("claim:"):
-        d = s[6:]
-        return Leaf("claim", d.lower()) if _HEX64.fullmatch(d) else None
-    if s.startswith("commitment:"):
-        d = s[11:]
-        return Leaf("commitment", d) if d else None
-    if ":" in s:
-        kind, value = s.split(":", 1)
-        if kind and _KIND.fullmatch(kind) and value and not any(c in WHITE_SPACE or c in ",()" for c in value):
-            return Leaf(kind, value)
+    return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
+
+
+def parse_one(text):
+    """One condition → Holder or Records, or None if malformed (never met)."""
+    if not isinstance(text, str) or "?" not in text:
         return None
-    return Leaf("aid", s) if _AID.fullmatch(s) else None
-
-
-def _parse_at(s, depth):
-    if depth > MAX_DEPTH:
+    head, _, query = text.partition("?")
+    pairs = []
+    for part in query.split("&"):
+        key, eq, raw = part.partition("=")
+        if not eq or not FIELD_RE.fullmatch(key) or any(k == key for k, _ in pairs):
+            return None
+        try:
+            value = unquote(raw, errors="strict")
+        except UnicodeDecodeError:
+            return None
+        if not value:
+            return None
+        pairs.append((key, value))
+    if head == "":
+        if len(pairs) != 1:
+            return None
+        key, value = pairs[0]
+        if key == "aid" and AID_RE.fullmatch(value):
+            return Holder("aid", value)
+        if key == "claim" and _HEX64.fullmatch(value):
+            return Holder("claim", value.lower())
         return None
-    s = s.lstrip(WHITE_SPACE)
-    for name in ("any(", "all("):
-        if s.startswith(name):
-            rest = s[len(name):]
-            items = []
-            while True:
-                r = _parse_at(rest, depth + 1)
-                if r is None:
-                    return None
-                c, rest = r
-                items.append(c)
-                rest = rest.lstrip(WHITE_SPACE)
-                if rest.startswith(","):
-                    rest = rest[1:]
-                elif rest.startswith(")"):
-                    return Node(name[:3], items), rest[1:]
-                else:
-                    return None
-    ends = [i for i in (s.find(","), s.find(")")) if i >= 0]
-    end = min(ends) if ends else len(s)
-    leaf = _leaf(s[:end].strip(WHITE_SPACE))
-    return (leaf, s[end:]) if leaf else None
-
-
-def parse(text):
-    """Parses a condition; None if it is malformed (then nobody meets it)."""
-    if not isinstance(text, str):
+    if not (NAME_RE.fullmatch(head) or SAID_RE.fullmatch(head)):
         return None
-    s = text.strip(WHITE_SPACE)
-    if not s or len(s.encode("utf-8")) > MAX_LEN:
+    got = dict(pairs)
+    if not AID_RE.fullmatch(got.get("from", "")):
         return None
-    r = _parse_at(s, 0)
-    if r is None or r[1].strip(WHITE_SPACE):
+    if "to" in got and not AID_RE.fullmatch(got["to"]):
         return None
-    return r[0]
+    if "since" in got and _instant(got["since"]) is None:
+        return None
+    if "count" in got and not _COUNT.fullmatch(got["count"]):
+        return None
+    fields = [(k, v) for k, v in pairs if k not in RESERVED]
+    return Records(head, got["from"], got.get("to"), got.get("since"), int(got.get("count", "1")), fields)
 
 
-def holds(cond, leaf_ok, kinds=KNOWN):
-    """Is the condition met, when `leaf_ok(leaf)` says which leaves were proved?
-    Leaves of kinds outside `kinds` (core kinds plus the extensions a
-    verifier supports) are never met."""
-    if isinstance(cond, Node):
-        if cond.op == "any":
-            return any(holds(c, leaf_ok, kinds) for c in cond.items)
-        return bool(cond.items) and all(holds(c, leaf_ok, kinds) for c in cond.items)
-    if cond.kind not in kinds:
-        return False
-    return bool(leaf_ok(cond))
+def parse(dq):
+    """a.dq → list of conditions (None for each malformed one), or None if
+    a.dq itself is not a string or a non-empty list of strings."""
+    items = [dq] if isinstance(dq, str) else dq
+    if not isinstance(items, list) or not items or len(items) > MAX_ITEMS:
+        return None
+    if not all(isinstance(i, str) for i in items):
+        return None
+    if sum(len(i.encode("utf-8")) for i in items) > MAX_LEN:
+        return None
+    return [parse_one(i) for i in items]
 
 
-def leaves(cond):
-    if isinstance(cond, Node):
-        for c in cond.items:
-            yield from leaves(c)
-    else:
-        yield cond
+def well_formed(dq):
+    """a.dq has the right shape (a string or a non-empty list of strings,
+    within limits). Conditions that do not parse are allowed: never met."""
+    return parse(dq) is not None
+
+
+def names_holder(dq, holder):
+    """Is `holder` named directly (`?aid=<holder>`)?"""
+    return any(isinstance(c, Holder) and c.key == "aid" and c.value == holder for c in (parse(dq) or []))

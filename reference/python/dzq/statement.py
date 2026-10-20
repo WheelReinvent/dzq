@@ -47,6 +47,11 @@ class Statement:
         return self.credential.get("i")
 
     @property
+    def recipient_text(self):
+        r = self.recipient
+        return "  or  ".join(r) if isinstance(r, list) else r
+
+    @property
     def recipient(self):
         a = self.credential.get("a", {})
         return a.get("i") or a.get("dq")
@@ -98,7 +103,7 @@ class Statement:
         name = self.type or "type unknown here: %s" % self.credential.get("s")
         lines = ["Statement (%s)" % name,
                  "  from     %s" % self.issuer,
-                 "  to       %s" % self.recipient,
+                 "  to       %s" % self.recipient_text,
                  "  date     %s" % self.date]
         for k, v in self.content.items():
             if archive._is_attachment(v):
@@ -169,7 +174,8 @@ class Verification:
                  "  type       %s" % (r.get("type") if r.get("type_known")
                                       else "unknown to this reader — signature and envelope checked, fields not"),
                  "  signed by  %s" % r["issuer"],
-                 "  to         %s" % r["recipient"],
+                 "  to         %s" % ("  or  ".join(r["recipient"]) if isinstance(r["recipient"], list)
+                                       else r["recipient"]),
                  "  unchanged  yes, every byte as signed"]
         if r.get("content") == "hidden":
             lines.append("  content    hidden: the signature covers it, but this copy does not show it")
@@ -214,12 +220,13 @@ def open_statement(data, types=None):
 
 
 def _is_condition(to):
-    return to.startswith(("any(", "all(")) or ":" in to
+    return isinstance(to, list) or "?" in to
 
 
 def sign(identity, type, to, content, when=None, attachment=None, private=True, types=None, re=None):
-    """Builds and signs a statement of `type` from `identity` to `to`
-    (an AID, or a condition like "any(<AID>,<AID>)").
+    """Builds and signs a statement of `type` from `identity` to `to`: an
+    AID, a condition ("?aid=<AID>", "dzq:gratitude?from=<AID>&count=3") or a
+    list of conditions, any of which is enough (SPEC §4).
 
     `type` is a TypeDoc, a type SAID, or a name ("gratitude",
     "acme:board-post") among the base types and `types`. `content` holds
