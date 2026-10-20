@@ -43,7 +43,7 @@ import re as _re  # noqa: E402
 LOOK_RE = _re.compile(r"[a-z0-9-]+:\S+")
 SAID_RE = _re.compile(r"E[A-Za-z0-9_-]{43}")
 NAME_RE = _re.compile(r"[a-z][a-z0-9_]{0,31}")
-RESERVED_NAMES = ("d", "i", "dq", "dt", "c", "u", "look", "re", "from", "to", "since", "count")
+RESERVED_NAMES = ("d", "i", "requires", "dq", "dt", "c", "u", "look", "re", "from", "to", "since", "count")
 
 
 def builtin_types():
@@ -150,17 +150,17 @@ def _generic_attributes(a):
     if not isinstance(a, dict):
         raise AcdcError("schema", "a must be an object")
     keys = list(a)
-    if len(keys) < 3 or keys[0] != "d" or keys[1] not in ("i", "dq") or keys[2] != "dt":
-        raise AcdcError("schema", "a starts with d, then i or dq, then dt")
-    if "i" in a and "dq" in a:
-        raise AcdcError("schema", "a statement has a.i or a.dq, not both")
+    if len(keys) < 3 or keys[0] != "d" or keys[1] not in ("i", "requires") or keys[2] != "dt":
+        raise AcdcError("schema", "a starts with d, then i or requires, then dt")
+    if "i" in a and "requires" in a:
+        raise AcdcError("schema", "a statement has a.i or a.requires, not both")
     for k in ("d", "i", "dt"):
         if k in a and not isinstance(a[k], str):
             raise AcdcError("schema", "a.%s must be a string" % k)
-    if "dq" in a:
-        from . import dq as dq_
-        if not dq_.well_formed(a["dq"]):
-            raise AcdcError("schema", "a.dq must be a condition or a non-empty list of conditions (strings)")
+    if "requires" in a:
+        from . import conditions as dq_
+        if not dq_.well_formed(a["requires"]):
+            raise AcdcError("schema", "a.requires must be a condition or a non-empty list of conditions (strings)")
     for k in keys[3:]:
         if k == "c":
             continue
@@ -208,7 +208,7 @@ def _check_against(a, doc):
                 continue
             _field(where, f["name"], block[f["name"]], f.get("max"), f.get("kind", "text"))
 
-    check(a, doc.public, "a", {"d", "i", "dq", "dt", "c"})
+    check(a, doc.public, "a", {"d", "i", "requires", "dt", "c"})
     c = a.get("c")
     if doc.private and c is None:
         raise AcdcError("schema", "%s has private fields: a.c is required" % doc.name)
@@ -358,7 +358,7 @@ def new_typed(issuer, registry, doc, attributes, salt):
     """A statement of a type document `doc`: envelope (i or dq, dt), the
     type's public fields, then its private fields plus look / re in a salted
     block — each in the order the type lists them."""
-    to = "dq" if "dq" in attributes else "i"
+    to = "requires" if "requires" in attributes else "i"
     a = {"d": "", to: attributes[to], "dt": attributes["dt"]}
     for f in doc.public:
         if f["name"] in attributes:
@@ -425,7 +425,7 @@ def check_integrity(raw, known=None):
     elif s == SCHEMA_GRATITUDE_CONDITION or s in LAYOUTS:
         if "dq" not in a or "i" in a:
             raise AcdcError("schema", "a gratitude to a condition has a.dq and no a.i")
-    recipient = a.get("i", a.get("dq"))
+    recipient = a.get("i", a.get("requires", a.get("dq")))
     content = None
     if isinstance(a.get("c"), dict):
         # Expanded: the block must be the one whose SAID the signed form holds.

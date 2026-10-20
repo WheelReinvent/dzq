@@ -1,6 +1,6 @@
-"""Conditions (`a.dq`): who may hold a statement (SPEC §4).
+"""Conditions (`a.requires`): who may hold a statement (SPEC §4).
 
-`a.dq` is one condition (a string) or a list of conditions, any of which
+`a.requires` is one condition (a string) or a list of conditions, any of which
 is enough. A condition reads like a URL:
 
     <type>?from=<AID>&<field>=<value>&…&count=3  the holder shows at least 3 such records
@@ -112,8 +112,8 @@ def parse_one(text):
 
 
 def parse(dq):
-    """a.dq → list of conditions (None for each malformed one), or None if
-    a.dq itself is not a string or a non-empty list of strings."""
+    """a.requires → list of conditions (None for each malformed one), or None if
+    a.requires itself is not a string or a non-empty list of strings."""
     items = [dq] if isinstance(dq, str) else dq
     if not isinstance(items, list) or not items or len(items) > MAX_ITEMS:
         return None
@@ -125,7 +125,7 @@ def parse(dq):
 
 
 def well_formed(dq):
-    """a.dq has the right shape (a string or a non-empty list of strings,
+    """a.requires has the right shape (a string or a non-empty list of strings,
     within limits). Conditions that do not parse are allowed: never met."""
     return parse(dq) is not None
 

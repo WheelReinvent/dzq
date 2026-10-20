@@ -20,7 +20,7 @@ from .cesr import SAID_PLACEHOLDER, blake3_said
 
 NAME_RE = re.compile(r"[a-z0-9-]+:[a-z0-9][a-z0-9.-]{0,63}")
 FIELD_RE = re.compile(r"[a-z][a-z0-9_]{0,31}")
-RESERVED = {"d", "i", "dq", "dt", "c", "u", "look", "re", "from", "to", "since", "count"}
+RESERVED = {"d", "i", "requires", "dq", "dt", "c", "u", "look", "re", "from", "to", "since", "count"}
 KINDS = ("text", "attachment")
 DZQ_SOURCE = "dzq"
 
@@ -95,7 +95,7 @@ def make_type(name, version, public=(), private=(), title=None, description="", 
     if "aid" in to:
         recipients.append({"required": ["i"], "properties": {"i": {"type": "string", "description": "Recipient AID"}}})
     if "condition" in to:
-        recipients.append({"required": ["dq"], "properties": {"dq": {
+        recipients.append({"required": ["requires"], "properties": {"requires": {
             "oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}, "minItems": 1}],
             "description": "A condition, or a list of conditions any of which is enough (SPEC §4)"}}})
     c_props = {"d": {"type": "string"}, "u": {"type": "string", "description": "Salt: 128 random bits, CESR 0A…"}}
@@ -103,7 +103,7 @@ def make_type(name, version, public=(), private=(), title=None, description="", 
     c_props["look"] = {"type": "string", "description": "<source>:<id> of how it wants to be shown"}
     c_props["re"] = {"type": "string", "description": "SAID of the statement this one answers"}
     a_props = {"d": {"type": "string"}, "i": {"type": "string"},
-               "dq": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
+               "requires": {"oneOf": [{"type": "string"}, {"type": "array", "items": {"type": "string"}}]},
                "dt": {"type": "string", "format": "date-time"}}
     a_props.update({f["name"]: _field_schema(f) for f in public})
     a_props["c"] = {"oneOf": [{"type": "string", "description": "Compact form: SAID of the private block"},
