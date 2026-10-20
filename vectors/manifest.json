@@ -1427,6 +1427,34 @@
       }
     },
     {
+      "name": "promise-earned-with-claimed-letters",
+      "description": "Dad thanked Marko by e-mail three times (?claim=); Marko claimed them later and earns the promise.",
+      "file": "presentations/promise-earned-with-claimed-letters.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extensions": [
+        "promises"
+      ],
+      "expect": {
+        "valid": true,
+        "promise": "usable"
+      }
+    },
+    {
+      "name": "promise-letters-without-claims",
+      "description": "The same letters without the claim proofs: they are not shown to be Marko's, so they do not count.",
+      "file": "presentations/promise-letters-without-claims.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extensions": [
+        "promises"
+      ],
+      "expect": {
+        "valid": false,
+        "promise": "not-earned"
+      }
+    },
+    {
       "name": "promise-closed",
       "description": "Marko shows a promise the issuer has closed (a close digest in its KEL).",
       "file": "presentations/promise-closed.json",

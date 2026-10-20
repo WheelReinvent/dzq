@@ -451,8 +451,11 @@ must show, like a template; anything not given may be anything:
 
 In a presentation (extensions/presentation.md) a statement condition is met
 when, among the statements shown with it, at least `count` distinct ones
-are valid (section 6), match, and are held by the holder **directly**
-(`a.i` = holder, or `a.req` contains `?aid=<holder>`). A statement the
+are valid (section 6), match, and are held by the holder **directly**:
+`a.i` = holder, or `a.req` contains `?aid=<holder>`, or a `?claim=` the
+holder proves with a claim proof in the same presentation. So thank-yous
+sent to an e-mail or phone before the person had an AID count once they
+claim them (vector `promise-earned-with-claimed-letters`). A statement the
 holder issued to itself counts only toward a statement the holder issued
 too.
 

@@ -700,6 +700,23 @@ def generate(base):
     only_certs = stmt(dad, PROMISE, "oc", req=want(dad, category=room), what="Чай")
     pv("promise-is-not-a-thank-you", "A promise never counts as a thank-you: two promises, no gratitude.",
        marko, [dad.bundle(acdc.compact(only_certs)), dad.bundle(acdc.compact(to_one))], "not-earned")
+    # Thank-yous sent to an e-mail address, claimed later, count too.
+    lk = blake3(b"dzq vector letter key, promise")[:16].hex()
+    mail = build.claim_key(lk, "email", "marko@example.org")
+    mailed = [stmt(dad, GRAT, "mailed %d" % k, req="?claim=" + mail.pub.hex(), category=room,
+                   title="Дякую", message="Лист %d" % k) for k in (1, 2, 3)]
+    mail_proofs = [build.claim_proof(mail, m["d"], marko.prefix) for m in mailed]
+    room3 = stmt(dad, PROMISE, "room3", req=want(dad, category=room, count=3), what="Кіно")
+    room3_b = dad.bundle(acdc.compact(room3))
+    mailed_b = [dad.bundle(acdc.compact(m)) for m in mailed]
+    out.presentation("promise-earned-with-claimed-letters",
+                     "Dad thanked Marko by e-mail three times (?claim=); Marko claimed them later and earns the promise.",
+                     build.presentation(marko, [room3_b] + mailed_b, NONCE, DT, claims=mail_proofs), NONCE,
+                     {"valid": True, "promise": "usable"}, now=NOW, extensions=["promises"])
+    out.presentation("promise-letters-without-claims",
+                     "The same letters without the claim proofs: they are not shown to be Marko's, so they do not count.",
+                     build.presentation(marko, [room3_b] + mailed_b, NONCE, DT), NONCE,
+                     {"valid": False, "promise": "not-earned"}, now=NOW, extensions=["promises"])
     closer = build.Controller("closer").incept()
     closing = stmt(closer, PROMISE, "closing", i=marko.prefix, what="Кіно")
     closer.interact([{"d": promise_ext.close_said(closing["d"])}])

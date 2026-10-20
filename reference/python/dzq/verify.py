@@ -185,12 +185,24 @@ def _instant(text):
     return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
 
 
-def held_directly(r, holder):
-    """The holder holds `r` without showing anything else: a.i is the
-    holder, or a.req names the holder (`?aid=<holder>`)."""
+def held_directly(r, holder, claims=()):
+    """The holder holds `r` without counting other statements: a.i is the
+    holder, or a.req has `?aid=<holder>`, or a `?claim=` the holder proves
+    with a claim proof (a letter to an address, claimed later)."""
     if r.get("to_aid"):
         return r.get("recipient") == holder
-    return dq.names_holder(r.get("recipient"), holder)
+    for cond in dq.parse(r.get("recipient")) or []:
+        if isinstance(cond, dq.Holder):
+            if cond.key == "aid" and cond.value == holder:
+                return True
+            if cond.key == "claim" and _claimed(cond.value, r.get("said"), holder, claims):
+                return True
+    return False
+
+
+def _claimed(key, said, holder, claims):
+    return any(isinstance(p, dict) and p.get("said") == said and p.get("aid") == holder
+               and p.get("key") == key and claim_holds(p) for p in claims)
 
 
 def _record_matches(cond, r):
@@ -220,14 +232,12 @@ def holder_meets(recipient, said, holder, claims, to_aid=False, shown=(), issuer
         if isinstance(cond, dq.Holder):
             if cond.key == "aid" and cond.value == holder:
                 return True
-            if cond.key == "claim" and any(
-                    isinstance(p, dict) and p.get("said") == said and p.get("aid") == holder
-                    and p.get("key") == cond.value and claim_holds(p) for p in claims):
+            if cond.key == "claim" and _claimed(cond.value, said, holder, claims):
                 return True
         elif isinstance(cond, dq.Records):
             counted = set()
             for r in shown:
-                if not r.valid or r["said"] == said or not held_directly(r, holder):
+                if not r.valid or r["said"] == said or not held_directly(r, holder, claims):
                     continue
                 if r.get("issuer") == holder and issuer != holder:
                     continue  # your statements to yourself count only toward your own
