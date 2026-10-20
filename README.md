@@ -46,15 +46,24 @@ dzq comes with three — `dzq:gratitude`, `dzq:apology`, `dzq:promise`
 
 ```
 dzq type new myapp:board-post --public "area*:64" --private "text*:2000" "photo@"
-dzq sign --as alice.id --type myapp:board-post --to "any(<Bob>,<Dave>)" area=Podil text="Free kid's bike"
+dzq sign --as alice.id --type myapp:board-post --to "?aid=<Bob>" --to "?aid=<Dave>" area=Podil text="Free kid's bike"
 ```
 
 The type travels inside the file, so other apps can check the fields. An
 app that doesn't know the type still verifies the signature.
 
-A statement goes to one person or to a condition (`any(…)`, `all(…)`,
-an e-mail or phone via a claim key). Every type can also say how it wants
-to be shown (`look`) and which statement it answers (`re`).
+A statement goes to one person, or to whoever meets a condition. Conditions
+read like URLs, and any statement can be asked for — that is how "thank
+now, repay later" works:
+
+```
+"req": ["?aid=<Marko>", "?aid=<Sofia>"]                     Marko or Sofia
+"req": "?claim=<key>"                                       whoever got the letter by e-mail
+"req": "dzq:gratitude?from=<Dad>&category=help&count=3"     three thank-yous from Dad for help
+```
+
+Every type can also say how it wants to be shown (`look`) and which
+statement it answers (`re`).
 
 ## Under the hood
 
@@ -69,8 +78,8 @@ reasoning: [SPEC.md](SPEC.md), starting with §0.
 |---|---|
 | [SPEC.md](SPEC.md) | the format, `dzq/1.3` |
 | [types/](types/) | base types |
-| [extensions/](extensions/) | optional: letters to e-mail/phone, sealing, presentations, looks, counting (`count:`), promises |
-| [vectors/](vectors/) | 132 test cases with expected results |
+| [extensions/](extensions/) | optional: letters to e-mail/phone, sealing, presentations, looks, promises |
+| [vectors/](vectors/) | 135 test cases with expected results |
 | [reference/python/](reference/python/) | reference verifier and the `dzq` CLI |
 | [examples/](examples/) | a Python quickstart and a custom type |
 | [docs/](docs/) | relation to KERI/ACDC; DzenQ's implementation status |

@@ -15,14 +15,14 @@
       }
     },
     {
-      "name": "condition-group",
-      "description": "A thank-you to a condition (schema 2.0.0): any of two AIDs.",
-      "bundle": "credentials/condition-group.acdc",
+      "name": "condition-aid",
+      "description": "A thank-you to a condition (schema 2.0.0): ?aid=<Carol>.",
+      "bundle": "credentials/condition-aid.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EI7nYydg4aIxWDzv5SDRxZVMAXVmJHOWn4XF7Dn8u6HP",
-        "recipient": "any(EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj,EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih)",
+        "said": "EBiGu8QWh6BwM9GRDX9bdOOaB6Gh4sB2UncK98OCyKKb",
+        "recipient": "?aid=EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih",
         "schema": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ"
       }
     },
@@ -33,28 +33,18 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EKE_Jz7brlYRkBskgb891ppg0UJsRzF4wm0ytOlwMcqE",
-        "recipient": "claim:405eb123128b51bb931de471b79b94c6ad45950d45e081507e5a96cfe98c4313"
-      }
-    },
-    {
-      "name": "condition-unknown-kind",
-      "description": "A condition with a leaf of a kind this version does not know; the credential is still valid.",
-      "bundle": "credentials/condition-unknown-kind.acdc",
-      "expect": {
-        "valid": true,
-        "sealed": false,
-        "recipient": "any(txn:6H24-KE7X,EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj)"
+        "said": "EKUD1TGWpsRfZnwBFSZJ5wV4BlQQ-Sdlvgw8bhFIDfIq",
+        "recipient": "?claim=405eb123128b51bb931de471b79b94c6ad45950d45e081507e5a96cfe98c4313"
       }
     },
     {
       "name": "condition-malformed",
-      "description": "A condition that does not parse: the credential verifies, but nobody can ever hold it (see presentations).",
+      "description": "A condition that does not parse (the old any(…) form): the statement verifies, but nobody can ever hold it.",
       "bundle": "credentials/condition-malformed.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "recipient": "any(EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj,"
+        "recipient": "any(EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj,EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih)"
       }
     },
     {
@@ -396,9 +386,40 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "ENHLbexlFDo534LiVQTXJYLc_LRB8HEgMYx6Yx30KNGt",
+        "said": "EA-iYV2_iDg77TeWYMaiqL3_0a54YEfp1kkY_B6Ifr3S",
         "schema": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
         "content": "shown"
+      }
+    },
+    {
+      "name": "condition-list",
+      "description": "a.req as a list of conditions: Bob or Carol.",
+      "bundle": "credentials/condition-list.acdc",
+      "expect": {
+        "valid": true,
+        "sealed": false,
+        "recipient": [
+          "?aid=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
+          "?aid=EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih"
+        ]
+      }
+    },
+    {
+      "name": "condition-empty-list",
+      "description": "a.req must be a string or a non-empty list of strings (SAIDs recomputed).",
+      "bundle": "credentials/condition-empty-list.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
+      }
+    },
+    {
+      "name": "condition-not-strings",
+      "description": "a.req must be a string or a non-empty list of strings (SAIDs recomputed).",
+      "bundle": "credentials/condition-not-strings.acdc",
+      "expect": {
+        "valid": false,
+        "code": "schema"
       }
     },
     {
@@ -408,8 +429,8 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EAb-LP3nFq8MK8fnRJnNt0k1vWTvUsuoii2VzW32rIS5",
-        "schema": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
+        "said": "EOq5sR9Yc4FugDvVxp7pI0vdZpj-pp7aYTBYysXKFMgN",
+        "schema": "EA7UscxbMPT20L2iL0_rh1kyV_atIttXW3erkpAKqsHy",
         "type": "dzq:gratitude",
         "type_known": true,
         "content": "shown"
@@ -417,7 +438,7 @@
     },
     {
       "name": "gratitude-1.2-condition",
-      "description": "The same type to a condition: one type document covers both (a.i or a.dq).",
+      "description": "The same type to a condition: one type document covers both (a.i or a.req).",
       "bundle": "credentials/gratitude-1.2-condition.acdc",
       "expect": {
         "valid": true,
@@ -433,7 +454,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EAb-LP3nFq8MK8fnRJnNt0k1vWTvUsuoii2VzW32rIS5",
+        "said": "EOq5sR9Yc4FugDvVxp7pI0vdZpj-pp7aYTBYysXKFMgN",
         "content": "hidden"
       }
     },
@@ -462,7 +483,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EBOOKm90kob7MyjC-aJSKGBtxBh32cDfH0ZQNZHDoIoe",
+        "said": "ENLfDwBYhN8hDA7ZpBwl6ELeeTbzcOy_Eq8yj8NHIadJ",
         "type": "dzq:apology",
         "type_known": true,
         "content": "shown"
@@ -475,7 +496,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EBOOKm90kob7MyjC-aJSKGBtxBh32cDfH0ZQNZHDoIoe",
+        "said": "ENLfDwBYhN8hDA7ZpBwl6ELeeTbzcOy_Eq8yj8NHIadJ",
         "content": "hidden"
       }
     },
@@ -505,7 +526,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "ECP4bGW5E3lxugZOzi5sfjBdu9Qvy3NWZPM619W7sT0A",
+        "said": "EEKQ8_ZdhJ6L0mCHJ96gZPanci6BU_a_vLfvAEBjNy17",
         "schema": "EHykbo2uFDt7fTuMDNanRfds73YLVDUO9vloKE8mrJX2",
         "type": null,
         "type_known": false,
@@ -522,7 +543,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "ECP4bGW5E3lxugZOzi5sfjBdu9Qvy3NWZPM619W7sT0A",
+        "said": "EEKQ8_ZdhJ6L0mCHJ96gZPanci6BU_a_vLfvAEBjNy17",
         "type": "acme:board-post",
         "type_known": true
       }
@@ -537,7 +558,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "ECP4bGW5E3lxugZOzi5sfjBdu9Qvy3NWZPM619W7sT0A",
+        "said": "EEKQ8_ZdhJ6L0mCHJ96gZPanci6BU_a_vLfvAEBjNy17",
         "content": "hidden",
         "type": "acme:board-post"
       }
@@ -616,7 +637,7 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "re": "EAb-LP3nFq8MK8fnRJnNt0k1vWTvUsuoii2VzW32rIS5",
+        "re": "EOq5sR9Yc4FugDvVxp7pI0vdZpj-pp7aYTBYysXKFMgN",
         "content": "shown"
       }
     },
@@ -646,8 +667,8 @@
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EP6BNj-DiHWFCjBXPs0yjT9E3SPKA8_PQbk9KzHWkz2X",
-        "schema": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
+        "said": "EDrgXB2DvRBrmkOJyTSCGwDXfqkLLPUbMBDw2Pewk8tX",
+        "schema": "EA7UscxbMPT20L2iL0_rh1kyV_atIttXW3erkpAKqsHy",
         "content": "shown"
       }
     },
@@ -681,24 +702,24 @@
     },
     {
       "name": "promise",
-      "description": "A dzq:promise to a condition, with ask and payload. Without the extension it is just a valid statement.",
+      "description": "A dzq:promise whose condition asks for three 'cleaned the room' thank-yous from Dad, to Marko or to Sofia.",
       "bundle": "credentials/promise.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EM8zTZnT2g1Jo8HYBllAudWCe63_LVe9FlNH0usVQ-16",
+        "said": "EOB3jdbTcQ214J2SefCKMzgpqxqQy0OrOwzdUtaR3kj6",
         "type": "dzq:promise",
         "content": "shown"
       }
     },
     {
       "name": "promise-compact",
-      "description": "The same promise, compact: what, ask and payload are hidden; until stays public.",
+      "description": "The same promise, compact: what, ask and payload are hidden; until and req stay public.",
       "bundle": "credentials/promise-compact.acdc",
       "expect": {
         "valid": true,
         "sealed": false,
-        "said": "EM8zTZnT2g1Jo8HYBllAudWCe63_LVe9FlNH0usVQ-16",
+        "said": "EOB3jdbTcQ214J2SefCKMzgpqxqQy0OrOwzdUtaR3kj6",
         "content": "hidden"
       }
     }
@@ -964,9 +985,9 @@
       }
     },
     {
-      "name": "group-member",
-      "description": "Carol holds the group thank-you (any of Bob, Carol).",
-      "file": "presentations/group-member.json",
+      "name": "condition-aid-holder",
+      "description": "Carol holds the thank-you to ?aid=<Carol>.",
+      "file": "presentations/condition-aid-holder.json",
       "nonce": "door-7Q4M-2026",
       "expect": {
         "valid": true,
@@ -1011,36 +1032,6 @@
       "expect": {
         "valid": false,
         "code": "credential"
-      }
-    },
-    {
-      "name": "all-of-two-claims",
-      "description": "all(…) of two claim keys, both claimed.",
-      "file": "presentations/all-of-two-claims.json",
-      "nonce": "door-7Q4M-2026",
-      "expect": {
-        "valid": true,
-        "holder": "EE6JvGdSCln8k5H6rTyDYHLV3cqm-TEbkWNMHlGDV_Pb"
-      }
-    },
-    {
-      "name": "all-of-two-claims-one-missing",
-      "description": "all(…) with only one of the two claims.",
-      "file": "presentations/all-of-two-claims-one-missing.json",
-      "nonce": "door-7Q4M-2026",
-      "expect": {
-        "valid": false,
-        "code": "credential"
-      }
-    },
-    {
-      "name": "unknown-kind-other-leaf",
-      "description": "Bob meets any(txn:…, Bob) through his AID; the unknown leaf is never met.",
-      "file": "presentations/unknown-kind-other-leaf.json",
-      "nonce": "door-7Q4M-2026",
-      "expect": {
-        "valid": true,
-        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
       }
     },
     {
@@ -1134,13 +1125,42 @@
       }
     },
     {
+      "name": "list-of-two-claims",
+      "description": "a.req is a list: either claim is enough. Erin claims one of them.",
+      "file": "presentations/list-of-two-claims.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EE6JvGdSCln8k5H6rTyDYHLV3cqm-TEbkWNMHlGDV_Pb"
+      }
+    },
+    {
+      "name": "condition-list-member",
+      "description": "Carol holds the thank-you to [?aid=<Bob>, ?aid=<Carol>].",
+      "file": "presentations/condition-list-member.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EPsBw3F8CZ8SaOxxEkI3cXcPI9VLT2Oy8W_ruDizuoih"
+      }
+    },
+    {
+      "name": "condition-unknown-key",
+      "description": "Bob meets [?txn=…, ?aid=<Bob>] through his AID; the unknown condition is never met.",
+      "file": "presentations/condition-unknown-key.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj"
+      }
+    },
+    {
       "name": "promise-earned",
       "description": "Marko shows the promise with three thank-yous from Dad (all compact).",
       "file": "presentations/promise-earned.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1155,7 +1175,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1170,7 +1189,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1185,7 +1203,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1200,7 +1217,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1210,12 +1226,11 @@
     },
     {
       "name": "promise-not-a-holder",
-      "description": "Erin is not in any(Marko, Sofia), even with three thank-yous.",
+      "description": "Erin has three thank-yous from Dad, but the condition asks for ones to Marko or Sofia.",
       "file": "presentations/promise-not-a-holder.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1230,7 +1245,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2027-07-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1239,13 +1253,12 @@
       }
     },
     {
-      "name": "promise-two-issuers-add-up",
-      "description": "count:3 from Dad+Neighbour: one from Dad and two from the neighbour.",
-      "file": "presentations/promise-two-issuers-add-up.json",
+      "name": "promise-either-condition",
+      "description": "Three from Dad for the room, or five from Mom for anything: Marko has five from Mom.",
+      "file": "presentations/promise-either-condition.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1254,28 +1267,12 @@
       }
     },
     {
-      "name": "promise-mixed-terms",
-      "description": "count:3/<Dad>~dzq:gratitude~category=room+<Mom>~dzq:gratitude: two from Dad for the room, one from Mom for anything.",
-      "file": "presentations/promise-mixed-terms.json",
+      "name": "promise-counts-do-not-add-up",
+      "description": "Two from Dad and four from Mom: each condition counts on its own.",
+      "file": "presentations/promise-counts-do-not-add-up.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
-        "promises"
-      ],
-      "expect": {
-        "valid": true,
-        "promise": "usable"
-      }
-    },
-    {
-      "name": "promise-mixed-terms-wrong-category",
-      "description": "Two from Dad for the room and one from Dad for something else: Dad's term needs the room.",
-      "file": "presentations/promise-mixed-terms-wrong-category.json",
-      "nonce": "door-7Q4M-2026",
-      "now": "2026-11-01T00:00:00+00:00",
-      "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1285,12 +1282,11 @@
     },
     {
       "name": "promise-any-gratitude",
-      "description": "count:2/<Dad>~dzq:gratitude: two thank-yous from Dad, any fields.",
+      "description": "dzq:gratitude?from=<Dad>&count=2: two thank-yous from Dad, any fields.",
       "file": "presentations/promise-any-gratitude.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1300,12 +1296,11 @@
     },
     {
       "name": "promise-other-type-does-not-count",
-      "description": "A term counts only its type: an apology from Dad is not a gratitude.",
+      "description": "A condition counts only its type: an apology from Dad is not a gratitude.",
       "file": "presentations/promise-other-type-does-not-count.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1315,12 +1310,11 @@
     },
     {
       "name": "promise-earned-with-apologies",
-      "description": "Any type can be counted: a lunch for two apologies from Dad.",
+      "description": "Any type can be asked for: a lunch for two apologies from Dad.",
       "file": "presentations/promise-earned-with-apologies.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1335,10 +1329,9 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "types": [
-        "types/EEvgG-l5x3OEIMFIgdB7V9B8rF9FEW73bO7_HPYytCJH.json"
+        "types/EGOB0E7Ac3Pf34s4snG--nBq_loJtxeaKxlr198owXBR.json"
       ],
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1348,15 +1341,28 @@
     },
     {
       "name": "promise-earned-with-likes",
-      "description": "The app's type counts when named: count:1/<Dad>~dzenq:like.",
+      "description": "The app's type counts when asked for: dzenq:like?from=<Dad>.",
       "file": "presentations/promise-earned-with-likes.json",
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "types": [
-        "types/EEvgG-l5x3OEIMFIgdB7V9B8rF9FEW73bO7_HPYytCJH.json"
+        "types/EGOB0E7Ac3Pf34s4snG--nBq_loJtxeaKxlr198owXBR.json"
       ],
       "extensions": [
-        "counting",
+        "promises"
+      ],
+      "expect": {
+        "valid": true,
+        "promise": "usable"
+      }
+    },
+    {
+      "name": "promise-type-by-said",
+      "description": "A type can be named by its SAID: works even for a reader that does not know it.",
+      "file": "presentations/promise-type-by-said.json",
+      "nonce": "door-7Q4M-2026",
+      "now": "2026-11-01T00:00:00+00:00",
+      "extensions": [
         "promises"
       ],
       "expect": {
@@ -1371,7 +1377,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1386,7 +1391,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1401,7 +1405,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1416,7 +1419,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1431,7 +1433,6 @@
       "nonce": "door-7Q4M-2026",
       "now": "2026-11-01T00:00:00+00:00",
       "extensions": [
-        "counting",
         "promises"
       ],
       "expect": {
@@ -1440,9 +1441,19 @@
       }
     },
     {
-      "name": "count-without-extension",
-      "description": "The earned promise, checked by a verifier without the extensions: count: is an unknown kind, never met.",
-      "file": "presentations/count-without-extension.json",
+      "name": "record-condition-core",
+      "description": "Without the promises extension: Marko holds the promise (the record condition is core).",
+      "file": "presentations/record-condition-core.json",
+      "nonce": "door-7Q4M-2026",
+      "expect": {
+        "valid": true,
+        "holder": "EEcvuTEO774O4dWGUdGZoJoi-3Cp0DHQpg9fHwPwcV5s"
+      }
+    },
+    {
+      "name": "record-condition-core-not-met",
+      "description": "Without the extension: two thank-yous are not enough, Marko does not hold it.",
+      "file": "presentations/record-condition-core-not-met.json",
       "nonce": "door-7Q4M-2026",
       "expect": {
         "valid": false,

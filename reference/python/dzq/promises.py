@@ -2,14 +2,14 @@
 
 For statements of type `dzq:promise`, in a presentation: is it usable now?
 Not past `until`, not closed by its issuer, and the holder meets its
-condition. Earning a promise with other statements is the counting
-extension (`count:`), which this one is usually used with.
+condition — which may ask for other statements
+(`dzq:gratitude?from=<AID>&count=3`, SPEC §4).
 
 It is NOT double-spend protection: showing a promise twice is showing it
 twice. A verifier that must refuse a second use keeps its own record.
 
-    from dzq import counting, promises
-    r = dzq.verify_presentation(vp, nonce, extensions=[counting.Extension(), promises.Extension()])
+    from dzq import promises
+    r = dzq.verify_presentation(vp, nonce, extensions=[promises.Extension()])
 """
 
 import datetime
@@ -38,13 +38,8 @@ def _instant(text):
 
 
 class Extension:
-    kinds = ()
-
     def __init__(self, promise_types=("dzq:promise",)):
         self.promise_types = set(promise_types)
-
-    def leaf(self, leaf, holder, statement, results, claims):
-        return False
 
     def assess(self, r, holder, now):
         if r.get("type") not in self.promise_types:

@@ -13,8 +13,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
 VECTORS = os.path.join(ROOT, "vectors")
 sys.path.insert(0, os.path.dirname(HERE))
 
-from dzq import archive, dq, kel, merkle, verify  # noqa: E402
-from dzq import counting, promises  # noqa: E402
+from dzq import archive, conditions, kel, merkle, verify  # noqa: E402
+from dzq import promises  # noqa: E402
 from dzq.typedoc import TypeDoc  # noqa: E402
 from dzq.blake3 import blake3  # noqa: E402
 
@@ -31,7 +31,7 @@ def known(v):
     return {d.said: d for d in (TypeDoc(load(t)) for t in v.get("types", []))}
 
 
-EXTENSIONS = {"counting": counting.Extension, "promises": promises.Extension}
+EXTENSIONS = {"promises": promises.Extension}
 
 
 def matches(case, result, expect):
@@ -81,13 +81,11 @@ class Presentations(unittest.TestCase):
 class Conditions(unittest.TestCase):
     def test_all(self):
         for c in json.loads(load("conditions.json"))["conditions"]:
-            with self.subTest(c["dq"][:40]):
-                p = dq.parse(c["dq"])
+            with self.subTest(c["condition"][:40]):
+                p = conditions.parse_one(c["condition"])
                 self.assertEqual(p is not None, c["parses"])
                 if p is not None:
                     self.assertEqual(str(p), c["canonical"])
-                    proved = set(c["proved"])
-                    self.assertEqual(dq.holds(p, lambda leaf: str(leaf) in proved), c["holds"])
 
 
 class Merkle(unittest.TestCase):

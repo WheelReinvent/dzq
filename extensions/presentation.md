@@ -43,10 +43,10 @@ The presentation is valid when all hold:
    with the KEL in its own bundle plus any fresher KEL the verifier has —
    not with KELs from other credentials of the same presentation — and
    using its period seal from `seals` if it is not sealed otherwise), and
-   the holder is its recipient: `a.i` equals `holder`, or the condition
-   `a.dq` holds where an AID leaf is met when it equals `holder` and a
-   `claim:` leaf is met by a claim proof in `claims` for this gratitude and
-   this holder. — `credential`
+   the holder is its recipient: `a.i` equals `holder`, or one condition in
+   `a.req` is met (SPEC §4) — `?aid=` equal to `holder`, `?claim=` by a
+   claim proof in `claims` for this statement and this holder, a statement
+   condition by the other statements of this presentation. — `credential`
 
 An online verifier SHOULD load the holder's KEL from a KERI source first, so
 that a device the holder moved away from (and whose key was rotated out)

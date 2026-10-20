@@ -47,9 +47,14 @@ class Statement:
         return self.credential.get("i")
 
     @property
+    def recipient_text(self):
+        r = self.recipient
+        return "  or  ".join(r) if isinstance(r, list) else r
+
+    @property
     def recipient(self):
         a = self.credential.get("a", {})
-        return a.get("i") or a.get("dq")
+        return a.get("i") or a.get("req") or a.get("dq")
 
     @property
     def date(self):
@@ -74,7 +79,7 @@ class Statement:
         """The type's own fields (title, message, …), without the envelope.
         Private fields are missing when the copy is compact."""
         a = self.credential.get("a", {})
-        out = {k: v for k, v in a.items() if k not in ("d", "i", "dq", "dt", "c")}
+        out = {k: v for k, v in a.items() if k not in ("d", "i", "req", "dq", "dt", "c")}
         c = a.get("c")
         if isinstance(c, dict):
             out.update({k: v for k, v in c.items() if k not in ("d", "u")})
@@ -98,7 +103,7 @@ class Statement:
         name = self.type or "type unknown here: %s" % self.credential.get("s")
         lines = ["Statement (%s)" % name,
                  "  from     %s" % self.issuer,
-                 "  to       %s" % self.recipient,
+                 "  to       %s" % self.recipient_text,
                  "  date     %s" % self.date]
         for k, v in self.content.items():
             if archive._is_attachment(v):
@@ -169,7 +174,8 @@ class Verification:
                  "  type       %s" % (r.get("type") if r.get("type_known")
                                       else "unknown to this reader — signature and envelope checked, fields not"),
                  "  signed by  %s" % r["issuer"],
-                 "  to         %s" % r["recipient"],
+                 "  to         %s" % ("  or  ".join(r["recipient"]) if isinstance(r["recipient"], list)
+                                       else r["recipient"]),
                  "  unchanged  yes, every byte as signed"]
         if r.get("content") == "hidden":
             lines.append("  content    hidden: the signature covers it, but this copy does not show it")
@@ -214,12 +220,13 @@ def open_statement(data, types=None):
 
 
 def _is_condition(to):
-    return to.startswith(("any(", "all(")) or ":" in to
+    return isinstance(to, list) or "?" in to
 
 
 def sign(identity, type, to, content, when=None, attachment=None, private=True, types=None, re=None):
-    """Builds and signs a statement of `type` from `identity` to `to`
-    (an AID, or a condition like "any(<AID>,<AID>)").
+    """Builds and signs a statement of `type` from `identity` to `to`: an
+    AID, a condition ("?aid=<AID>", "dzq:gratitude?from=<AID>&count=3") or a
+    list of conditions, any of which is enough (SPEC §4).
 
     `type` is a TypeDoc, a type SAID, or a name ("gratitude",
     "acme:board-post") among the base types and `types`. `content` holds
@@ -258,7 +265,7 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True, 
         asset = (name, body)
     when = when or datetime.datetime.now(datetime.timezone.utc)
     attrs = {"dt": when.isoformat(timespec="seconds") if hasattr(when, "isoformat") else when}
-    attrs["dq" if _is_condition(to) else "i"] = to
+    attrs["req" if _is_condition(to) else "i"] = to
     attrs.update(content)
     if private:
         try:
@@ -270,6 +277,8 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True, 
         if doc.said != types_.GRATITUDE.said or "look" in content or "re" in content:
             raise ValueError("only a plain gratitude can be signed all-public (dzq/1.0)")
         schema = acdc.SCHEMA_GRATITUDE_CONDITION if _is_condition(to) else acdc.SCHEMA_GRATITUDE
+        if "req" in attrs:
+            attrs["dq"] = attrs.pop("req")
         credential = acdc.saidify({"v": "", "d": "", "i": identity.prefix,
                                    "ri": identity.registry, "s": schema, "a": dict({"d": ""}, **attrs)})
     return Statement(identity.bundle(credential), attachment=asset, types=known)

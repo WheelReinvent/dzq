@@ -15,7 +15,6 @@ use keri_wrapper::sdk::KeriSdk;
 use keri_wrapper::verify::PeriodSeal;
 use keri_wrapper::{acdc, CesrResult, DzenqManager};
 use serde_json::Value;
-use std::collections::HashSet;
 use std::path::PathBuf;
 
 fn vectors_dir() -> Option<PathBuf> {
@@ -49,6 +48,7 @@ fn code_of(reason: &str) -> &'static str {
         "format"
     } else if r.contains("not a gratitude ACDC") || r.contains("unknown schema") || r.contains("names its recipient")
         || r.contains("has a.dq and no a.i")
+        || r.contains("a.req")
     {
         "schema"
     } else if r.contains("SAID does not match") || r.contains("version string size") {
@@ -162,7 +162,7 @@ fn dzq_presentations() {
     for v in manifest["presentations"].as_array().unwrap() {
         let name = v["name"].as_str().unwrap();
         if v.get("extensions").is_some() && std::env::var("DZQ_EXTENSIONS").is_err() {
-            continue; // optional extensions (counting, promises): set DZQ_EXTENSIONS=1 to run them
+            continue; // optional extensions (promises): set DZQ_EXTENSIONS=1 to run them
         }
         let tmp = tempfile::tempdir().unwrap();
         let core = DzenqManager::new(tmp.path().to_str().unwrap().to_string()).unwrap();
@@ -195,19 +195,12 @@ fn dzq_presentations() {
 fn dzq_conditions() {
     let Some(dir) = vectors_dir() else { return };
     for c in json(&dir, "conditions.json")["conditions"].as_array().unwrap() {
-        let text = c["dq"].as_str().unwrap();
-        let parsed = Challenge::parse(text);
+        // dzq/1.3 §4: one URL-style condition; DzenQ needs a parser for it.
+        let text = c["condition"].as_str().unwrap();
+        let parsed = Condition::parse(text);
         assert_eq!(parsed.is_some(), c["parses"].as_bool().unwrap(), "{text}");
         let Some(p) = parsed else { continue };
         assert_eq!(p.to_string(), c["canonical"].as_str().unwrap(), "{text}");
-        let proved: HashSet<String> =
-            c["proved"].as_array().unwrap().iter().map(|x| x.as_str().unwrap().to_string()).collect();
-        // dzq/1.0 §4: unknown kinds (and commitments) are never met.
-        let holds = p.holds(&mut |leaf| match leaf {
-            Challenge::Unknown(..) | Challenge::Commitment(_) => false,
-            l => proved.contains(&l.to_string()),
-        });
-        assert_eq!(holds, c["holds"].as_bool().unwrap(), "{text}");
     }
 }
 

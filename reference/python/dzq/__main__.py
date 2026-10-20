@@ -186,7 +186,8 @@ def cmd_sign(a):
         except (types.TypeError_, OSError) as e:
             raise CliError(str(e)) from e
     try:
-        st = me.sign(type=type_, to=a.to, content=content, attachment=attachment,
+        to = a.to[0] if len(a.to) == 1 else a.to
+        st = me.sign(type=type_, to=to, content=content, attachment=attachment,
                      private=not a.all_public, types=known)
     except ValueError as e:
         raise CliError(str(e)) from e
@@ -321,9 +322,8 @@ def cmd_verify(a):
 
 def cmd_presentation(a):
     kels = [open(k, encoding="utf-8").read() for k in (a.kel or [])]
-    from . import counting, promises
-    known_ext = {"counting": counting.Extension, "promises": promises.Extension}
-    ext = [known_ext[e]() for e in (a.extension or [])]
+    from . import promises
+    ext = [promises.Extension()] if "promises" in (a.extension or []) else []
     r = verify.verify_presentation(open(a.file, encoding="utf-8").read(), a.nonce, kels=kels, known=_known(),
                                    extensions=ext)
     if a.json:
@@ -378,7 +378,9 @@ def main(argv=None):
     s = sub.add_parser("sign", help="sign a statement into a .dzq file")
     s.add_argument("--as", dest="identity", required=True, help="your identity file")
     s.add_argument("--type", required=True, help="a type name (see: dzq types) or a type document file")
-    s.add_argument("--to", required=True, help="recipient AID, or a condition like any(AID,AID)")
+    s.add_argument("--to", required=True, action="append",
+                   help="recipient AID, or a condition (?aid=AID, dzq:gratitude?from=AID&count=3); "
+                        "repeat for a list: any one is enough")
     s.add_argument("fields", nargs="*", help="the type's fields as name=value")
     s.add_argument("--attach", help="a file to attach")
     s.add_argument("-o", "--output", help="output .dzq file")
@@ -427,8 +429,8 @@ def main(argv=None):
     s.add_argument("file")
     s.add_argument("--nonce", default="", help="the code you gave the holder (empty: display only)")
     s.add_argument("--kel", action="append", help="a fresher key history of an issuer (repeatable)")
-    s.add_argument("--with", dest="extension", action="append", choices=["counting", "promises"],
-                   help="an optional extension: counting (count: conditions), promises (usable, closed)")
+    s.add_argument("--with", dest="extension", action="append", choices=["promises"],
+                   help="an optional extension: promises (until, closed early)")
     s.add_argument("--json", action="store_true")
     s.set_defaults(fn=cmd_presentation)
 

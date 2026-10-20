@@ -47,5 +47,5 @@ jobs:
           dzq sign --as alice.id --type gratitude --to "$(dzq whoami bob.id)" title="Thank you" message="For fixing my bike." category=help -o thanks.dzq
           dzq verify thanks.dzq
           dzq type new acme:board-post --public "area*:64" --private "text*:2000" "photo@"
-          dzq sign --as alice.id --type acme:board-post --to "any($(dzq whoami bob.id))" area=Podil text="A bike for a kid" -o post.dzq
+          dzq sign --as alice.id --type acme:board-post --to "?aid=$(dzq whoami bob.id)" area=Podil text="A bike for a kid" -o post.dzq
           rm -r types && dzq verify post.dzq

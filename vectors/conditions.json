@@ -1,169 +1,120 @@
 {
-  "spec": "dzq/1.0",
+  "spec": "dzq/1.3",
+  "note": "one condition each; a.req is one of these or a list of them",
   "conditions": [
     {
-      "dq": "EBP8abc_-Q",
+      "condition": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
       "parses": true,
-      "canonical": "EBP8abc_-Q",
-      "proved": [
-        "EBP8abc_-Q"
-      ],
-      "holds": true,
-      "note": "a plain AID"
+      "canonical": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+      "note": "the holder is this AID"
     },
     {
-      "dq": "claim:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "condition": "?claim=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
       "parses": true,
-      "canonical": "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-      "proved": [
-        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      ],
-      "holds": true,
+      "canonical": "?claim=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       "note": "claim keys are hex, compared in lower case"
     },
     {
-      "dq": "commitment:ff00",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
       "parses": true,
-      "canonical": "commitment:ff00",
-      "proved": [],
-      "holds": false,
-      "note": "older binding flow; not met by dzq/1.0 verifiers"
+      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+      "note": "one thank-you from AID1"
     },
     {
-      "dq": "alias:abcd01",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=help&count=3",
       "parses": true,
-      "canonical": "alias:abcd01",
-      "proved": [
-        "alias:abcd01"
-      ],
-      "holds": false,
-      "note": "an unknown kind is kept and never met"
+      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=help&count=3"
     },
     {
-      "dq": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
+      "condition": "dzq:gratitude?count=3&category=help&from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
       "parses": true,
-      "canonical": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
-      "proved": [
-        "claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-        "EAID1"
-      ],
-      "holds": true
+      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=help&count=3",
+      "note": "reserved keys in any order; canonical: from, to, fields, since, count"
     },
     {
-      "dq": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
       "parses": true,
-      "canonical": "all(any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,claim:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb),EAID1)",
-      "proved": [
-        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      ],
-      "holds": false,
-      "note": "all() needs every branch"
+      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=cleaned the room",
+      "note": "values are not URL-encoded except %, & and ="
     },
     {
-      "dq": "any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:6H24-KE7X,key:EAbc/blue)",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a%26b",
       "parses": true,
-      "canonical": "any(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:6H24-KE7X,key:EAbc/blue)",
-      "proved": [
-        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-      ],
-      "holds": true
+      "canonical": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&category=a%26b",
+      "note": "& in a value"
     },
     {
-      "dq": "all(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:x)",
+      "condition": "myshop:visit?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&to=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj&since=2026-10-01&count=5",
       "parses": true,
-      "canonical": "all(claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa,txn:x)",
-      "proved": [
-        "claim:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "txn:x"
-      ],
-      "holds": false,
-      "note": "an unknown leaf inside all() makes it unmeetable"
+      "canonical": "myshop:visit?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&to=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj&since=2026-10-01&count=5"
     },
     {
-      "dq": " any( EBP8abc_-Q , EAID2 ) ",
-      "parses": true,
-      "canonical": "any(EBP8abc_-Q,EAID2)",
-      "proved": [
-        "EAID2"
-      ],
-      "holds": true,
-      "note": "whitespace around items is allowed"
-    },
-    {
-      "dq": "count:3/EAID1~dzq:gratitude",
-      "parses": true,
-      "canonical": "count:3/EAID1~dzq:gratitude",
-      "proved": [
-        "count:3/EAID1~dzq:gratitude"
-      ],
-      "holds": false,
-      "note": "count: is an extension kind (counting): core holds() never meets it; the extension proves it from statements"
-    },
-    {
-      "dq": "any(EAID2,count:3/EAID1~dzq:gratitude)",
-      "parses": true,
-      "canonical": "any(EAID2,count:3/EAID1~dzq:gratitude)",
-      "proved": [
-        "EAID2"
-      ],
-      "holds": true
-    },
-    {
-      "dq": "\u001cEBP8abc_-Q",
+      "condition": "?txn=6H24-KE7X",
       "parses": false,
-      "note": "U+001C is not white space"
+      "note": "unknown holder key: never met"
     },
     {
-      "dq": "any(x\n:y,EAID1)",
-      "parses": false,
-      "note": "a line break inside a leaf"
-    },
-    {
-      "dq": "",
+      "condition": "",
       "parses": false
     },
     {
-      "dq": "any(",
+      "condition": "?",
       "parses": false
     },
     {
-      "dq": "any()",
+      "condition": "?aid=",
       "parses": false
     },
     {
-      "dq": "all(a,",
+      "condition": "?aid=short",
       "parses": false
     },
     {
-      "dq": "any(a))",
+      "condition": "?aid=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&aid=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
       "parses": false
     },
     {
-      "dq": "claim:zz",
+      "condition": "?claim=abcd",
       "parses": false
     },
     {
-      "dq": "claim:abcd",
+      "condition": "dzq:gratitude",
       "parses": false
     },
     {
-      "dq": "a b",
+      "condition": "dzq:gratitude?category=help",
       "parses": false
     },
     {
-      "dq": "any(a)(b)",
+      "condition": "dzq:gratitude?from=x",
       "parses": false
     },
     {
-      "dq": "Bad:x",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&count=0",
       "parses": false
     },
     {
-      "dq": "k:",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&count=many",
       "parses": false
     },
     {
-      "dq": "any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(any(a))))))))))))))))))))",
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&since=yesterday",
+      "parses": false
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&from=EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj",
+      "parses": false
+    },
+    {
+      "condition": "Bad Type?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex",
+      "parses": false
+    },
+    {
+      "condition": "any(ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex,EAlo1nISJlSdPtCf8MuEtMUB0oe02zfrKxgCsSREPGdj)",
+      "parses": false
+    },
+    {
+      "condition": "dzq:gratitude?from=ENxefXJUbK8lY1Md19y6CammOfc05iwDBzcfvSYMFsex&Category=x",
       "parses": false
     }
   ]

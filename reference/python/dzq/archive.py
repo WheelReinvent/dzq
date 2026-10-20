@@ -104,9 +104,9 @@ def read_dzq(data):
     a = json.loads(verify.split_bundle(bundle)[0])
     attrs = a.get("a", {})
     c = attrs.get("c") if isinstance(attrs.get("c"), dict) else {}
-    fields = {k: v for k, v in attrs.items() if k not in ("d", "i", "dq", "dt", "c")}
+    fields = {k: v for k, v in attrs.items() if k not in ("d", "i", "req", "dq", "dt", "c")}
     fields.update({k: v for k, v in c.items() if k not in ("d", "u")})
-    return {"issuer": a.get("i"), "recipient": attrs.get("i") or attrs.get("dq"), "date": attrs.get("dt"),
+    return {"issuer": a.get("i"), "recipient": attrs.get("i") or attrs.get("req") or attrs.get("dq"), "date": attrs.get("dt"),
             "schema": a.get("s"), "fields": fields,
             "title": fields.get("title"), "message": fields.get("message"), "category": fields.get("category"),
             "attachment": (named_attachment(a) or {}).get("filename"),

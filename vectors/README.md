@@ -13,7 +13,7 @@ compatible with dzq.
 | `archives/<name>.dzq` | `.dzq` files, good and hostile |
 | `presentations/<name>.json` | `dzenq-vp/1` presentations; check with the `nonce` (and `now`, if given) from the manifest |
 | `types/<SAID>.json` | type documents; a vector with `"types": [...]` is checked by a reader that knows them, one without by a reader that does not |
-| `conditions.json` | condition texts: does it parse, its canonical form, which leaves are proved, does it hold |
+| `conditions.json` | condition texts: does it parse, its canonical form |
 | `merkle.json` | period trees: leaves, root, a proof for each leaf |
 | `digests.json` | schema SAIDs, Blake3 SAIDs, redemption digests, claim-key derivations |
 | `identities.json` | names of the test identifiers and their AIDs |
@@ -28,7 +28,7 @@ always there; `code` is the failure code of SPEC §6.4 (or `archive` when the
 (`type_known` false).
 
 Vectors with `"extensions": [...]` test optional extensions
-([counting](../extensions/counting.md), [promises](../extensions/promises.md));
+([promises](../extensions/promises.md));
 `"promise"` in `expect` is `usable` or the reason it is not. Skip them
 unless you implement those extensions.
 

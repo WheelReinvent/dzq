@@ -25,7 +25,7 @@ Exit code 0 = valid, 1 = invalid, 2 = could not read the input.
 | `cesr.py` | qb64 primitives, `-A##` signature groups, attachment skipping |
 | `kel.py` | KERI KEL verification (SPEC §6.2 step 5) |
 | `acdc.py` | canonical form, SAIDs, schemas (SPEC §3) |
-| `dq.py` | conditions (SPEC §4) |
+| `conditions.py` | conditions in `a.req` (SPEC §4) |
 | `verify.py` | credential verification (SPEC §6), claims, presentations |
 | `merkle.py` | period trees (extensions/periods.md) |
 | `archive.py` | `.dzq` reading and writing (SPEC §7) |

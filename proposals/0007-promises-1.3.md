@@ -1,27 +1,31 @@
-# Proposal 0007: promises that DzenQ certificates fit into
+# Proposal 0007: conditions and promises for "thank now, repay later"
 
 **Status:** closed — implemented in dzq/1.3 · **Author:** DzenQ team, 2026-10-20
 
-Raised while moving DzenQ certificates to `dzq:promise`:
-
-1. **Statements from different people, for different things, add up.**
-2. **"For anything"** from a person.
-3. **Something of value inside** the promise.
-4. **Earning is something other apps can rely on**, not experimental.
+Raised while moving DzenQ certificates to `dzq:promise`: a reward must be
+earnable with thank-yous — from several people, for different things or
+for anything — and carry something of value.
 
 Outcome:
 
-- `dzq:promise` 1.1.0: `what`, optional `ask` (how to earn it), optional
-  `payload` (a code, an invite link). `payload` is private, not encrypted:
-  the holder sees it at once. What must arrive only after earning is sent
-  then, as its own statement.
-- A general **`count:`** condition instead of a gratitude-only one: count
-  statements of **any type**, from given issuers, optionally with given
-  public field values; terms add up to one N:
-  `count:3/<Dad>~dzq:gratitude~category=room+<Mom>~dzq:gratitude`.
-  "For anything" = no field filter. An app's own kinds (likes) are their
-  own type, so they are not counted unless named.
-- Two optional extensions: [counting](../extensions/counting.md) and
-  [promises](../extensions/promises.md) (usable, closing early).
+- **`a.req` replaces `a.dq`** (envelope names are short, like `i`, `dt`).
+  It is one condition or a list of them, any one of which is enough.
+- **A condition reads like a URL**, one field one value:
+  - `?aid=<AID>` — the holder is this AID;
+  - `?claim=<key>` — the holder has this claim key (letters);
+  - `<type>?from=<AID>&<field>=<value>&to=…&since=…&count=N` — the holder
+    shows at least N such statements of any type: thank-yous, apologies,
+    an app's own types.
+  `from`, `to`, `since`, `count` are reserved. Each condition counts on its
+  own. `any(…)`, `all(…)`, `claim:`, `count:` and `thanks:` are gone.
+- **A category belongs to its issuer**, so it is asked for together with
+  `from`.
+- **`dzq:promise`**: `what`, optional `ask` (how to earn it), optional
+  `payload` (a code, an invite: private, not encrypted).
+- **Promises extension** (optional): usable (until, closed early).
 
-No earlier promise version or `thanks:` form is kept: neither was issued.
+Considered and rejected on the way: a query language inside one string
+(`count:3/…~…`, `min(…)`, search syntax with `OR` and brackets), JSONPath
+(an engine in every verifier, filters on hidden fields), earning moved out
+of the format into apps (loses "thank now, repay later"), sums across
+conditions (each condition counts on its own).

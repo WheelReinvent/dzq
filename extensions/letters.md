@@ -1,11 +1,10 @@
 # Extension: letters (claim keys, `dzenq-claim/1`)
 
-**Status:** part of dzq/1.0, optional. Implemented by DzenQ since 2026-10-12.
+**Status:** optional; since dzq/1.0 (the `?claim=` form since dzq/1.3). Implemented by DzenQ since 2026-10-12.
 
 A thank-you to an e-mail address, a phone number or an account on another
-service names no identifier. It is a gratitude to a condition (schema 2.0.0)
-whose leaves are one-time **claim keys**: `claim:<64 hex>`, an Ed25519
-public key. Whoever is handed the matching private key — through that
+service names no identifier. It is a statement to a condition `?claim=<64
+hex>`: a one-time **claim key**, an Ed25519 public key. Whoever is handed the matching private key — through that
 address, a link, a QR code — can sign the letter over to their own AID.
 
 Nobody attests the address. It is only the channel the key went through.
@@ -24,9 +23,9 @@ issuer's app nor the mail provider, and valid forever.
 dzenq-claim/1|<gratitude SAID>|<holder AID>
 ```
 
-A `claim:<key>` leaf of a gratitude with SAID `S` is **proved for holder
-`H`** by a claim proof with `said = S`, `aid = H`, `key` equal to the leaf's
-key (lowercase hex) and a signature that verifies. Verifiers SHOULD use
+A `?claim=<key>` condition of a statement with SAID `S` is **proved for
+holder `H`** by a claim proof with `said = S`, `aid = H`, `key` equal to
+the condition's key (lowercase hex) and a signature that verifies. Verifiers SHOULD use
 strict Ed25519 verification (reject non-canonical encodings and small-order
 keys).
 
@@ -55,10 +54,8 @@ Schemes and normalization:
 | `phone` | digits and `+` only; a 10-digit number starting with `0` gets `+38` (DzenQ's home market, as on its server); `+` added if missing; at least 8 characters |
 | any other scheme of 1–16 lowercase letters/digits starting with a letter, except `txn` (`github`, `x`, …) | the handle, trimmed, without a leading `@`, lowercase; 1–64 of `[a-z0-9._-]` |
 
-One letter to several addresses is `any(claim:…, claim:…)`. `all(…)` of
-claim keys of one letter proves nothing more than `any(…)` (whoever has the
-letter key can make all of them) and SHOULD NOT be issued; it is still
-valid syntax.
+One letter to several addresses is a list: `"req": ["?claim=…", "?claim=…"]`;
+any one claim is enough.
 
 The letter key travels only to the address: in DzenQ, as a waiting letter
 the owner of the address fetches after signing in with it, or in a link

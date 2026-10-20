@@ -8,9 +8,10 @@ format.
 
 **Status:** published 2026-10-20, git tag `v1.3.0`. Editors: the DzenQ team.
 **This version:** `dzq/1.3` — 1.3 gives the promise `ask` and `payload`
-(3.8) and adds two optional extensions: [counting](extensions/counting.md)
-(`count:` conditions over any type) and [promises](extensions/promises.md)
-(usable, closing early). Earlier:
+(3.8), replaces the condition language with URL-style conditions in `a.req`
+— one or a list; a condition may ask for statements the holder shows
+(section 4) — and makes [promises](extensions/promises.md) (usable, closing
+early) an optional extension. Earlier:
 1.1 added private content (3.5); 1.2 opened
 types to everyone (3.6: type documents, unknown types still verify), adds
 two general fields, `look` and `re` (3.7), and a library of base types:
@@ -47,7 +48,7 @@ RFC 2119 / RFC 8174.
 1. [What dzq is](#1-what-dzq-is)
 2. [Building blocks](#2-building-blocks)
 3. [The statement: envelope and type](#3-the-statement-envelope-and-type)
-4. [Conditions](#4-conditions-adq)
+4. [Conditions](#4-conditions-areq)
 5. [The credential bundle](#5-the-credential-bundle)
 6. [Verification](#6-verification)
 7. [The `.dzq` file](#7-the-dzq-file)
@@ -60,7 +61,6 @@ statements sent to an e-mail or phone), [periods](extensions/periods.md)
 (sealing many statements with one key event), [redemption](extensions/redemption.md),
 [presentation](extensions/presentation.md) (proving to a door that you hold
 them), [looks](extensions/looks.md) (a shared look document),
-[counting](extensions/counting.md) (`count:` conditions),
 [promises](extensions/promises.md) (when a promise is usable).
 How this relates to standard KERI/ACDC:
 [docs/keri-acdc-alignment.md](docs/keri-acdc-alignment.md). Where DzenQ
@@ -122,7 +122,9 @@ To keep the format small, dzq will not add:
   own key history, that it considers something redeemed or closed
   (extensions) — a hint for the honest, not a guarantee;
 - **graphs of statements**: a statement may name one other it answers
-  (`re`, 3.7), as a hint; nothing is verified across statements;
+  (`re`, 3.7), as a hint. The one link that is checked is a condition that
+  asks the holder to show other statements ("three thank-yous from me",
+  section 4) — thank now, repay later — and it never consumes them;
 - **chains of trust or delegation**: a statement says what its issuer says,
   nothing about who the issuer is to anyone else;
 - **free structure**: every type uses the same envelope and the same
@@ -207,14 +209,16 @@ The attribute block `a` holds, in this order:
 | Field | Required | Content |
 |---|---|---|
 | `d` | yes | SAID of the attribute block |
-| `i` | one of `i`, `dq` | recipient: one AID |
-| `dq` | one of `i`, `dq` | condition (section 4), at most 65 536 bytes |
+| `i` | one of `i`, `req` | recipient: one AID |
+| `req` | one of `i`, `req` | what it takes to hold it: a condition or a list of conditions (section 4), at most 65 536 bytes |
 | `dt` | yes | issuance time, RFC 3339 |
 | *public fields* | per type | the type's public fields (3.6) |
 | `c` | when the type has private fields | the private block (3.5), always last |
 
-Field names of a type are `[a-z][a-z0-9_]{0,31}`. The names `d`, `i`, `dq`,
-`dt`, `c`, `u`, `look` and `re` are reserved. Values are strings, integers
+Field names of a type are `[a-z][a-z0-9_]{0,31}`. The names `d`, `i`, `req`, `dq`,
+`dt`, `c`, `u`, `look`, `re`, `from`, `to`, `since` and `count` are
+reserved. Envelope names are short (`i`, `req`, `dt`); a type's own fields
+are words (`category`, `message`). Values are strings, integers
 (|n| ≤ 2^53), booleans, lists and objects of these, nested at most 8 deep:
 **no floats** (one number, two spellings) and **no `null`** (absent fields
 are omitted). The whole ACDC is at most 256 KB.
@@ -260,9 +264,9 @@ never needs to fetch them.
 
 | Type | Document | Version | SAID |
 |---|---|---|---|
-| `dzq:gratitude` | [types/gratitude.json](types/gratitude.json) — base type (3.8) | 1.2.0 | `EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG` |
-| `dzq:apology` | [types/apology.json](types/apology.json) — base type (3.8) | 1.0.0 | `EMA-8lnSqc0Z1oR0jazreAx3juTg5rXUdJSwHcJRIoSE` |
-| `dzq:promise` | [types/promise.json](types/promise.json) — base type (3.8) | 1.1.0 | `EJ-uSUjfgcWgiUDPwNIuqBgO_U-doYgKCFYvjL_Gn0By` |
+| `dzq:gratitude` | [types/gratitude.json](types/gratitude.json) — base type (3.8) | 1.2.0 | `EA7UscxbMPT20L2iL0_rh1kyV_atIttXW3erkpAKqsHy` |
+| `dzq:apology` | [types/apology.json](types/apology.json) — base type (3.8) | 1.0.0 | `EPAEJEeoWrF34_fWkqnTSHlhUPddcHsAYrPKBDhdULzi` |
+| `dzq:promise` | [types/promise.json](types/promise.json) — base type (3.8) | 1.1.0 | `ENdXpl_T_qnJbaY59IOIHOtlAUyqo3gd6G4VhH_P8TCo` |
 | gratitude | [gratitude.schema.json](schemas/gratitude.schema.json) — dzq/1.0, all public, to one AID | 1.0.0 | `EHJJvD_pHa1kHRWiQq9o1KxNHNpnFpArKmGGltmDjTav` |
 | gratitude | [gratitude-condition.schema.json](schemas/gratitude-condition.schema.json) — dzq/1.0, all public, to a condition | 2.0.0 | `EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ` |
 | gratitude | [gratitude-private.schema.json](schemas/gratitude-private.schema.json) — dzq/1.1, to one AID | 1.1.0 | `EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_` |
@@ -275,7 +279,10 @@ The dzq/1.0–1.1 layouts are fixed: 1.0.0 / 2.0.0 have `title`, `message`,
 `a.i` (1.0.0) or `a.dq` (2.0.0); 1.1.0 / 2.1.0 have `category` in `a` and
 `title`, `message`, optional `attachment` in `c`. Their schema files carry
 DzenQ-era titles ("DzenQ Gratitude"); those are part of the signed SAIDs
-and stay. New thank-yous SHOULD use `dzq:gratitude` 1.2.0.
+and stay. Their `a.dq` holds a single condition of section 4; the
+pre-1.3 `any(…)` / `all(…)` / `claim:` forms are no longer read (such a
+statement verifies but has no holder). New thank-yous use `dzq:gratitude`
+1.2.0.
 
 ### 3.5 Private content
 
@@ -286,7 +293,7 @@ compact one and still check everything except the hidden words.
 
 | Where | Fields, in this order |
 |---|---|
-| `a` | `d`, `i` or `dq`, `dt`, the public fields, `c` |
+| `a` | `d`, `i` or `req`, `dt`, the public fields, `c` |
 | `a.c` | `d`, `u`, the private fields, optional `look`, optional `re` |
 
 - `a.c.u` is a **salt**: 128 random bits, CESR qb64 with code `0A` (24
@@ -324,7 +331,7 @@ any language reads without a schema validator:
   listed in 3.4.
 - `version` is `MAJOR.MINOR.PATCH`. A changed document is a new SAID; old
   statements keep their SAID and stay valid.
-- `to`: `aid`, `condition`, or both — whether `a.i` and/or `a.dq` is used.
+- `to`: `aid`, `condition`, or both — whether `a.i` and/or `a.req` is used.
 - `public` / `private`: field items `{name, required?, kind?, max?, description?}`.
   `kind` is `text` (default: a string, `max` characters at most) or
   `attachment` (a file object as in gratitude). A name is in one list only
@@ -339,7 +346,7 @@ cannot be swapped after signing, and two apps can both have a
 A verifier that **knows** the type (a base type, configured, or carried in the
 `.dzq` as `types/<SAID>.json`: section 7) also checks the fields: every
 required field present, no field the type does not list, text within
-`max`, files well-formed, `a.i`/`a.dq` allowed by `to`. A verifier that does
+`max`, files well-formed, `a.i`/`a.req` allowed by `to`. A verifier that does
 **not** know it checks the envelope (3.1, 3.5), the SAIDs and the signature
 — everything section 6 requires — and reports the type as unknown
 (`type_known` = false). The statement is valid; the reader just cannot
@@ -397,43 +404,76 @@ one AID or to a condition, and take `look` and `re` (3.7).
   earned it is sent then, as its own statement (`re` = the promise).
   `until` is the issuer's word; the optional
   [promises](extensions/promises.md) extension enforces it and adds
-  closing early. Earning a promise ("after three thank-yous from me") is a
-  `count:` condition ([counting](extensions/counting.md)).
+  closing early. Earning a promise ("after three thank-yous from me") is
+  its condition: `a.req` = `dzq:gratitude?from=<me>&count=3` (section 4).
 
-## 4. Conditions (`a.dq`)
+## 4. Conditions (`a.req`)
 
-A statement to a condition names no person. `a.dq` says who may hold it;
-whoever proves it holds it, and if ten people prove it, all ten hold it.
+A statement to a condition names no person. `a.req` says what it takes to
+hold it; whoever proves that holds it, and if ten people prove it, all ten
+hold it. `a.req` is **one condition** (a string) or a **list** of them, any
+one of which is enough. Each condition reads like a URL:
 
 ```
-condition := "any(" condition ("," condition)* ")"
-           | "all(" condition ("," condition)* ")"
-           | leaf
-leaf      := AID                         [A-Za-z0-9_-]+
-           | "claim:" 64 hex digits      a one-time Ed25519 claim key (letters extension)
-           | "commitment:" non-empty     older binding flow (deprecated)
-           | kind ":" value              kind = [a-z0-9-]+, value has no whitespace , ( )
+?aid=<AID>                                     the holder is this AID
+?claim=<64 hex>                                the holder has this claim key (letters extension)
+<type>?from=<AID>[&<field>=<value>…][&to=<AID>][&since=<time>][&count=<N>]
+                                               the holder shows such statements
 ```
 
-- White space (Unicode `White_Space`) around items is allowed; the
-  canonical text has none. No other characters are trimmed.
-- Nesting depth is at most 8 levels below the top.
-- `any` holds when at least one item holds; `all` when every item holds
-  (and it has at least one).
-- `claim:` hex is compared in lower case.
-- **A leaf of a kind the verifier does not know is kept and never met.**
-  `any(txn:…, <AID>)` can still be met through the AID; `all(txn:…, …)`
-  cannot be met at all. This is how new kinds are added without a new
-  format (section 8). An extension may teach a verifier a kind — e.g.
-  `count:` in the optional [counting](extensions/counting.md); to every
-  other verifier it stays unknown.
-- `commitment:` leaves are not met by dzq/1.x verifiers.
-- A condition that does not parse is met by nobody. The statement itself
-  still verifies (its signature is fine); it simply has no holder.
+```json
+"req": "?aid=<Marko>"
+"req": ["?aid=<Marko>", "?aid=<Sofia>"]
+"req": "dzq:gratitude?from=<Dad>&category=cleaned the room&count=3"
+"req": ["dzq:gratitude?from=<Dad>&category=cleaned the room&count=3",
+        "dzq:gratitude?from=<Mom>&count=5"]
+"req": "dzq:apology?from=<Olena>&count=2"
+"req": "dzq:gratitude?from=<Dad>&to=<Marko>&count=3"
+```
 
-How a leaf is *proved* is up to the context: an `AID` leaf by the holder's
-signature (presentation extension), a `claim:` leaf by a claim proof
-(letters extension).
+**Statement conditions** (`<type>?…`) describe the statements the holder
+must show, like a template; anything not given may be anything:
+
+- `<type>` — a type name (`dzq:gratitude`, `myshop:visit`) or a type SAID.
+  A verifier matches a name only for types it knows; a SAID always.
+- `from` (required) — the issuer of those statements. A condition that
+  accepted statements from anyone could be met with identifiers the holder
+  makes up.
+- `to` — their recipient (`a.i`). "Three thank-yous from Dad **to Marko**":
+  only Marko can meet it.
+- any other key — a **public** field of the type, compared exactly as a
+  string. A category belongs to its issuer (8.3), so `category` together
+  with `from` names one issuer's category.
+- `since` — RFC 3339; only statements with `a.dt` at or after it.
+- `count` — at least this many distinct statements (by SAID); default 1.
+  Each condition counts on its own; counts of different conditions do not
+  add up.
+
+In a presentation (extensions/presentation.md) a statement condition is met
+when, among the statements shown with it, at least `count` distinct ones
+are valid (section 6), match, and are held by the holder **directly**
+(`a.i` = holder, or `a.req` contains `?aid=<holder>`). A statement the
+holder issued to itself counts only toward a statement the holder issued
+too.
+
+**Rules for all conditions:**
+
+- Pairs are `key=value` joined by `&`; each key at most once. Keys are
+  `[a-z][a-z0-9_]{0,31}`. In values only `%`, `&` and `=` are
+  percent-encoded (`%25`, `%26`, `%3D`); everything else, spaces and
+  non-ASCII included, is written as it is.
+- `from`, `to`, `since`, `count` are reserved: no type has fields with these
+  names.
+- A condition that does not parse, or uses a key the verifier does not
+  know in `?…` (`?txn=…`), is **never met**. Others in the list still can
+  be. A statement whose conditions are all unmeetable still verifies (its
+  signature is fine); it simply has no holder.
+- Canonical text (used in vectors): reserved keys in the order `from`,
+  `to`, the fields as written, `since`, `count`; `count=1` omitted.
+
+How a condition is *proved* depends on the context: `?aid=` by the
+holder's signature (presentation extension), `?claim=` by a claim proof
+(letters extension), a statement condition by the statements shown.
 
 ## 5. The credential bundle
 
@@ -520,7 +560,7 @@ reporting its code (6.4).
    extension.
 
 The statement is **valid** when all steps pass. The recipient is `a.i`
-or the condition `a.dq`; who *holds* it is a separate question (section 4,
+or the conditions `a.req`; who *holds* it is a separate question (section 4,
 presentation extension).
 
 ### 6.3 What "valid" means: offline and fresh
@@ -611,7 +651,7 @@ accepting statements of the old one.
 - Unknown type (a SAID `s` the verifier has no document for): verify the
   envelope; report the type unknown (3.6).
 - Fields a known type does not list: reject (`schema`).
-- Unknown condition leaf kinds: keep, never met (section 4).
+- Unknown condition keys: kept, never met (section 4).
 - Unknown archive entries: reject (section 7).
 - Unknown CESR attachment groups in a KEL: verifiers MAY skip groups whose
   size they know (receipts, first-seen replay couples, seal source couples)
@@ -619,19 +659,17 @@ accepting statements of the old one.
 
 ### 8.3 Categories and condition kinds from other applications
 
-- `a.category` is free text chosen by the issuer; its meaning is the
-  issuer's. Values without `:` are general words (`help`, `team`).
-  Application-specific categories SHOULD be prefixed with a reverse domain
-  or app name and a colon (`org.example.shop:coffee`), so apps do not
-  collide. No verifier decision depends on the category.
-- New condition kinds: a kind name of `[a-z0-9-]+`. Experimental kinds
-  SHOULD start with `x-`. A kind becomes standard when a version of this
-  document defines how it is proved; until then every verifier treats it as
-  never met.
+- `category` is free text chosen by the issuer, and **it belongs to the
+  issuer**: "help" from Dad and "help" from Mom are two different
+  categories that share a name. That is why a statement condition can ask
+  for a category only together with `from`.
+- New condition keys for `?…` (as `?aid`, `?claim`) are added by a version
+  of this document or an extension that defines how they are proved; until
+  then every verifier treats them as never met.
 
 ### 8.4 Version names
 
-`dzq/MAJOR.MINOR`. Minor versions only add (schemas, condition kinds,
+`dzq/MAJOR.MINOR`. Minor versions only add (schemas, condition keys,
 extensions, archive entries announced with a version marker). A major
 version may change the serialization; it will be a new schema family and
 a new file signature.

@@ -5,7 +5,7 @@ import json
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
-from . import acdc, cesr, dq, kel, merkle
+from . import acdc, cesr, conditions as dq, kel, merkle
 from .blake3 import blake3
 
 
@@ -107,7 +107,7 @@ def check_credential(bundle, seal=None, kel_text=None, known=None):
     a = integ.acdc["a"]
     r.update(said=integ.said, issuer=integ.issuer, recipient=integ.recipient, schema=integ.schema,
              type=acdc.type_of(integ.schema, known), to_aid="i" in a, dt=a.get("dt"),
-             fields={k: v for k, v in a.items() if k not in ("d", "i", "dq", "dt", "c")})
+             fields={k: v for k, v in a.items() if k not in ("d", "i", "req", "dq", "dt", "c")})
     r["type_known"] = r["type"] is not None
     if "category" in a:
         r["category"] = a["category"]
@@ -176,27 +176,66 @@ def claim_holds(proof):
         return False
 
 
-def holder_meets(recipient, said, holder, claims, to_aid=False, hook=None, kinds=()):
-    """Is `holder` the recipient: the AID in a.i, or a condition in a.dq the
-    holder meets with its claims? `hook(leaf)` decides leaves of extension
-    `kinds` (e.g. count:)."""
+def _instant(text):
+    import datetime
+    try:
+        t = datetime.datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except (ValueError, AttributeError, TypeError):
+        return None
+    return t if t.tzinfo else t.replace(tzinfo=datetime.timezone.utc)
+
+
+def held_directly(r, holder):
+    """The holder holds `r` without showing anything else: a.i is the
+    holder, or a.req names the holder (`?aid=<holder>`)."""
+    if r.get("to_aid"):
+        return r.get("recipient") == holder
+    return dq.names_holder(r.get("recipient"), holder)
+
+
+def _record_matches(cond, r):
+    if r.get("issuer") != cond.issuer:
+        return False
+    if cond.type != r.get("type") and cond.type != r.get("schema"):
+        return False
+    if cond.to is not None and not (r.get("to_aid") and r.get("recipient") == cond.to):
+        return False
+    public = r.get("fields") or {}
+    if not all(public.get(k) == v for k, v in cond.fields):
+        return False
+    if cond.since is not None:
+        when, since = _instant(r.get("dt")), _instant(cond.since)
+        if when is None or when < since:
+            return False
+    return True
+
+
+def holder_meets(recipient, said, holder, claims, to_aid=False, shown=(), issuer=None):
+    """Is `holder` the recipient: the AID in a.i, or one of the conditions
+    in a.req — `?aid=`, `?claim=` (with a claim proof), or `<type>?from=…`
+    met by the statements `shown` with it (results of check_credential)."""
     if to_aid:
         return recipient == holder
-    cond = dq.parse(recipient)
-    if cond is None:
-        return False
-
-    def leaf_ok(leaf):
-        if leaf.kind == "aid":
-            return leaf.value == holder
-        if leaf.kind == "claim":
-            return any(isinstance(p, dict) and p.get("said") == said and p.get("aid") == holder
-                       and p.get("key") == leaf.value and claim_holds(p) for p in claims)
-        if leaf.kind in kinds and hook is not None:
-            return bool(hook(leaf))
-        return False  # commitment, unknown kinds: never met
-
-    return dq.holds(cond, leaf_ok, dq.KNOWN + tuple(kinds))
+    for cond in dq.parse(recipient) or []:
+        if isinstance(cond, dq.Holder):
+            if cond.key == "aid" and cond.value == holder:
+                return True
+            if cond.key == "claim" and any(
+                    isinstance(p, dict) and p.get("said") == said and p.get("aid") == holder
+                    and p.get("key") == cond.value and claim_holds(p) for p in claims):
+                return True
+        elif isinstance(cond, dq.Records):
+            counted = set()
+            for r in shown:
+                if not r.valid or r["said"] == said or not held_directly(r, holder):
+                    continue
+                if r.get("issuer") == holder and issuer != holder:
+                    continue  # your statements to yourself count only toward your own
+                if _record_matches(cond, r):
+                    counted.add(r["said"])
+            if len(counted) >= cond.count:
+                return True
+    return False
 
 
 # --- presentations (extension: presentation) -------------------------------
@@ -205,9 +244,8 @@ def verify_presentation(vp_text, expected_nonce, now=None, kels=(), known=None, 
     """Holder-bound presentation `dzenq-vp/1`. An empty expected_nonce means
     "display only": it proves nothing about freshness.
 
-    `extensions` add condition kinds and "usable" rules (an object with
-    `kinds`, `leaf(leaf, holder, statement, results, claims)` and
-    `assess(statement, holder, now)`), e.g. dzq.promises."""
+    `extensions` add "usable" rules: objects with
+    `assess(statement, holder, now)`, e.g. dzq.promises.Extension()."""
     out = {"valid": False, "holder": None, "code": None, "reason": None, "nonce": None, "credentials": []}
 
     def fail(code, reason):
@@ -258,16 +296,10 @@ def verify_presentation(vp_text, expected_nonce, now=None, kels=(), known=None, 
         if r.said and not r.sealed and isinstance(seals, dict) and r.said in seals:
             r = check_credential(bundle, seal=seals[r.said], kel_text=fresher or None, known=known)
         results.append(r)
-    kinds = tuple(k for e in extensions for k in e.kinds)
     all_ok = bool(results)
     for r in results:
-        def hook(leaf, r=r):
-            for e in extensions:
-                if leaf.kind in e.kinds:
-                    return e.leaf(leaf, holder, r, results, claims)
-            return False
         r["holder_is_recipient"] = r.valid and holder_meets(
-            r.recipient, r.said, holder, claims, r.get("to_aid"), hook, kinds)
+            r.recipient, r.said, holder, claims, r.get("to_aid"), results, r.issuer)
         for e in extensions:
             if r.valid:
                 e.assess(r, holder, now)

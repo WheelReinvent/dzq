@@ -5,7 +5,7 @@
     "gratitude-condition 2.0.0": "EL3ntXZJeGkmy1w43X19vtv9J5dGTiHjqwxpEKtZRSMZ",
     "gratitude-private 1.1.0": "EMI0LpKv73h125n5PgJIYxXc1u3QBvkvWbt3hl9FvKn_",
     "gratitude-private-condition 2.1.0": "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsildc",
-    "dzq:gratitude 1.2.0 (type document)": "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG",
+    "dzq:gratitude 1.2.0 (type document)": "EA7UscxbMPT20L2iL0_rh1kyV_atIttXW3erkpAKqsHy",
     "look/1 (extension)": "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv",
     "binding 1.0.0": "ED-ubFgDExNNMYg9Q_Y_VmvJorQpAXGbGX8x8urN7EVo"
   },
@@ -31,8 +31,8 @@
   ],
   "close_said (extension: promises)": [
     {
-      "promise": "EM8zTZnT2g1Jo8HYBllAudWCe63_LVe9FlNH0usVQ-16",
-      "said": "EOkQOWgIUC8C8L1SSFK8NLOszLVUWBPs36YJ4qpRy_fk"
+      "promise": "EOB3jdbTcQ214J2SefCKMzgpqxqQy0OrOwzdUtaR3kj6",
+      "said": "EKEm0Y9IxbWV4BTNsvPwpuTd6cn7mAixDHUKWd_IaLOE"
     }
   ],
   "claim_keys": [
@@ -56,8 +56,8 @@
     }
   ],
   "claim_message": {
-    "said": "EKE_Jz7brlYRkBskgb891ppg0UJsRzF4wm0ytOlwMcqE",
+    "said": "EKUD1TGWpsRfZnwBFSZJ5wV4BlQQ-Sdlvgw8bhFIDfIq",
     "aid": "EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv",
-    "message": "dzenq-claim/1|EKE_Jz7brlYRkBskgb891ppg0UJsRzF4wm0ytOlwMcqE|EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv"
+    "message": "dzenq-claim/1|EKUD1TGWpsRfZnwBFSZJ5wV4BlQQ-Sdlvgw8bhFIDfIq|EHd36LmWd388oEVT6UU5oPuQj6W-9S1_dtluLhxAvIOv"
   }
 }

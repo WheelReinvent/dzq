@@ -15,7 +15,7 @@ through the core (copy it into `rustLib/tests/`). Draft 1 (commit
 
 Pin the conformance step to tag `v1.3.0` and copy the updated
 `conformance/rust/dzq_vectors.rs`. It skips the vectors of optional
-extensions (counting, promises) unless `DZQ_EXTENSIONS=1`; set it once
+extensions (promises) unless `DZQ_EXTENSIONS=1`; set it once
 step 6 is done. In order:
 
 1. **Security finding** below: recompute every KEL event SAID (vectors
@@ -27,14 +27,17 @@ step 6 is done. In order:
    base types (`types/`), read `types/<SAID>.json` from archives, `look` and
    `re` (vectors `schema-unknown`, `custom-type-*`, `envelope-*`,
    `apology*`, `promise*`, `re*`, `look-*`).
-5. Issue new thank-yous as `dzq:gratitude` 1.2.0 (`EDM7gu9-…`); old ones
+5. Issue new thank-yous as `dzq:gratitude` 1.2.0 (`EA7Uscx…`); old ones
    stay valid.
 6. Certificates: `dzq:promise` 1.1.0 — `what` (name), `ask` (what to do),
    `payload` (the code, the invite; private but not encrypted: the holder
-   sees it at once). Earning by stamps → `count:` (extensions/counting.md):
-   «3 from me for anything» = `count:3/<me>~dzq:gratitude`;
-   «Dad for the room or Mom for anything» =
-   `count:3/<Dad>~dzq:gratitude~category=room+<Mom>~dzq:gratitude`.
+   sees it at once). Earning by stamps → the promise's `a.req` (SPEC §4):
+   «3 from me for anything» = `"dzq:gratitude?from=<me>&count=3"`;
+   «3 from Dad for the room, or 5 from Mom» =
+   `["dzq:gratitude?from=<Dad>&category=room&count=3", "dzq:gratitude?from=<Mom>&count=5"]`
+   (each condition counts on its own).
+   Conditions: `a.dq` becomes `a.req` (a string or a list); `any(…)`,
+   `all(…)`, `claim:` become a list of `?aid=…` / `?claim=…`.
    Likes «👍 for a kept promise»: DzenQ's own type (e.g. `dzenq:like`), so
    they never count as gratitudes, but can be counted by name. Usable /
    closing early: extensions/promises.md.

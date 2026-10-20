@@ -17,7 +17,7 @@ SCHEMA_GRATITUDE_PRIVATE_CONDITION = "EMa9OBQr5dKKmPH2hLNViB8QVEN1m6GVlVJq2Tvsil
 
 # dzq/1.2: open types. New statements use type documents (typedoc.py);
 # the base types (types.py) are type documents too.
-SCHEMA_GRATITUDE_12 = "EDM7gu9-qtygix9Ukwfo_iE9n4EGy8mU3KmMABB7hjhG"   # dzq:gratitude 1.2.0
+SCHEMA_GRATITUDE_12 = "EA7UscxbMPT20L2iL0_rh1kyV_atIttXW3erkpAKqsHy"   # dzq:gratitude 1.2.0
 SCHEMA_LOOK = "EIPQeKyOu9UNczhgujDJwHEYA1SP1CuKen9pRt8PxZfv"          # look/1 document (optional extension)
 
 MAX_ACDC = 256 * 1024
@@ -43,6 +43,7 @@ import re as _re  # noqa: E402
 LOOK_RE = _re.compile(r"[a-z0-9-]+:\S+")
 SAID_RE = _re.compile(r"E[A-Za-z0-9_-]{43}")
 NAME_RE = _re.compile(r"[a-z][a-z0-9_]{0,31}")
+RESERVED_NAMES = ("d", "i", "req", "dq", "dt", "c", "u", "look", "re", "from", "to", "since", "count")
 
 
 def builtin_types():
@@ -149,17 +150,21 @@ def _generic_attributes(a):
     if not isinstance(a, dict):
         raise AcdcError("schema", "a must be an object")
     keys = list(a)
-    if len(keys) < 3 or keys[0] != "d" or keys[1] not in ("i", "dq") or keys[2] != "dt":
-        raise AcdcError("schema", "a starts with d, then i or dq, then dt")
-    if "i" in a and "dq" in a:
-        raise AcdcError("schema", "a statement has a.i or a.dq, not both")
-    for k in ("d", keys[1], "dt"):
-        if not isinstance(a[k], str):
+    if len(keys) < 3 or keys[0] != "d" or keys[1] not in ("i", "req") or keys[2] != "dt":
+        raise AcdcError("schema", "a starts with d, then i or req, then dt")
+    if "i" in a and "req" in a:
+        raise AcdcError("schema", "a statement has a.i or a.req, not both")
+    for k in ("d", "i", "dt"):
+        if k in a and not isinstance(a[k], str):
             raise AcdcError("schema", "a.%s must be a string" % k)
+    if "req" in a:
+        from . import conditions as dq_
+        if not dq_.well_formed(a["req"]):
+            raise AcdcError("schema", "a.req must be a condition or a non-empty list of conditions (strings)")
     for k in keys[3:]:
         if k == "c":
             continue
-        if not NAME_RE.fullmatch(k) or k in ("d", "i", "dq", "dt", "u", "look", "re"):
+        if not NAME_RE.fullmatch(k) or k in RESERVED_NAMES:
             raise AcdcError("schema", "a.%s is not an allowed field name" % k)
         _plain(a[k], "a.%s" % k)
     if "c" in a:
@@ -173,7 +178,7 @@ def _generic_attributes(a):
             if not isinstance(c["d"], str) or not _salt_ok(c["u"]):
                 raise AcdcError("schema", "a.c.u must be a 128-bit salt (CESR 0A…)")
             for k in ck[2:]:
-                if not NAME_RE.fullmatch(k) or k in ("d", "i", "dq", "dt", "u", "c"):
+                if not NAME_RE.fullmatch(k) or (k in RESERVED_NAMES and k not in ("look", "re")):
                     raise AcdcError("schema", "a.c.%s is not an allowed field name" % k)
                 _plain(c[k], "a.c.%s" % k)
             if "look" in c and not (isinstance(c["look"], str) and LOOK_RE.fullmatch(c["look"])):
@@ -203,7 +208,7 @@ def _check_against(a, doc):
                 continue
             _field(where, f["name"], block[f["name"]], f.get("max"), f.get("kind", "text"))
 
-    check(a, doc.public, "a", {"d", "i", "dq", "dt", "c"})
+    check(a, doc.public, "a", {"d", "i", "req", "dt", "c"})
     c = a.get("c")
     if doc.private and c is None:
         raise AcdcError("schema", "%s has private fields: a.c is required" % doc.name)
@@ -353,7 +358,7 @@ def new_typed(issuer, registry, doc, attributes, salt):
     """A statement of a type document `doc`: envelope (i or dq, dt), the
     type's public fields, then its private fields plus look / re in a salted
     block — each in the order the type lists them."""
-    to = "dq" if "dq" in attributes else "i"
+    to = "req" if "req" in attributes else "i"
     a = {"d": "", to: attributes[to], "dt": attributes["dt"]}
     for f in doc.public:
         if f["name"] in attributes:
@@ -420,7 +425,7 @@ def check_integrity(raw, known=None):
     elif s == SCHEMA_GRATITUDE_CONDITION or s in LAYOUTS:
         if "dq" not in a or "i" in a:
             raise AcdcError("schema", "a gratitude to a condition has a.dq and no a.i")
-    recipient = a.get("i", a.get("dq"))
+    recipient = a.get("i", a.get("req", a.get("dq")))
     content = None
     if isinstance(a.get("c"), dict):
         # Expanded: the block must be the one whose SAID the signed form holds.
