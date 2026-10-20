@@ -54,7 +54,7 @@ class Statement:
     @property
     def recipient(self):
         a = self.credential.get("a", {})
-        return a.get("i") or a.get("requires") or a.get("dq")
+        return a.get("i") or a.get("req") or a.get("dq")
 
     @property
     def date(self):
@@ -79,7 +79,7 @@ class Statement:
         """The type's own fields (title, message, …), without the envelope.
         Private fields are missing when the copy is compact."""
         a = self.credential.get("a", {})
-        out = {k: v for k, v in a.items() if k not in ("d", "i", "requires", "dq", "dt", "c")}
+        out = {k: v for k, v in a.items() if k not in ("d", "i", "req", "dq", "dt", "c")}
         c = a.get("c")
         if isinstance(c, dict):
             out.update({k: v for k, v in c.items() if k not in ("d", "u")})
@@ -265,7 +265,7 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True, 
         asset = (name, body)
     when = when or datetime.datetime.now(datetime.timezone.utc)
     attrs = {"dt": when.isoformat(timespec="seconds") if hasattr(when, "isoformat") else when}
-    attrs["requires" if _is_condition(to) else "i"] = to
+    attrs["req" if _is_condition(to) else "i"] = to
     attrs.update(content)
     if private:
         try:
@@ -277,8 +277,8 @@ def sign(identity, type, to, content, when=None, attachment=None, private=True, 
         if doc.said != types_.GRATITUDE.said or "look" in content or "re" in content:
             raise ValueError("only a plain gratitude can be signed all-public (dzq/1.0)")
         schema = acdc.SCHEMA_GRATITUDE_CONDITION if _is_condition(to) else acdc.SCHEMA_GRATITUDE
-        if "requires" in attrs:
-            attrs["dq"] = attrs.pop("requires")
+        if "req" in attrs:
+            attrs["dq"] = attrs.pop("req")
         credential = acdc.saidify({"v": "", "d": "", "i": identity.prefix,
                                    "ri": identity.registry, "s": schema, "a": dict({"d": ""}, **attrs)})
     return Statement(identity.bundle(credential), attachment=asset, types=known)

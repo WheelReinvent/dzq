@@ -107,7 +107,7 @@ def check_credential(bundle, seal=None, kel_text=None, known=None):
     a = integ.acdc["a"]
     r.update(said=integ.said, issuer=integ.issuer, recipient=integ.recipient, schema=integ.schema,
              type=acdc.type_of(integ.schema, known), to_aid="i" in a, dt=a.get("dt"),
-             fields={k: v for k, v in a.items() if k not in ("d", "i", "requires", "dq", "dt", "c")})
+             fields={k: v for k, v in a.items() if k not in ("d", "i", "req", "dq", "dt", "c")})
     r["type_known"] = r["type"] is not None
     if "category" in a:
         r["category"] = a["category"]
@@ -187,7 +187,7 @@ def _instant(text):
 
 def held_directly(r, holder):
     """The holder holds `r` without showing anything else: a.i is the
-    holder, or a.requires names the holder (`?aid=<holder>`)."""
+    holder, or a.req names the holder (`?aid=<holder>`)."""
     if r.get("to_aid"):
         return r.get("recipient") == holder
     return dq.names_holder(r.get("recipient"), holder)
@@ -212,7 +212,7 @@ def _record_matches(cond, r):
 
 def holder_meets(recipient, said, holder, claims, to_aid=False, shown=(), issuer=None):
     """Is `holder` the recipient: the AID in a.i, or one of the conditions
-    in a.requires — `?aid=`, `?claim=` (with a claim proof), or `<type>?from=…`
+    in a.req — `?aid=`, `?claim=` (with a claim proof), or `<type>?from=…`
     met by the statements `shown` with it (results of check_credential)."""
     if to_aid:
         return recipient == holder
